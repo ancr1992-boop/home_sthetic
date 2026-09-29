@@ -14,7 +14,12 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// Servir la página principal
+// Login: siempre disponible
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Servir la página principal (la verificación de sesión la hace el JS del cliente)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -47,8 +52,9 @@ const appointmentSchema = new mongoose.Schema({
   fecha: { type: String, required: true }, // YYYY-MM-DD
   hora: { type: String, required: true }, // HH:MM
   duracion: { type: Number, default: 45 },
-  estado: { type: String, enum: ['Pendiente', 'Completada', 'Cancelada'], default: 'Pendiente' },
-  notas: { type: String, default: '' }
+  estado: { type: String, enum: ['Pendiente', 'Listo para Facturar', 'Completada', 'Cancelada'], default: 'Pendiente' },
+  notas: { type: String, default: '' },
+  notasOperaria: { type: String, default: '' }
 }, { timestamps: true });
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
@@ -86,6 +92,36 @@ const configSchema = new mongoose.Schema({
 });
 
 const Config = mongoose.model('Config', configSchema);
+
+// 5. Usuarios del Sistema y Roles (Control de Accesos)
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password: { type: String, required: true },
+  nombre: { type: String, required: true },
+  rol: { type: String, enum: ['admin', 'recepcionista', 'operaria'], required: true },
+  operariaNombre: { type: String, default: '' },
+  activo: { type: Boolean, default: true }
+}, { timestamps: true });
+
+const User = mongoose.model('User', userSchema);
+
+// Helper para verificar usuario autenticado en peticiones
+async function getAuthUser(req) {
+  try {
+    const userId = req.headers['x-user-id'];
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      const u = await User.findById(userId);
+      if (u && u.activo) return u;
+    }
+    const roleHeader = req.headers['x-user-role'];
+    if (roleHeader) {
+      return { rol: roleHeader, nombre: 'Usuario Sesión' };
+    }
+  } catch (e) {
+    console.error('Error al resolver usuario auth:', e);
+  }
+  return null;
+}
 
 // ================= UTILIDADES =================
 function getFechaHoy() {
@@ -153,7 +189,48 @@ async function getOrCreateConfig() {
 
 // Inicializar configuración y datos semilla si la base está nueva
 async function initDatabaseDefaults() {
-  await getOrCreateConfig();
+  const config = await getOrCreateConfig();
+
+  // Asegurar usuarios base
+  const adminExists = await User.findOne({ rol: 'admin' });
+  if (!adminExists) {
+    await User.create({
+      username: 'admin',
+      password: 'admin123',
+      nombre: 'Administrador General',
+      rol: 'admin'
+    });
+    console.log('✓ Usuario Administrador creado: admin / admin123');
+  }
+
+  const recepcionExists = await User.findOne({ rol: 'recepcionista' });
+  if (!recepcionExists) {
+    await User.create({
+      username: 'recepcion',
+      password: 'recepcion123',
+      nombre: 'Recepción & Caja',
+      rol: 'recepcionista'
+    });
+    console.log('✓ Usuario Recepcionista creado: recepcion / recepcion123');
+  }
+
+  // Asegurar usuarios para las operarias registradas
+  if (config.operarias && Array.isArray(config.operarias)) {
+    for (const op of config.operarias) {
+      const uname = op.nombre.split(' ')[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const opUser = await User.findOne({ username: uname });
+      if (!opUser) {
+        await User.create({
+          username: uname,
+          password: '123',
+          nombre: op.nombre,
+          rol: 'operaria',
+          operariaNombre: op.nombre
+        });
+        console.log(`✓ Usuario Operaria creado: ${uname} / 123 (${op.nombre})`);
+      }
+    }
+  }
 
   const clientCount = await Client.countDocuments();
   if (clientCount === 0) {
@@ -257,10 +334,11 @@ app.get('/api/bootstrap', async (req, res) => {
   try {
     const hoy = getFechaHoy();
     const config = await getOrCreateConfig();
-    const [clientes, todasLasCitas, ventasHoy] = await Promise.all([
+    const [clientes, todasLasCitas, ventasHoy, usuarios] = await Promise.all([
       Client.find().sort({ nombre: 1 }),
       Appointment.find().sort({ fecha: 1, hora: 1 }),
-      Sale.find({ fecha: hoy }).sort({ createdAt: -1 })
+      Sale.find({ fecha: hoy }).sort({ createdAt: -1 }),
+      User.find().select('-password').sort({ rol: 1, nombre: 1 })
     ]);
 
     res.json({
@@ -270,6 +348,7 @@ app.get('/api/bootstrap', async (req, res) => {
         clientes,
         citas: todasLasCitas,
         ventas: ventasHoy,
+        usuarios,
         fechaHoy: hoy
       }
     });
@@ -360,6 +439,56 @@ app.put('/api/citas/:id/reprogramar', async (req, res) => {
     res.json({ success: true, cita });
   } catch (error) {
     console.error('Error al reprogramar cita:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4.1 Operaria: Actualizar Zonas y Enviar a Facturar en Recepción
+app.put('/api/citas/:id/enviar-a-facturar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { zonas, notasOperaria } = req.body;
+    const cita = await Appointment.findById(id);
+    if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
+
+    if (zonas && Array.isArray(zonas)) {
+      cita.zonas = zonas;
+      if (cita.servicio && (cita.servicio.toLowerCase().includes('laser') || cita.servicio.toLowerCase().includes('láser'))) {
+        cita.valor = zonas.length * 50000;
+      }
+    }
+    if (notasOperaria !== undefined) {
+      cita.notasOperaria = notasOperaria;
+    }
+    cita.estado = 'Listo para Facturar';
+    await cita.save();
+
+    console.log(`✓ Cita enviada a facturar en caja: ${cita.clienteNombre} (${cita.zonas.length} zonas) - $${cita.valor}`);
+    res.json({ success: true, cita });
+  } catch (error) {
+    console.error('Error al enviar a facturar:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4.2 Operaria: Actualizar Zonas en vivo
+app.put('/api/citas/:id/actualizar-zonas', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { zonas } = req.body;
+    const cita = await Appointment.findById(id);
+    if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
+
+    if (zonas && Array.isArray(zonas)) {
+      cita.zonas = zonas;
+      if (cita.servicio && (cita.servicio.toLowerCase().includes('laser') || cita.servicio.toLowerCase().includes('láser'))) {
+        cita.valor = zonas.length * 50000;
+      }
+    }
+    await cita.save();
+    res.json({ success: true, cita });
+  } catch (error) {
+    console.error('Error al actualizar zonas:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -468,9 +597,40 @@ app.post('/api/caja/venta-rapida', async (req, res) => {
   }
 });
 
-// 8. Operarias: Crear y Eliminar
+// 7.1 Eliminar Venta de Caja (ESTRICTAMENTE SOLO ADMINISTRADOR)
+app.delete('/api/caja/ventas/:id', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado: El perfil Recepcionista u Operaria NO tiene autorización para eliminar ventas. Solo el Administrador tiene control total para anularlas.'
+      });
+    }
+
+    const { id } = req.params;
+    const venta = await Sale.findByIdAndDelete(id);
+    if (!venta) {
+      return res.status(404).json({ success: false, error: 'Venta no encontrada' });
+    }
+
+    console.log(`✓ Venta eliminada por Administrador: ${venta.concepto} ($${venta.valor}) de ${venta.cliente}`);
+    res.json({ success: true, message: 'Venta eliminada exitosamente', venta });
+  } catch (error) {
+    console.error('Error al eliminar venta:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+app.delete('/api/ventas/:id', (req, res) => res.redirect(307, `/api/caja/ventas/${req.params.id}`));
+
+// 8. Operarias: Crear y Eliminar (Solo Administrador)
 app.post('/api/operarias', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede gestionar el equipo de operarias.' });
+    }
+
     const { nombre, rol } = req.body;
     if (!nombre || !nombre.trim()) {
       return res.status(400).json({ success: false, error: 'El nombre de la operaria es obligatorio.' });
@@ -482,6 +642,21 @@ app.post('/api/operarias', async (req, res) => {
     };
     config.operarias.push(nuevaOp);
     await config.save();
+
+    // Crear automáticamente usuario para la operaria
+    const uname = nuevaOp.nombre.split(' ')[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const userExist = await User.findOne({ username: uname });
+    if (!userExist) {
+      await User.create({
+        username: uname,
+        password: '123',
+        nombre: nuevaOp.nombre,
+        rol: 'operaria',
+        operariaNombre: nuevaOp.nombre
+      });
+      console.log(`✓ Usuario de operaria creado automáticamente: ${uname} / 123`);
+    }
+
     console.log(`✓ Nueva operaria agregada: ${nuevaOp.nombre} (${nuevaOp.rol})`);
     res.json({ success: true, operarias: config.operarias });
   } catch (error) {
@@ -492,6 +667,11 @@ app.post('/api/operarias', async (req, res) => {
 
 app.delete('/api/operarias/:id', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede eliminar operarias.' });
+    }
+
     const config = await getOrCreateConfig();
     config.operarias = config.operarias.filter(o => o._id && o._id.toString() !== req.params.id);
     await config.save();
@@ -503,9 +683,14 @@ app.delete('/api/operarias/:id', async (req, res) => {
   }
 });
 
-// 9. Servicios: Crear y Eliminar
+// 9. Servicios: Crear y Eliminar (Solo Administrador - Recepcionista NO puede modificar precios)
 app.post('/api/servicios', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado: El perfil Recepcionista NO tiene permisos para modificar precios o crear servicios. Solo el Administrador puede hacerlo.' });
+    }
+
     const { nombre, duracion, precio } = req.body;
     if (!nombre || !nombre.trim()) {
       return res.status(400).json({ success: false, error: 'El nombre del tratamiento es obligatorio.' });
@@ -528,6 +713,11 @@ app.post('/api/servicios', async (req, res) => {
 
 app.delete('/api/servicios/:id', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado: Solo el Administrador puede eliminar o modificar tratamientos y precios.' });
+    }
+
     const config = await getOrCreateConfig();
     config.servicios = config.servicios.filter(s => s._id && s._id.toString() !== req.params.id);
     await config.save();
@@ -535,6 +725,123 @@ app.delete('/api/servicios/:id', async (req, res) => {
     res.json({ success: true, servicios: config.servicios });
   } catch (error) {
     console.error('Error al eliminar servicio:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ================= RUTAS DE AUTENTICACIÓN Y USUARIOS =================
+
+// 10. Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Por favor ingresa usuario y contraseña' });
+    }
+
+    const user = await User.findOne({ username: username.toLowerCase().trim() });
+    if (!user || !user.activo) {
+      return res.status(401).json({ success: false, error: 'Usuario no encontrado o inactivo en el sistema.' });
+    }
+
+    if (user.password !== password.trim()) {
+      return res.status(401).json({ success: false, error: 'Contraseña incorrecta.' });
+    }
+
+    console.log(`✓ Inicio de sesión exitoso: ${user.username} (Rol: ${user.rol})`);
+    res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        username: user.username,
+        nombre: user.nombre,
+        rol: user.rol,
+        operariaNombre: user.operariaNombre
+      }
+    });
+  } catch (error) {
+    console.error('Error en login:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 11. Listar Usuarios (Admin)
+app.get('/api/usuarios', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede gestionar los accesos.' });
+    }
+    const usuarios = await User.find().select('-password').sort({ rol: 1, nombre: 1 });
+    res.json({ success: true, usuarios });
+  } catch (error) {
+    console.error('Error al listar usuarios:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 12. Crear Usuario (Admin)
+app.post('/api/usuarios', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede crear usuarios.' });
+    }
+
+    const { username, password, nombre, rol, operariaNombre } = req.body;
+    if (!username || !password || !nombre || !rol) {
+      return res.status(400).json({ success: false, error: 'Todos los campos son obligatorios.' });
+    }
+
+    const uname = username.toLowerCase().trim();
+    const exist = await User.findOne({ username: uname });
+    if (exist) {
+      return res.status(400).json({ success: false, error: 'El nombre de usuario ya existe. Elige otro.' });
+    }
+
+    const nuevo = await User.create({
+      username: uname,
+      password: password.trim(),
+      nombre: nombre.trim(),
+      rol,
+      operariaNombre: rol === 'operaria' ? (operariaNombre || nombre).trim() : ''
+    });
+
+    console.log(`✓ Nuevo usuario creado: ${nuevo.username} (${nuevo.rol})`);
+    res.json({
+      success: true,
+      usuario: {
+        _id: nuevo._id,
+        username: nuevo.username,
+        nombre: nuevo.nombre,
+        rol: nuevo.rol,
+        operariaNombre: nuevo.operariaNombre
+      }
+    });
+  } catch (error) {
+    console.error('Error al crear usuario:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 13. Eliminar Usuario (Admin)
+app.delete('/api/usuarios/:id', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede eliminar usuarios.' });
+    }
+
+    const { id } = req.params;
+    if (authUser._id && authUser._id.toString() === id) {
+      return res.status(400).json({ success: false, error: 'No puedes eliminar tu propia cuenta de Administrador.' });
+    }
+
+    await User.findByIdAndDelete(id);
+    console.log(`✓ Usuario eliminado id: ${id}`);
+    res.json({ success: true, message: 'Usuario eliminado exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar usuario:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

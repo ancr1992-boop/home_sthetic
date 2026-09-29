@@ -63,21 +63,32 @@
         </div>
       </div>
 
-      <!-- Estado de Caja Rápido & Botón Nueva Cita -->
-      <div class="flex items-center gap-3 sm:gap-4">
-        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-brand-border rounded-full text-xs font-medium">
+      <!-- Estado de Caja Rápido, Perfil de Usuario & Botón Nueva Cita -->
+      <div class="flex items-center gap-2 sm:gap-4">
+        <div id="navCajaBadgeContainer" class="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-brand-border rounded-full text-xs font-medium">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
           <span>Caja Hoy: <strong id="navCajaTotal">$0</strong></span>
         </div>
 
-        <button onclick="openModal('modalNuevaCita')" class="bg-black hover:bg-neutral-800 text-white px-4 sm:px-5 py-2.5 rounded-sm text-xs font-semibold tracking-wider uppercase transition flex items-center gap-2 shadow-sm">
+        <button id="btnNavNuevaCita" onclick="openModal('modalNuevaCita')" class="bg-black hover:bg-neutral-800 text-white px-3 sm:px-4 py-2 rounded-sm text-xs font-semibold tracking-wider uppercase transition flex items-center gap-1.5 shadow-sm">
           <i data-lucide="plus" class="w-4 h-4"></i>
-          <span>Nueva Cita</span>
+          <span class="hidden xs:inline">Nueva Cita</span>
         </button>
+
+        <!-- Perfil de Usuario Activo -->
+        <div id="navUserBadge" class="flex items-center gap-2 pl-2 border-l border-brand-border">
+          <div class="flex flex-col text-right">
+            <span id="navUserName" class="text-xs font-bold leading-tight truncate max-w-[110px] sm:max-w-[150px]">Cargando...</span>
+            <span id="navUserRole" class="text-[9px] uppercase font-bold tracking-widest text-brand-gray">Rol</span>
+          </div>
+          <button onclick="cerrarSesionUsuario()" class="p-1.5 border border-brand-border hover:border-red-400 hover:text-red-600 rounded-sm text-brand-gray transition" title="Cerrar Sesión">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Pestañas Minimalistas -->
+    <!-- Pestañas Minimalistas según Rol -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-brand-border/40 overflow-x-auto py-2">
       <button onclick="cambiarSeccion('agenda')" id="tab-agenda" class="tab-btn active-tab px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm transition flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="calendar" class="w-4 h-4"></i> Agenda
@@ -91,11 +102,31 @@
       <button onclick="cambiarSeccion('equipo')" id="tab-equipo" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="sparkles" class="w-4 h-4"></i> Operarias & Tratamientos
       </button>
+      <button onclick="cambiarSeccion('usuarios')" id="tab-usuarios" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap">
+        <i data-lucide="shield-check" class="w-4 h-4 text-purple-600"></i> Usuarios & Permisos
+      </button>
+      <button onclick="cambiarSeccion('operaria')" id="tab-operaria" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap hidden">
+        <i data-lucide="sparkles" class="w-4 h-4 text-pink-600"></i> Mi Cabina / Clientes
+      </button>
     </div>
   </header>
 
   <!-- ================= CONTENEDOR PRINCIPAL ================= -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+    <!-- Banner Alerta: Citas Listas para Cobrar en Caja (Enviadas por Operarias) -->
+    <div id="bannerCitasPorFacturarGlobal" class="hidden mb-6 p-4 border border-amber-300 bg-amber-50 rounded-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="p-2 bg-amber-500 text-white rounded-full"><i data-lucide="bell-ring" class="w-4 h-4 animate-bounce"></i></span>
+          <div>
+            <h4 class="text-xs font-bold text-amber-900 uppercase tracking-wider">¡Citas Listas para Facturar en Caja!</h4>
+            <p class="text-[11px] text-amber-800" id="bannerTextoCitasFacturar">Las operarias han finalizado atención en cabina y esperan el cobro en caja.</p>
+          </div>
+        </div>
+        <div id="bannerListaCitasFacturar" class="flex flex-wrap gap-2"></div>
+      </div>
+    </div>
 
     <!-- SECCIÓN 1: AGENDA -->
     <section id="sec-agenda" class="space-y-6">
@@ -235,6 +266,7 @@
                 <th class="p-3">Medio de Pago</th>
                 <th class="p-3">Operaria</th>
                 <th class="p-3 text-right">Valor</th>
+                <th id="thAccionesVenta" class="p-3 text-center hidden">Acciones</th>
               </tr>
             </thead>
             <tbody id="tablaVentasBody" class="divide-y divide-brand-border">
@@ -245,11 +277,11 @@
       </div>
     </section>
 
-    <!-- SECCIÓN 4: OPERARIAS & SERVICIOS -->
+    <!-- SECCIÓN 4: OPERARIAS & SERVICIOS (ADMIN) -->
     <section id="sec-equipo" class="hidden space-y-8">
       <div class="border-b border-brand-border pb-5">
         <h2 class="text-2xl font-bold tracking-tight">Operarias & Catálogo de Tratamientos</h2>
-        <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Configuración guardada en MongoDB Atlas</p>
+        <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Configuración guardada en MongoDB Atlas (Control de Administrador)</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -280,6 +312,80 @@
           </div>
           <div id="listaServicios" class="space-y-3"></div>
         </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 5: USUARIOS & PERMISOS (SOLO ADMINISTRADOR) -->
+    <section id="sec-usuarios" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-2xl font-bold tracking-tight">Control de Usuarios & Accesos</h2>
+            <span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-purple-100 text-purple-800 border border-purple-200 rounded-full">Exclusivo Admin</span>
+          </div>
+          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Perfiles: Administrador (Control Total), Recepcionista (Sin borrar ventas ni alterar precios), Operaria (Cabina)</p>
+        </div>
+        <button onclick="abrirModalNuevoUsuario()" class="bg-black hover:bg-neutral-800 text-white px-4 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>Crear Usuario</span>
+        </button>
+      </div>
+
+      <div class="border border-brand-border rounded-sm overflow-hidden bg-white">
+        <div class="p-4 bg-brand-lightGray border-b border-brand-border flex justify-between items-center">
+          <h3 class="text-xs uppercase tracking-wider font-bold">Cuentas Registradas en el Sistema</h3>
+          <span class="text-[10px] text-brand-gray uppercase font-semibold">MongoDB Atlas</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="border-b border-brand-border uppercase tracking-wider font-semibold text-brand-gray">
+              <tr>
+                <th class="p-3">Usuario (Login)</th>
+                <th class="p-3">Nombre</th>
+                <th class="p-3">Perfil / Rol</th>
+                <th class="p-3">Operaria Vinculada</th>
+                <th class="p-3 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaUsuariosBody" class="divide-y divide-brand-border">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 6: CABINA DE ATENCIÓN DE OPERARIA (EXCLUSIVO OPERARIAS) -->
+    <section id="sec-operaria" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-2xl font-bold tracking-tight">Cabina de Atención Especializada</h2>
+            <span class="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-pink-100 text-pink-800 border border-pink-200 flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3 h-3 text-pink-600"></i> <span id="opNombreCabinaHeader">Especialista</span>
+            </span>
+          </div>
+          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Atiende a tus clientas, agrega o quita zonas de depilación y envía la cuenta lista a recepción</p>
+        </div>
+
+        <!-- Selector de fecha para la operaria -->
+        <div class="flex items-center gap-1.5 text-xs">
+          <button onclick="cambiarDiaOperaria(-1)" class="p-1.5 border border-brand-border bg-white rounded-sm hover:border-black transition" title="Día Anterior">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          </button>
+          <input type="date" id="filtroFechaOperaria" onchange="seleccionarFechaOperaria(this.value)" class="border border-brand-border bg-white px-2 py-1 rounded-sm text-xs font-bold focus:border-black outline-none">
+          <button onclick="cambiarDiaOperaria(1)" class="p-1.5 border border-brand-border bg-white rounded-sm hover:border-black transition" title="Día Siguiente">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+          <button onclick="verFechaHoyOperaria()" class="px-2.5 py-1 text-xs border border-brand-border bg-white hover:border-black font-semibold rounded-sm transition">
+            Hoy
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenedor de citas asignadas a esta operaria -->
+      <div id="contenedorCitasOperaria" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Renderizado dinámico -->
       </div>
     </section>
 
@@ -737,6 +843,54 @@
     </div>
   </div>
 
+  <!-- Modal: Crear Nuevo Usuario (Solo Admin) -->
+  <div id="modalNuevoUsuario" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4 text-purple-600"></i> Crear Usuario
+        </h3>
+        <button onclick="closeModal('modalNuevoUsuario')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="guardarNuevoUsuario(event)" class="space-y-3">
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre Completo *</label>
+          <input type="text" id="nuUsuarioNombre" required placeholder="Ej: María González" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        </div>
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre de Usuario (para login) *</label>
+          <input type="text" id="nuUsuarioUsername" required placeholder="Ej: maria (sin espacios)" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        </div>
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Contraseña *</label>
+          <input type="text" id="nuUsuarioPassword" required placeholder="Mínimo 3 caracteres" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        </div>
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Perfil / Rol *</label>
+          <select id="nuUsuarioRol" onchange="onCambioRolNuevoUsuario()" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-medium">
+            <option value="recepcionista">Recepcionista — Gestión & Caja</option>
+            <option value="operaria">Operaria — Solo Cabina</option>
+            <option value="admin">Administrador — Control Total</option>
+          </select>
+        </div>
+        <div id="bloqueOperariaVinculada" class="hidden">
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Operaria Vinculada</label>
+          <select id="nuUsuarioOperaria" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white">
+          </select>
+          <p class="text-[10px] text-brand-gray mt-1">Elige la operaria del equipo a quien corresponde esta cuenta.</p>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalNuevoUsuario')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-black text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm hover:bg-neutral-800 transition">Crear Usuario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= JAVASCRIPT ================= -->
   <script>
     let appState = {
@@ -750,6 +904,122 @@
     let fechaAgendaActiva = '';
     let modoVerTodasAgenda = false;
     let citaActualSiguiente = null;
+
+    // ─── GESTIÓN DE SESIÓN ────────────────────────────────────────────────────
+
+    function obtenerSesion() {
+      try {
+        const raw = localStorage.getItem('hs_session');
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    }
+
+    function cerrarSesionUsuario() {
+      if (confirm('¿Deseas cerrar sesión en HOME STHETIC?')) {
+        localStorage.removeItem('hs_session');
+        window.location.href = '/login';
+      }
+    }
+
+    // ─── CONTROL DE ROLES Y PERMISOS UI ──────────────────────────────────────
+    //
+    //  admin         → todo visible, puede eliminar ventas, modificar precios
+    //  recepcionista → todo excepto: eliminar ventas, agregar/eliminar servicios (precios)
+    //  operaria      → solo ve "Mi Cabina / Clientes", el resto oculto
+    //
+    function aplicarRestriccionesPorRol(user) {
+      const rol = user.rol;
+
+      // ── Nombre y rol en navbar ──
+      const navName = document.getElementById('navUserName');
+      const navRole = document.getElementById('navUserRole');
+      if (navName) navName.textContent = user.nombre;
+      if (navRole) {
+        const labels = { admin: '🛡 Administrador', recepcionista: '🖥 Recepcionista', operaria: '✨ Especialista' };
+        navRole.textContent = labels[rol] || rol;
+      }
+
+      if (rol === 'operaria') {
+        // ── OPERARIA: ocultar casi todo, mostrar solo "Mi Cabina" ──
+
+        // Ocultar pestañas que no corresponden
+        ['tab-agenda','tab-clientes','tab-caja','tab-equipo','tab-usuarios'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('hidden');
+        });
+
+        // Mostrar pestaña "Mi Cabina"
+        const tabCabina = document.getElementById('tab-operaria');
+        if (tabCabina) tabCabina.classList.remove('hidden');
+
+        // Ocultar botón "Nueva Cita" del navbar (operaria no agenda)
+        const btnNuevaCita = document.getElementById('btnNavNuevaCita');
+        if (btnNuevaCita) btnNuevaCita.classList.add('hidden');
+
+        // Ocultar badge caja en navbar (operaria no ve caja)
+        const navCaja = document.getElementById('navCajaBadgeContainer');
+        if (navCaja) navCaja.classList.add('hidden');
+
+        // Iniciar en sección cabina
+        cambiarSeccion('operaria');
+
+        // Establecer nombre de operaria en header de cabina
+        const opHeader = document.getElementById('opNombreCabinaHeader');
+        if (opHeader) opHeader.textContent = user.nombre;
+
+        // Guardar fecha de hoy en filtro de operaria
+        const fechaOpInput = document.getElementById('filtroFechaOperaria');
+        if (fechaOpInput) fechaOpInput.value = appState.fechaHoy || new Date().toISOString().split('T')[0];
+
+        return;
+      }
+
+      if (rol === 'recepcionista') {
+        // ── RECEPCIONISTA: todo excepto eliminar ventas y modificar precios ──
+
+        // Mostrar pestañas principales, pero no Usuarios
+        const tabUsuarios = document.getElementById('tab-usuarios');
+        if (tabUsuarios) tabUsuarios.classList.add('hidden');
+
+        // Ocultar botón de eliminar ventas (columna de acciones en tabla ventas)
+        const thAcciones = document.getElementById('thAccionesVenta');
+        if (thAcciones) thAcciones.classList.add('hidden');
+
+        // La sección "Operarias & Servicios" es visible, pero el botón
+        // "+ Agregar Tratamiento" (que crea precios) se oculta
+        // Se maneja después del render de la sección (ver renderizarEquipo)
+
+        // Asegurarse que la cabina (tab operaria) esté oculta
+        const tabCabina = document.getElementById('tab-operaria');
+        if (tabCabina) tabCabina.classList.add('hidden');
+
+        cambiarSeccion('agenda');
+        return;
+      }
+
+      if (rol === 'admin') {
+        // ── ADMIN: todo visible ──
+        const thAcciones = document.getElementById('thAccionesVenta');
+        if (thAcciones) thAcciones.classList.remove('hidden');
+
+        const tabCabina = document.getElementById('tab-operaria');
+        if (tabCabina) tabCabina.classList.add('hidden');
+
+        cambiarSeccion('agenda');
+        return;
+      }
+    }
+
+    // Retorna los headers de autenticación para cada fetch
+    function authHeaders() {
+      const session = obtenerSesion();
+      if (!session) return { 'Content-Type': 'application/json' };
+      return {
+        'Content-Type': 'application/json',
+        'x-user-id': session._id || '',
+        'x-user-role': session.rol || ''
+      };
+    }
 
     // Las 14 zonas oficiales de Depilación Láser ($50.000 COP c/u)
     const ZONAS_LASER = [
@@ -810,7 +1080,7 @@
 
     async function cargarDatosServidor() {
       try {
-        const res = await fetch('/api/bootstrap');
+        const res = await fetch('/api/bootstrap', { headers: authHeaders() });
         const json = await res.json();
         if (json.success) {
           appState = json.data;
@@ -828,16 +1098,18 @@
           renderizarClientes();
           renderizarCaja();
           renderizarEquipo();
+          renderizarUsuarios();
         } else {
           console.error('Error desde el servidor:', json.error);
         }
       } catch (err) {
         console.error('Error al conectar con MongoDB Atlas:', err);
       }
+
     }
 
     function cambiarSeccion(seccion) {
-      const secciones = ['agenda', 'clientes', 'caja', 'equipo'];
+      const secciones = ['agenda', 'clientes', 'caja', 'equipo', 'usuarios', 'operaria'];
       secciones.forEach(sec => {
         const el = document.getElementById(`sec-${sec}`);
         if (el) el.classList.add('hidden');
@@ -1730,6 +2002,9 @@
 
     // --- CAJA ---
     function renderizarCaja() {
+      const session = obtenerSesion();
+      const esAdmin = session && session.rol === 'admin';
+
       const fondo = (appState.config && appState.config.caja && appState.config.caja.fondoInicial) || 0;
       let totalEf = 0;
       let totalTarj = 0;
@@ -1749,9 +2024,15 @@
       document.getElementById('resumenTotalGeneral').innerText = formatMoney(totalVentas);
       document.getElementById('navCajaTotal').innerText = formatMoney(totalVentas + fondo);
 
+      // Mostrar/ocultar columna Acciones según rol
+      const thAcciones = document.getElementById('thAccionesVenta');
+      if (thAcciones) {
+        esAdmin ? thAcciones.classList.remove('hidden') : thAcciones.classList.add('hidden');
+      }
+
       const tbody = document.getElementById('tablaVentasBody');
       if (appState.ventas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-brand-gray">No se han registrado pagos hoy.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${esAdmin ? 7 : 6}" class="p-6 text-center text-brand-gray">No se han registrado pagos hoy.</td></tr>`;
       } else {
         tbody.innerHTML = appState.ventas.map(v => `
           <tr class="hover:bg-neutral-50">
@@ -1761,8 +2042,33 @@
             <td class="p-3"><span class="px-2 py-0.5 border border-brand-border bg-white text-xs uppercase font-bold tracking-wider rounded-xs">${v.metodo}</span></td>
             <td class="p-3 text-brand-gray">${v.operaria}</td>
             <td class="p-3 text-right font-bold">${formatMoney(v.valor)}</td>
+            ${esAdmin ? `
+            <td class="p-3 text-center">
+              <button onclick="eliminarVenta('${v._id}')"
+                class="text-neutral-400 hover:text-red-600 transition p-1.5 border border-transparent hover:border-red-200 rounded-sm"
+                title="Eliminar venta (Solo Administrador)">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </td>` : ''}
           </tr>
         `).join('');
+        lucide.createIcons();
+      }
+    }
+
+    async function eliminarVenta(id) {
+      if (!confirm('⚠️ ¿Deseas eliminar esta venta? Esta acción solo está disponible para el Administrador y no se puede deshacer.')) return;
+      try {
+        const res = await fetch(`/api/caja/ventas/${id}`, { method: 'DELETE', headers: authHeaders() });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert('✓ Venta eliminada exitosamente.');
+        } else {
+          alert('Error: ' + (data.error || 'Acceso denegado'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
@@ -1849,6 +2155,9 @@
 
     // --- OPERARIAS & TRATAMIENTOS ---
     function renderizarEquipo() {
+      const session = obtenerSesion();
+      const esAdmin = session && session.rol === 'admin';
+
       const contOp = document.getElementById('listaOperarias');
       if (appState.config && appState.config.operarias) {
         contOp.innerHTML = appState.config.operarias.map(o => `
@@ -1859,9 +2168,10 @@
             </div>
             <div class="flex items-center gap-3">
               <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full" title="Activa"></span>
+              ${esAdmin ? `
               <button onclick="eliminarOperaria('${o._id}')" class="text-neutral-400 hover:text-red-600 transition p-1" title="Eliminar operaria">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
+              </button>` : ''}
             </div>
           </div>
         `).join('');
@@ -1880,16 +2190,24 @@
               </div>
               <div class="flex items-center gap-3">
                 <span class="font-bold text-xs">${precioTxt}</span>
+                ${esAdmin ? `
                 <button onclick="eliminarServicio('${s._id}')" class="text-neutral-400 hover:text-red-600 transition p-1" title="Eliminar servicio">
                   <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                </button>
+                </button>` : ''}
               </div>
             </div>
           `;
         }).join('');
       }
+
+      // Ocultar botón "+ Agregar Tratamiento" si no es admin (no puede modificar precios)
+      if (!esAdmin) {
+        document.querySelectorAll('[onclick="openModal(\'modalNuevoServicio\')"]').forEach(btn => btn.classList.add('hidden'));
+      }
+
       lucide.createIcons();
     }
+
 
     async function guardarNuevaOperaria(e) {
       e.preventDefault();
@@ -1914,7 +2232,7 @@
       try {
         const res = await fetch('/api/operarias', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({ nombre, rol: rol || 'Operaria Especialista' })
         });
         const data = await res.json();
@@ -1945,7 +2263,7 @@
     async function eliminarOperaria(id) {
       if (!confirm('¿Deseas eliminar esta operaria de la lista?')) return;
       try {
-        const res = await fetch(`/api/operarias/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/operarias/${id}`, { method: 'DELETE', headers: authHeaders() });
         const data = await res.json();
         if (data.success) {
           await cargarDatosServidor();
@@ -1984,7 +2302,7 @@
       try {
         const res = await fetch('/api/servicios', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({ nombre, duracion, precio })
         });
         const data = await res.json();
@@ -2010,7 +2328,7 @@
     async function eliminarServicio(id) {
       if (!confirm('¿Deseas eliminar este tratamiento del catálogo?')) return;
       try {
-        const res = await fetch(`/api/servicios/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/servicios/${id}`, { method: 'DELETE', headers: authHeaders() });
         const data = await res.json();
         if (data.success) {
           await cargarDatosServidor();
@@ -2023,8 +2341,142 @@
       }
     }
 
+    // ─── GESTIÓN DE USUARIOS (Solo Admin) ────────────────────────────────────
+
+    function renderizarUsuarios() {
+      const session = obtenerSesion();
+      if (!session || session.rol !== 'admin') return;
+
+      const tbody = document.getElementById('tablaUsuariosBody');
+      if (!tbody) return;
+
+      const usuarios = (appState.usuarios || []);
+      if (usuarios.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-brand-gray">No hay usuarios registrados.</td></tr>`;
+        return;
+      }
+
+      const rolLabels = {
+        admin: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-purple-100 text-purple-800 border border-purple-200 rounded-full">Administrador</span>',
+        recepcionista: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-100 text-blue-800 border border-blue-200 rounded-full">Recepcionista</span>',
+        operaria: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-pink-100 text-pink-800 border border-pink-200 rounded-full">Operaria</span>'
+      };
+
+      tbody.innerHTML = usuarios.map(u => `
+        <tr class="hover:bg-neutral-50">
+          <td class="p-3 font-mono font-semibold">${u.username}</td>
+          <td class="p-3 font-semibold">${u.nombre}</td>
+          <td class="p-3">${rolLabels[u.rol] || u.rol}</td>
+          <td class="p-3 text-brand-gray">${u.operariaNombre || '—'}</td>
+          <td class="p-3 text-center">
+            ${u._id !== session._id ? `
+            <button onclick="eliminarUsuario('${u._id}', '${u.username}')"
+              class="text-neutral-400 hover:text-red-600 transition p-1.5 border border-transparent hover:border-red-200 rounded-sm"
+              title="Eliminar usuario">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>` : `<span class="text-[10px] text-brand-gray italic">(tú)</span>`}
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function abrirModalNuevoUsuario() {
+      // Limpiar campos
+      document.getElementById('nuUsuarioNombre').value = '';
+      document.getElementById('nuUsuarioUsername').value = '';
+      document.getElementById('nuUsuarioPassword').value = '';
+      document.getElementById('nuUsuarioRol').value = 'recepcionista';
+
+      // Poblar select de operarias vinculadas
+      const selOp = document.getElementById('nuUsuarioOperaria');
+      if (selOp && appState.config && appState.config.operarias) {
+        selOp.innerHTML = appState.config.operarias.map(o => `<option value="${o.nombre}">${o.nombre}</option>`).join('');
+      }
+
+      document.getElementById('bloqueOperariaVinculada').classList.add('hidden');
+      openModal('modalNuevoUsuario');
+    }
+
+    function onCambioRolNuevoUsuario() {
+      const rol = document.getElementById('nuUsuarioRol').value;
+      const bloque = document.getElementById('bloqueOperariaVinculada');
+      if (rol === 'operaria') {
+        bloque.classList.remove('hidden');
+      } else {
+        bloque.classList.add('hidden');
+      }
+    }
+
+    async function guardarNuevoUsuario(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('nuUsuarioNombre').value.trim();
+      const username = document.getElementById('nuUsuarioUsername').value.trim().toLowerCase().replace(/\s+/g, '');
+      const password = document.getElementById('nuUsuarioPassword').value.trim();
+      const rol = document.getElementById('nuUsuarioRol').value;
+      const operariaNombre = rol === 'operaria' ? (document.getElementById('nuUsuarioOperaria').value || nombre) : '';
+
+      if (!nombre || !username || !password || !rol) {
+        alert('Por favor completa todos los campos obligatorios.');
+        return;
+      }
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      if (btn) { btn.disabled = true; btn.innerText = 'Guardando...'; }
+
+      try {
+        const res = await fetch('/api/usuarios', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ nombre, username, password, rol, operariaNombre })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalNuevoUsuario');
+          await cargarDatosServidor();
+          renderizarUsuarios();
+          alert(`✓ Usuario "${username}" creado exitosamente con perfil ${rol}.`);
+        } else {
+          alert('Error al crear usuario: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = 'Crear Usuario'; }
+      }
+    }
+
+    async function eliminarUsuario(id, username) {
+      if (!confirm(`¿Deseas eliminar el usuario "${username}"? Esta acción no se puede deshacer.`)) return;
+      try {
+        const res = await fetch(`/api/usuarios/${id}`, { method: 'DELETE', headers: authHeaders() });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          renderizarUsuarios();
+          alert(`✓ Usuario "${username}" eliminado del sistema.`);
+        } else {
+          alert('Error al eliminar usuario: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      cargarDatosServidor();
+      // ── Verificar sesión ──────────────────────────────────────────────────
+      const session = obtenerSesion();
+      if (!session || !session._id || !session.rol) {
+        window.location.href = '/login';
+        return;
+      }
+
+      // ── Cargar datos del servidor ─────────────────────────────────────────
+      cargarDatosServidor().then(() => {
+        // Aplicar restricciones DESPUÉS de que los datos (operarias, etc.) estén listos
+        aplicarRestriccionesPorRol(session);
+        lucide.createIcons();
+      });
     });
   </script>
 </body>
