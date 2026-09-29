@@ -854,6 +854,7 @@
         <p><strong>Cliente:</strong> <span id="cobroClienteNombre">-</span></p>
         <p><strong>Servicio:</strong> <span id="cobroServicioNombre">-</span></p>
         <p id="cobroZonasContainer" class="hidden"><strong>Zonas:</strong> <span id="cobroZonasTexto" class="font-semibold text-black">-</span></p>
+        <p id="cobroAdicionalesContainer" class="hidden text-purple-950"><strong>Tratamientos Adicionales:</strong> <span id="cobroAdicionalesTexto" class="font-bold text-purple-900">-</span></p>
         <p><strong>Operaria:</strong> <span id="cobroOperariaNombre">-</span></p>
       </div>
 
@@ -1036,6 +1037,90 @@
           <button type="button" onclick="closeModal('modalNuevoGasto')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
           <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1.5 shadow-xs">
             <i data-lucide="check" class="w-4 h-4"></i> Guardar Gasto
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Agregar Tratamiento Adicional a la Cita -->
+  <div id="modalTratamientoAdicional" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-purple-900">
+          <i data-lucide="sparkles" class="w-4 h-4 text-purple-600"></i> Agregar Tratamiento Adicional
+        </h3>
+        <button onclick="closeModal('modalTratamientoAdicional')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Resumen Cita Actual -->
+      <div class="bg-purple-50/60 p-3 rounded-sm border border-purple-200 text-xs space-y-1">
+        <div class="flex justify-between items-center">
+          <span class="text-[10px] uppercase font-bold text-purple-800 tracking-wider">Paciente:</span>
+          <span id="taLblCitaHora" class="text-[10px] font-mono font-bold text-purple-900 bg-purple-100 px-2 py-0.5 rounded">--:--</span>
+        </div>
+        <p id="taLblClienteNombre" class="font-extrabold text-sm text-black">-</p>
+        <p class="text-[11px] text-neutral-700">
+          Cita actual: <strong id="taLblServicioPrincipal" class="text-black">-</strong> (<span id="taLblValorActual" class="font-mono font-bold text-emerald-800">$0</span>)
+        </p>
+      </div>
+
+      <form onsubmit="guardarTratamientoAdicional(event)" class="space-y-3.5">
+        <input type="hidden" id="taCitaId">
+
+        <!-- Selector de Tratamiento Adicional -->
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Tratamiento o Servicio Adicional *</label>
+          <select id="taSelectServicio" required onchange="onCambioTratamientoAdicionalSelect()" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-medium">
+            <!-- Dinámico -->
+          </select>
+        </div>
+
+        <div id="taBloqueCustom" class="hidden">
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre del Tratamiento Personalizado *</label>
+          <input type="text" id="taInputNombreCustom" placeholder="Ej: Mascarilla de Oro / Velo de Colágeno" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-medium">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Precio Adicional ($ COP) *</label>
+            <input type="number" id="taInputPrecio" required min="0" placeholder="Ej: 70000" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-bold text-purple-950 font-mono">
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Especialista / Operaria *</label>
+            <select id="taSelectOperaria" required class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white font-medium">
+              <!-- Dinámico -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Modalidad de Registro -->
+        <div class="border border-brand-border p-3 rounded-sm bg-neutral-50 space-y-2">
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold text-[10px]">¿Cómo deseas registrarlo?</label>
+          <div class="space-y-1.5">
+            <label class="flex items-start gap-2 cursor-pointer p-2 bg-white border border-purple-200 rounded-sm hover:border-purple-400 transition">
+              <input type="radio" name="taModalidad" value="misma_cita" checked class="mt-0.5 accent-purple-600">
+              <div>
+                <strong class="text-xs text-neutral-900 block font-bold">Sumar a esta misma cita</strong>
+                <span class="text-[10px] text-brand-gray leading-tight block">Se unifica el cobro para que Recepción facture todo junto en Caja ($ principal + $ adicional).</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2 cursor-pointer p-2 bg-white border border-brand-border rounded-sm hover:border-black transition">
+              <input type="radio" name="taModalidad" value="nueva_cita" class="mt-0.5 accent-black">
+              <div>
+                <strong class="text-xs text-neutral-900 block font-bold">Crear como cita adicional hoy</strong>
+                <span class="text-[10px] text-brand-gray leading-tight block">Genera una nueva tarjeta de cita individual en la agenda para hoy a la misma hora.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalTratamientoAdicional')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i> Guardar Tratamiento
           </button>
         </div>
       </form>
@@ -1515,6 +1600,11 @@
                   <strong>Zonas (${zonas.length}):</strong> ${zonas.join(', ')}
                 </div>
               ` : ''}
+              ${c.tratamientosAdicionales && c.tratamientosAdicionales.length > 0 ? `
+                <div class="text-[11px] text-purple-950 font-bold pt-0.5">
+                  ✨ <strong>Adicionales:</strong> ${c.tratamientosAdicionales.map(t => `${t.nombre} (+${formatMoney(t.precio)})`).join(', ')}
+                </div>
+              ` : ''}
               ${c.notasOperaria ? `
                 <div class="text-[10px] text-amber-950 italic border-t border-amber-200 pt-1 mt-1">
                   <strong>Nota cabina:</strong> "${c.notasOperaria}"
@@ -1567,6 +1657,22 @@
         if (selectReprogOp) selectReprogOp.innerHTML = opOptions;
         if (selectSigOp) selectSigOp.innerHTML = opOptions;
         if (selectFiltro) selectFiltro.innerHTML = `<option value="todas">Todas las Operarias</option>` + opOptions;
+      }
+
+      // Servicios & Operarias para Modal Tratamiento Adicional
+      const selectTaServ = document.getElementById('taSelectServicio');
+      if (selectTaServ && appState.config && appState.config.servicios) {
+        selectTaServ.innerHTML = appState.config.servicios.map(s => {
+          const isLaser = s.nombre.toLowerCase().includes('laser') || s.nombre.toLowerCase().includes('láser');
+          const precio = isLaser ? 50000 : (s.precio || 0);
+          const labelPrecio = isLaser ? '$50.000 (1 zona)' : formatMoney(s.precio);
+          return `<option value="${s.nombre}" data-precio="${precio}">${s.nombre} - ${labelPrecio}</option>`;
+        }).join('') + `<option value="__custom__" data-precio="0">➕ Otro Tratamiento Personalizado...</option>`;
+      }
+
+      const selectTaOp = document.getElementById('taSelectOperaria');
+      if (selectTaOp && appState.config && appState.config.operarias) {
+        selectTaOp.innerHTML = appState.config.operarias.map(o => `<option value="${o.nombre}">${o.nombre}</option>`).join('');
       }
 
       // Renderizar los 14 botones/checkboxes táctiles de Zonas Láser (@ $50.000 COP c/u)
@@ -1807,13 +1913,47 @@
                   <div class="flex flex-wrap gap-1">
                     ${cita.zonas.map(z => `<span class="bg-black text-white text-[10px] font-semibold px-2 py-0.5 rounded-xs">${z}</span>`).join('')}
                   </div>
-                  <span class="text-xs text-brand-gray mt-1.5 block">Valor Total: <strong class="text-black font-bold font-mono">${formatMoney(cita.valor)}</strong> ($50.000 c/u)</span>
+                  <span class="text-xs text-brand-gray mt-1.5 block">Subtotal Láser: <strong class="text-black font-bold font-mono">${formatMoney(cita.zonas.length * 50000)}</strong> ($50.000 c/u)</span>
                 </div>
               ` : `
                 <div class="mt-2.5 pt-2 border-t border-brand-border/60">
-                  <span class="text-xs text-brand-gray block">Valor: <strong class="text-black font-bold font-mono">${formatMoney(cita.valor)}</strong></span>
+                  <span class="text-xs text-brand-gray block">Subtotal Tratamiento: <strong class="text-black font-bold font-mono">${formatMoney(cita.valor - ((cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0)))}</strong></span>
                 </div>
               `}
+
+              ${cita.tratamientosAdicionales && cita.tratamientosAdicionales.length > 0 ? `
+                <div class="mt-2.5 p-2.5 bg-purple-50/70 border border-purple-200 rounded-sm space-y-1.5">
+                  <div class="flex justify-between items-center">
+                    <span class="text-[10px] uppercase tracking-wider text-purple-900 font-bold flex items-center gap-1">
+                      <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-600"></i> Tratamientos Adicionales (${cita.tratamientosAdicionales.length}):
+                    </span>
+                    <span class="text-[10px] font-bold text-purple-800 font-mono">+${formatMoney(cita.tratamientosAdicionales.reduce((acc, t) => acc + (t.precio || 0), 0))}</span>
+                  </div>
+                  <div class="space-y-1">
+                    ${cita.tratamientosAdicionales.map(adic => `
+                      <div class="flex items-center justify-between text-xs bg-white px-2 py-1 rounded-xs border border-purple-100 shadow-2xs">
+                        <div class="pr-2">
+                          <span class="font-bold text-neutral-900">${adic.nombre}</span>
+                          <span class="text-[10px] text-brand-gray block sm:inline sm:ml-1">(${adic.operaria || cita.operaria})</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                          <span class="font-bold text-purple-900 font-mono text-[11px]">+${formatMoney(adic.precio)}</span>
+                          ${cita.estado !== 'Completada' ? `
+                            <button type="button" onclick="eliminarTratamientoAdicional('${cita._id}', '${adic._id}')" class="text-neutral-400 hover:text-red-600 p-0.5 rounded-full hover:bg-red-50 transition" title="Quitar este tratamiento adicional">
+                              <i data-lucide="x" class="w-3 h-3"></i>
+                            </button>
+                          ` : ''}
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+              <div class="mt-2.5 pt-2 border-t border-brand-border/60 flex justify-between items-center bg-neutral-50 px-2.5 py-1.5 rounded-xs">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-brand-black">Total a Facturar:</span>
+                <span class="text-sm font-black text-black font-mono">${formatMoney(cita.valor)}</span>
+              </div>
 
               ${cita.notasOperaria ? `
                 <div class="mt-2.5 p-2 bg-amber-100/70 border border-amber-300 rounded-xs text-[11px] text-amber-950">
@@ -1832,6 +1972,10 @@
             </div>
 
             <div class="pt-3 border-t border-brand-border flex flex-col gap-2">
+              <button type="button" onclick="abrirModalTratamientoAdicional('${cita._id}')" class="w-full bg-purple-50 hover:bg-purple-100 text-purple-950 border border-purple-200 hover:border-purple-300 py-1.5 px-3 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition shadow-2xs">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-600"></i> + Tratamiento Adicional
+              </button>
+
               ${esFacturar ? `
                 <div class="flex gap-2">
                   <button onclick="iniciarCobroCita('${cita._id}')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-black py-2.5 text-xs font-black uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 shadow-md transition animate-pulse">
@@ -2239,6 +2383,17 @@
         contZonas.classList.add('hidden');
       }
 
+      const contAdic = document.getElementById('cobroAdicionalesContainer');
+      const txtAdic = document.getElementById('cobroAdicionalesTexto');
+      if (contAdic && txtAdic) {
+        if (cita.tratamientosAdicionales && cita.tratamientosAdicionales.length > 0) {
+          contAdic.classList.remove('hidden');
+          txtAdic.innerText = cita.tratamientosAdicionales.map(t => `${t.nombre} (+${formatMoney(t.precio)})`).join(', ');
+        } else {
+          contAdic.classList.add('hidden');
+        }
+      }
+
       openModal('modalCobrarCita');
     }
 
@@ -2261,6 +2416,154 @@
           alert('✓ Cita cobrada exitosamente. Sesión sumada al contador del cliente e ingreso registrado en Caja.');
         } else {
           alert('Error al procesar cobro: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    // --- TRATAMIENTOS ADICIONALES ---
+    function abrirModalTratamientoAdicional(citaId) {
+      const cita = appState.citas.find(c => c._id == citaId);
+      if (!cita) return;
+
+      document.getElementById('taCitaId').value = cita._id;
+      document.getElementById('taLblClienteNombre').innerText = cita.clienteNombre;
+      document.getElementById('taLblCitaHora').innerText = (cita.fecha === appState.fechaHoy ? '' : cita.fecha + ' ') + cita.hora;
+      
+      const zonasTxt = (cita.zonas && cita.zonas.length > 0) ? ` (${cita.zonas.join(', ')})` : '';
+      document.getElementById('taLblServicioPrincipal').innerText = cita.servicio + zonasTxt;
+      document.getElementById('taLblValorActual').innerText = formatMoney(cita.valor);
+
+      // Si la cita ya está completada, marcar por defecto crear como nueva cita hoy
+      const radioNueva = document.querySelector('input[name="taModalidad"][value="nueva_cita"]');
+      const radioMisma = document.querySelector('input[name="taModalidad"][value="misma_cita"]');
+      if (cita.estado === 'Completada') {
+        if (radioNueva) radioNueva.checked = true;
+      } else {
+        if (radioMisma) radioMisma.checked = true;
+      }
+
+      // Preseleccionar operaria de la cita
+      const selectOp = document.getElementById('taSelectOperaria');
+      if (selectOp) {
+        selectOp.value = cita.operaria;
+        if (!selectOp.value && selectOp.options.length > 0) selectOp.selectedIndex = 0;
+      }
+
+      // Resetear select servicio y precio
+      const selectServ = document.getElementById('taSelectServicio');
+      if (selectServ && selectServ.options.length > 0) {
+        selectServ.selectedIndex = 0;
+      }
+      const inpCustom = document.getElementById('taInputNombreCustom');
+      if (inpCustom) inpCustom.value = '';
+
+      onCambioTratamientoAdicionalSelect();
+      openModal('modalTratamientoAdicional');
+    }
+
+    function onCambioTratamientoAdicionalSelect() {
+      const select = document.getElementById('taSelectServicio');
+      const bloqueCustom = document.getElementById('taBloqueCustom');
+      const inputPrecio = document.getElementById('taInputPrecio');
+      if (!select) return;
+
+      const isCustom = select.value === '__custom__';
+      if (isCustom) {
+        if (bloqueCustom) bloqueCustom.classList.remove('hidden');
+        if (inputPrecio) inputPrecio.value = '';
+        setTimeout(() => {
+          const inp = document.getElementById('taInputNombreCustom');
+          if (inp) inp.focus();
+        }, 100);
+      } else {
+        if (bloqueCustom) bloqueCustom.classList.add('hidden');
+        const opt = select.options[select.selectedIndex];
+        const precio = opt ? Number(opt.getAttribute('data-precio') || 0) : 0;
+        if (inputPrecio) inputPrecio.value = precio;
+      }
+    }
+
+    async function guardarTratamientoAdicional(e) {
+      e.preventDefault();
+      const citaId = document.getElementById('taCitaId').value;
+      const selectServ = document.getElementById('taSelectServicio');
+      const inputCustom = document.getElementById('taInputNombreCustom');
+      const inputPrecio = document.getElementById('taInputPrecio');
+      const selectOp = document.getElementById('taSelectOperaria');
+      const modalidadRadio = document.querySelector('input[name="taModalidad"]:checked');
+
+      if (!citaId) return;
+
+      let nombreTratamiento = '';
+      if (selectServ.value === '__custom__') {
+        nombreTratamiento = (inputCustom?.value || '').trim();
+        if (!nombreTratamiento) {
+          alert('Por favor escribe el nombre del tratamiento personalizado.');
+          if (inputCustom) inputCustom.focus();
+          return;
+        }
+      } else {
+        nombreTratamiento = selectServ.value;
+      }
+
+      const precio = Number(inputPrecio?.value || 0);
+      if (isNaN(precio) || precio < 0) {
+        alert('Por favor ingresa un precio válido para el tratamiento adicional.');
+        return;
+      }
+
+      const operaria = selectOp?.value || 'General';
+      const modalidad = modalidadRadio ? modalidadRadio.value : 'misma_cita';
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn ? btn.innerText : 'Guardar';
+      if (btn) { btn.disabled = true; btn.innerText = 'Guardando...'; }
+
+      try {
+        const res = await fetch(`/api/citas/${citaId}/adicional`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            nombre: nombreTratamiento,
+            precio,
+            operaria,
+            modalidad
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalTratamientoAdicional');
+          await cargarDatosServidor();
+          if (data.modo === 'nueva_cita') {
+            alert(`✓ Cita adicional creada para hoy: ${nombreTratamiento} (${formatMoney(precio)}) con ${operaria}.`);
+          } else {
+            alert(`✓ Tratamiento adicional "${nombreTratamiento}" (${formatMoney(precio)}) agregado a la cita. Nuevo total: ${formatMoney(data.cita.valor)}.`);
+          }
+        } else {
+          alert('Error al agregar tratamiento adicional: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = originalText; }
+      }
+    }
+
+    async function eliminarTratamientoAdicional(citaId, adicionalId) {
+      if (!confirm('¿Deseas retirar este tratamiento adicional de la cita? El total se recalculará automáticamente.')) return;
+      try {
+        const res = await fetch(`/api/citas/${citaId}/adicional/${adicionalId}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert('✓ Tratamiento adicional retirado de la cita.');
+        } else {
+          alert('Error al retirar tratamiento adicional: ' + (data.error || 'Ocurrió un error'));
         }
       } catch (err) {
         alert('Error de conexión: ' + err.message);
@@ -2675,6 +2978,7 @@
                 </div>
                 <p class="text-[11px] text-brand-gray mt-0.5">${c.servicio} • <strong class="text-neutral-900">${c.operaria}</strong></p>
                 ${c.zonas && c.zonas.length > 0 ? `<p class="text-[10px] text-neutral-700 mt-1"><strong>Zonas:</strong> ${c.zonas.join(', ')}</p>` : ''}
+                ${c.tratamientosAdicionales && c.tratamientosAdicionales.length > 0 ? `<p class="text-[10px] text-purple-950 font-bold mt-1 bg-purple-50 p-1 rounded-xs border border-purple-200">✨ <strong>Adicional:</strong> ${c.tratamientosAdicionales.map(t => `${t.nombre} (+${formatMoney(t.precio)})`).join(', ')}</p>` : ''}
                 ${c.notasOperaria ? `<p class="text-[10px] text-amber-900 italic mt-0.5">Nota: "${c.notasOperaria}"</p>` : ''}
               </div>
               <button onclick="iniciarCobroCita('${c._id}')" class="w-full bg-amber-500 hover:bg-amber-600 text-black py-2 px-2 text-[11px] font-black uppercase tracking-wider rounded-sm flex items-center justify-center gap-1 shadow-xs transition hover:scale-[1.01]">
@@ -3529,6 +3833,40 @@
                     ` : ''}
                   </div>
                 `}
+
+                ${c.tratamientosAdicionales && c.tratamientosAdicionales.length > 0 ? `
+                  <div class="mt-2.5 p-2 bg-purple-50/80 border border-purple-200 rounded-sm space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-purple-900 flex items-center gap-1">
+                      <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-600"></i> Tratamientos Adicionales:
+                    </span>
+                    <div class="space-y-1">
+                      ${c.tratamientosAdicionales.map(adic => `
+                        <div class="flex items-center justify-between text-xs bg-white p-1.5 rounded-xs border border-purple-100">
+                          <div>
+                            <span class="font-bold text-neutral-900">${adic.nombre}</span>
+                            <span class="text-[10px] text-brand-gray ml-1">(${adic.operaria || c.operaria})</span>
+                          </div>
+                          <div class="flex items-center gap-1.5">
+                            <span class="font-bold text-purple-900 font-mono text-[11px]">+${formatMoney(adic.precio)}</span>
+                            ${c.estado !== 'Completada' ? `
+                              <button type="button" onclick="eliminarTratamientoAdicional('${c._id}', '${adic._id}')" class="text-neutral-400 hover:text-red-600 p-0.5 rounded-full hover:bg-neutral-100 transition" title="Quitar">
+                                <i data-lucide="x" class="w-3 h-3"></i>
+                              </button>
+                            ` : ''}
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+
+                ${c.estado !== 'Completada' ? `
+                  <div class="pt-2 border-t border-brand-border/40">
+                    <button type="button" onclick="abrirModalTratamientoAdicional('${c._id}')" class="w-full bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 py-1.5 px-3 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition">
+                      <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-600"></i> + Agregar Tratamiento Adicional
+                    </button>
+                  </div>
+                ` : ''}
 
                 ${c.notas ? `
                   <div class="text-[11px] text-brand-gray italic pt-1 border-t border-brand-border/40">

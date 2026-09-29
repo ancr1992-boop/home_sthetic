@@ -50,6 +50,12 @@ const appointmentSchema = new mongoose.Schema({
   clienteTelefono: { type: String, default: '' },
   servicio: { type: String, required: true },
   zonas: { type: [String], default: [] },
+  tratamientosAdicionales: [{
+    nombre: { type: String, required: true },
+    precio: { type: Number, required: true },
+    operaria: { type: String, default: '' },
+    fecha: { type: String, default: '' }
+  }],
   valor: { type: Number, required: true },
   operaria: { type: String, required: true },
   fecha: { type: String, required: true }, // YYYY-MM-DD
@@ -507,11 +513,12 @@ app.put('/api/citas/:id/enviar-a-facturar', async (req, res) => {
     if (zonas && Array.isArray(zonas)) {
       cita.zonas = zonas;
       const sNorm = (cita.servicio || '').toLowerCase();
+      const sumaAdicionales = (cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0);
       if (sNorm.includes('laser') || sNorm.includes('láser')) {
-        cita.valor = zonas.length * 50000;
+        cita.valor = (zonas.length * 50000) + sumaAdicionales;
       } else if (zonas.length > 0) {
         cita.servicio = 'Depilación Láser';
-        cita.valor = zonas.length * 50000;
+        cita.valor = (zonas.length * 50000) + sumaAdicionales;
       }
     }
     if (notasOperaria !== undefined) {
@@ -539,11 +546,12 @@ app.put('/api/citas/:id/actualizar-zonas', async (req, res) => {
     if (zonas && Array.isArray(zonas)) {
       cita.zonas = zonas;
       const sNorm = (cita.servicio || '').toLowerCase();
+      const sumaAdicionales = (cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0);
       if (sNorm.includes('laser') || sNorm.includes('láser')) {
-        cita.valor = zonas.length * 50000;
+        cita.valor = (zonas.length * 50000) + sumaAdicionales;
       } else if (zonas.length > 0) {
         cita.servicio = 'Depilación Láser';
-        cita.valor = zonas.length * 50000;
+        cita.valor = (zonas.length * 50000) + sumaAdicionales;
       }
     }
     await cita.save();
@@ -554,7 +562,88 @@ app.put('/api/citas/:id/actualizar-zonas', async (req, res) => {
   }
 });
 
-// 5. Cobrar y Completar Cita (¡Incrementa contador por zona y suma a caja!)
+// 4.3 Agregar Tratamiento Adicional a una Cita
+app.post('/api/citas/:id/adicional', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, precio, operaria, modalidad } = req.body;
+
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({ success: false, error: 'El nombre del tratamiento adicional es obligatorio.' });
+    }
+    const monto = Number(precio);
+    if (isNaN(monto) || monto < 0) {
+      return res.status(400).json({ success: false, error: 'El precio debe ser un número válido mayor o igual a 0.' });
+    }
+
+    const cita = await Appointment.findById(id);
+    if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
+
+    if (modalidad === 'nueva_cita') {
+      const nueva = await Appointment.create({
+        clienteId: cita.clienteId,
+        clienteNombre: cita.clienteNombre,
+        clienteTelefono: cita.clienteTelefono || '',
+        servicio: nombre.trim(),
+        zonas: [],
+        tratamientosAdicionales: [],
+        valor: monto,
+        operaria: operaria || cita.operaria || 'General',
+        fecha: cita.fecha,
+        hora: cita.hora,
+        duracion: 30,
+        estado: 'Pendiente',
+        notas: `Tratamiento adicional agendado junto a cita de ${cita.servicio}`
+      });
+      console.log(`✓ Cita adicional creada para ${cita.clienteNombre}: ${nombre} ($${monto})`);
+      return res.json({ success: true, modo: 'nueva_cita', cita: nueva });
+    }
+
+    // Modalidad por defecto: sumar a la misma cita (cobro unificado)
+    cita.tratamientosAdicionales = cita.tratamientosAdicionales || [];
+    cita.tratamientosAdicionales.push({
+      nombre: nombre.trim(),
+      precio: monto,
+      operaria: operaria || cita.operaria || 'General',
+      fecha: getFechaHoy()
+    });
+    cita.valor = (cita.valor || 0) + monto;
+    await cita.save();
+
+    console.log(`✓ Tratamiento adicional sumado a cita de ${cita.clienteNombre}: ${nombre} (+$${monto}). Nuevo total: $${cita.valor}`);
+    res.json({ success: true, modo: 'misma_cita', cita });
+  } catch (error) {
+    console.error('Error al agregar tratamiento adicional:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4.4 Eliminar Tratamiento Adicional de una Cita
+app.delete('/api/citas/:id/adicional/:adicionalId', async (req, res) => {
+  try {
+    const { id, adicionalId } = req.params;
+    const cita = await Appointment.findById(id);
+    if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
+
+    const item = (cita.tratamientosAdicionales || []).id(adicionalId);
+    if (!item) {
+      return res.status(404).json({ success: false, error: 'Tratamiento adicional no encontrado' });
+    }
+
+    const valorARestar = item.precio || 0;
+    cita.valor = Math.max(0, (cita.valor || 0) - valorARestar);
+    cita.tratamientosAdicionales.pull(adicionalId);
+    await cita.save();
+
+    console.log(`✓ Tratamiento adicional eliminado de cita ${cita.clienteNombre}: -$${valorARestar}. Nuevo total: $${cita.valor}`);
+    res.json({ success: true, cita });
+  } catch (error) {
+    console.error('Error al eliminar tratamiento adicional:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 5. Cobrar y Completar Cita (¡Incrementa contador por zona, por adicional y suma a caja!)
 app.post('/api/citas/:id/completar-cobro', async (req, res) => {
   try {
     const { id } = req.params;
@@ -584,6 +673,17 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
         const actual = cliente.contadorServicios.get(cita.servicio) || 0;
         cliente.contadorServicios.set(cita.servicio, actual + 1);
       }
+
+      // Incrementar contador para cada tratamiento adicional
+      if (cita.tratamientosAdicionales && cita.tratamientosAdicionales.length > 0) {
+        cita.tratamientosAdicionales.forEach(adic => {
+          if (adic.nombre) {
+            const actualAdic = cliente.contadorServicios.get(adic.nombre) || 0;
+            cliente.contadorServicios.set(adic.nombre, actualAdic + 1);
+          }
+        });
+      }
+
       await cliente.save();
     }
 
@@ -592,6 +692,10 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
     let concepto = cita.servicio;
     if (cita.zonas && cita.zonas.length > 0) {
       concepto = `${cita.servicio} (${cita.zonas.join(', ')})`;
+    }
+    if (cita.tratamientosAdicionales && cita.tratamientosAdicionales.length > 0) {
+      const extraTxt = cita.tratamientosAdicionales.map(t => `${t.nombre} ($${t.precio.toLocaleString('es-CO')})`).join(', ');
+      concepto += ` + Adicional: ${extraTxt}`;
     }
 
     const venta = await Sale.create({
