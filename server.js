@@ -412,8 +412,8 @@ async function startServer() {
 
     await initDatabaseDefaults();
 
-    app.listen(PORT, () => {
-      console.log(`🌸 HOME STHETIC ejecutándose en: http://localhost:${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🌸 HOME STHETIC ejecutándose en puerto: ${PORT}`);
     });
   } catch (error) {
     console.error('Error fatal al iniciar:', error);
