@@ -896,6 +896,61 @@
     </div>
   </div>
 
+  <!-- Modal: Modificar Zonas de Depilación Láser en Cabina -->
+  <div id="modalEditarZonasCabina" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-lg w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4 text-pink-600"></i> Modificar Zonas de Depilación Láser
+        </h3>
+        <button onclick="closeModal('modalEditarZonasCabina')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Datos de la Cita / Paciente -->
+      <div class="bg-neutral-50 p-3 rounded-sm border border-brand-border flex justify-between items-center">
+        <div>
+          <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block">Paciente:</span>
+          <span id="lblEditarZonasCliente" class="text-sm font-bold text-black">-</span>
+          <span id="lblEditarZonasHora" class="text-xs text-brand-gray block mt-0.5">-</span>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block">Tarifa por Zona:</span>
+          <span class="text-xs font-bold text-black font-mono">$50.000 COP</span>
+        </div>
+      </div>
+
+      <!-- Selector de Zonas (14 Zonas) -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold">Toca las zonas que se realizará la paciente:</label>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="limpiarZonasEnEdicion()" class="text-[11px] text-brand-gray hover:text-black underline">Limpiar</button>
+            <button type="button" onclick="seleccionarComboPopularEdicion()" class="text-[11px] text-black font-semibold hover:underline">Bikini + Axilas</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1 max-h-56 overflow-y-auto pr-1" id="gridEditarZonasCabina">
+          <!-- 14 Zonas renderizadas dinámicamente -->
+        </div>
+      </div>
+
+      <!-- Resumen Calculado -->
+      <div class="pt-2 border-t border-brand-border flex justify-between items-center bg-brand-lightGray p-3 rounded-sm border">
+        <span class="text-xs text-brand-gray font-medium">Zonas seleccionadas: <strong id="lblEditarCantZonas" class="text-black text-sm">0</strong></span>
+        <span class="text-xs font-bold text-black">Nuevo Total: <strong id="lblEditarTotalLaser" class="text-base font-extrabold text-black font-mono">$0</strong></span>
+      </div>
+
+      <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+        <button type="button" onclick="closeModal('modalEditarZonasCabina')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm hover:text-black">Cancelar</button>
+        <button type="button" onclick="guardarZonasDesdeModal()" class="bg-black text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm hover:bg-neutral-800 transition flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="check" class="w-4 h-4"></i> Guardar Zonas en la Cita
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= JAVASCRIPT ================= -->
   <script>
     let appState = {
@@ -2614,14 +2669,52 @@
                   <span class="text-xs font-black text-black font-mono">${formatMoney(c.valor)}</span>
                 </div>
 
-                ${esLaser && zonas.length > 0 ? `
-                  <div class="pt-1.5 border-t border-brand-border/60">
-                    <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block mb-1">Zonas seleccionadas (${zonas.length}):</span>
-                    <div class="flex flex-wrap gap-1">
-                      ${zonas.map(z => `<span class="px-2 py-0.5 bg-white text-black text-[11px] font-semibold rounded-sm border border-brand-border">${z}</span>`).join('')}
+                ${esLaser ? `
+                  <div class="pt-2 border-t border-brand-border/60 space-y-2">
+                    <div class="flex justify-between items-center">
+                      <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold">
+                        Zonas seleccionadas (${zonas.length}):
+                      </span>
+                      ${c.estado !== 'Completada' ? `
+                        <button type="button" onclick="abrirModalEditarZonas('${c._id}')" class="text-[10px] font-bold text-black hover:underline flex items-center gap-1">
+                          <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Modificar / Agregar Zonas
+                        </button>
+                      ` : ''}
                     </div>
+
+                    ${zonas.length > 0 ? `
+                      <div class="flex flex-wrap gap-1.5">
+                        ${zonas.map(z => `
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-black text-xs font-semibold rounded-sm border border-brand-border shadow-xs">
+                            <span>${z}</span>
+                            ${c.estado !== 'Completada' ? `
+                              <button type="button" onclick="quitarZonaRapida('${c._id}', '${z}')" class="text-neutral-400 hover:text-red-600 transition p-0.5 rounded-full hover:bg-neutral-100" title="Quitar zona ${z}">
+                                <i data-lucide="x" class="w-3 h-3"></i>
+                              </button>
+                            ` : ''}
+                          </span>
+                        `).join('')}
+                      </div>
+                    ` : `
+                      <div class="flex items-center justify-between p-2.5 bg-amber-50 border border-amber-200 rounded-sm text-xs">
+                        <span class="text-amber-800 font-medium text-[11px]">⚠️ Cita sin zonas seleccionadas aún</span>
+                        ${c.estado !== 'Completada' ? `
+                          <button type="button" onclick="abrirModalEditarZonas('${c._id}')" class="bg-black text-white px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider hover:bg-neutral-800 transition">
+                            + Elegir Zonas
+                          </button>
+                        ` : ''}
+                      </div>
+                    `}
                   </div>
-                ` : ''}
+                ` : `
+                  <div class="pt-1.5 border-t border-brand-border/40 text-right">
+                    ${c.estado !== 'Completada' ? `
+                      <button type="button" onclick="abrirModalEditarZonas('${c._id}')" class="text-[10px] text-brand-gray hover:text-black underline flex items-center gap-1 justify-end">
+                        <i data-lucide="sparkles" class="w-3 h-3 text-pink-600"></i> + Agregar Zonas Láser a este servicio
+                      </button>
+                    ` : ''}
+                  </div>
+                `}
 
                 ${c.notas ? `
                   <div class="text-[11px] text-brand-gray italic pt-1 border-t border-brand-border/40">
@@ -2751,6 +2844,120 @@
         }
       } catch (err) {
         alert('Error: ' + err.message);
+      }
+    }
+
+    // ── GESTIÓN DE ZONAS EN CABINA (OPERARIA) ──
+    let citaIdEditandoZonas = null;
+    let zonasEnEdicion = [];
+
+    async function quitarZonaRapida(citaId, zona) {
+      const cita = (appState.citas || []).find(c => c._id === citaId);
+      if (!cita) return;
+
+      const nuevasZonas = (cita.zonas || []).filter(z => z !== zona);
+
+      try {
+        const res = await fetch(`/api/citas/${citaId}/actualizar-zonas`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ zonas: nuevasZonas })
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+        } else {
+          alert('Error al quitar zona: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    function abrirModalEditarZonas(citaId) {
+      citaIdEditandoZonas = citaId;
+      const cita = (appState.citas || []).find(c => c._id === citaId);
+      if (!cita) return;
+
+      zonasEnEdicion = [...(cita.zonas || [])];
+
+      document.getElementById('lblEditarZonasCliente').textContent = cita.clienteNombre;
+      document.getElementById('lblEditarZonasHora').textContent = `${cita.fecha} — ${cita.hora} (${cita.servicio})`;
+
+      renderGridModalZonas();
+      openModal('modalEditarZonasCabina');
+    }
+
+    function renderGridModalZonas() {
+      const cont = document.getElementById('gridEditarZonasCabina');
+      if (!cont) return;
+
+      cont.innerHTML = ZONAS_LASER.map((z, idx) => {
+        const checked = zonasEnEdicion.includes(z);
+        return `
+          <div onclick="toggleZonaEdicion('${z}')" class="flex items-center justify-between p-2.5 border ${checked ? 'bg-black text-white border-black shadow-sm' : 'bg-white text-black border-brand-border hover:border-black'} rounded-sm cursor-pointer text-xs transition select-none">
+            <div class="flex items-center gap-2">
+              <input type="checkbox" ${checked ? 'checked' : ''} class="accent-black w-4 h-4 cursor-pointer" onclick="event.stopPropagation(); toggleZonaEdicion('${z}')">
+              <span class="font-medium">${z}</span>
+            </div>
+            <span class="font-mono text-[10px] font-bold ${checked ? 'text-neutral-300' : 'text-brand-gray'}">+$50k</span>
+          </div>
+        `;
+      }).join('');
+
+      const total = zonasEnEdicion.length * 50000;
+      document.getElementById('lblEditarCantZonas').textContent = zonasEnEdicion.length;
+      document.getElementById('lblEditarTotalLaser').textContent = formatMoney(total);
+    }
+
+    function toggleZonaEdicion(zona) {
+      if (zonasEnEdicion.includes(zona)) {
+        zonasEnEdicion = zonasEnEdicion.filter(z => z !== zona);
+      } else {
+        zonasEnEdicion.push(zona);
+      }
+      renderGridModalZonas();
+    }
+
+    function limpiarZonasEnEdicion() {
+      zonasEnEdicion = [];
+      renderGridModalZonas();
+    }
+
+    function seleccionarComboPopularEdicion() {
+      ['Bikini', 'Axilas'].forEach(z => {
+        if (!zonasEnEdicion.includes(z)) zonasEnEdicion.push(z);
+      });
+      renderGridModalZonas();
+    }
+
+    async function guardarZonasDesdeModal() {
+      if (!citaIdEditandoZonas) return;
+
+      const btn = document.querySelector('#modalEditarZonasCabina button[onclick="guardarZonasDesdeModal()"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+      try {
+        const res = await fetch(`/api/citas/${citaIdEditandoZonas}/actualizar-zonas`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ zonas: zonasEnEdicion })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalEditarZonasCabina');
+          await cargarDatosServidor();
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo guardar'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Guardar Zonas en la Cita';
+          lucide.createIcons();
+        }
       }
     }
 

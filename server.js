@@ -453,7 +453,11 @@ app.put('/api/citas/:id/enviar-a-facturar', async (req, res) => {
 
     if (zonas && Array.isArray(zonas)) {
       cita.zonas = zonas;
-      if (cita.servicio && (cita.servicio.toLowerCase().includes('laser') || cita.servicio.toLowerCase().includes('láser'))) {
+      const sNorm = (cita.servicio || '').toLowerCase();
+      if (sNorm.includes('laser') || sNorm.includes('láser')) {
+        cita.valor = zonas.length * 50000;
+      } else if (zonas.length > 0) {
+        cita.servicio = 'Depilación Láser';
         cita.valor = zonas.length * 50000;
       }
     }
@@ -481,7 +485,11 @@ app.put('/api/citas/:id/actualizar-zonas', async (req, res) => {
 
     if (zonas && Array.isArray(zonas)) {
       cita.zonas = zonas;
-      if (cita.servicio && (cita.servicio.toLowerCase().includes('laser') || cita.servicio.toLowerCase().includes('láser'))) {
+      const sNorm = (cita.servicio || '').toLowerCase();
+      if (sNorm.includes('laser') || sNorm.includes('láser')) {
+        cita.valor = zonas.length * 50000;
+      } else if (zonas.length > 0) {
+        cita.servicio = 'Depilación Láser';
         cita.valor = zonas.length * 50000;
       }
     }
