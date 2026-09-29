@@ -14,7 +14,6 @@ const MONGODB_URI = process.env.MONGODB_URI;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(__dirname));
 
 // Login: siempre disponible
 app.get('/login', (req, res) => {
@@ -126,12 +125,18 @@ async function getAuthUser(req) {
 }
 
 // ================= UTILIDADES =================
+// Siempre usar la zona horaria oficial de Colombia (America/Bogota, UTC-5)
 function getFechaHoy() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
+}
+
+function getHoraActual() {
+  return new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(new Date());
 }
 
 // Obtener o inicializar la configuración de forma 100% segura
@@ -426,21 +431,47 @@ app.post('/api/citas', async (req, res) => {
   }
 });
 
-// 4. Reprogramar Cita
+// 4. Reprogramar / Actualizar Cita
 app.put('/api/citas/:id/reprogramar', async (req, res) => {
   try {
     const { id } = req.params;
-    const { hora, operaria } = req.body;
+    const { fecha, hora, operaria, estado } = req.body;
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
 
+    if (fecha) cita.fecha = fecha;
     if (hora) cita.hora = hora;
     if (operaria) cita.operaria = operaria;
+    if (estado) cita.estado = estado;
     await cita.save();
 
+    console.log(`✓ Cita reprogramada: ${cita.clienteNombre} (${cita.fecha} ${cita.hora} - ${cita.operaria} [${cita.estado}])`);
     res.json({ success: true, cita });
   } catch (error) {
     console.error('Error al reprogramar cita:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4.0 Eliminar Cita (Solo si no está completada)
+app.delete('/api/citas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cita = await Appointment.findById(id);
+    if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
+
+    if (cita.estado === 'Completada') {
+      return res.status(400).json({
+        success: false,
+        error: 'No se puede eliminar una cita ya completada y cobrada. Anula la venta en caja primero si es necesario.'
+      });
+    }
+
+    await Appointment.findByIdAndDelete(id);
+    console.log(`✓ Cita eliminada: ${cita.clienteNombre} (${cita.fecha} ${cita.hora})`);
+    res.json({ success: true, message: 'Cita eliminada correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar cita:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -537,8 +568,7 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
     }
 
     // Registrar en Caja
-    const now = new Date();
-    const horaStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const horaStr = getHoraActual();
     let concepto = cita.servicio;
     if (cita.zonas && cita.zonas.length > 0) {
       concepto = `${cita.servicio} (${cita.zonas.join(', ')})`;
@@ -587,8 +617,7 @@ app.post('/api/caja/apertura', async (req, res) => {
 app.post('/api/caja/venta-rapida', async (req, res) => {
   try {
     const { cliente, concepto, metodo, operaria, valor } = req.body;
-    const now = new Date();
-    const horaStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const horaStr = getHoraActual();
 
     const venta = await Sale.create({
       fecha: getFechaHoy(),
@@ -1051,6 +1080,36 @@ app.get('/api/backup/archivo/:filename', async (req, res) => {
     console.error('Error al descargar archivo de backup:', err);
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// Manejo de rutas API no encontradas
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, error: `Ruta no encontrada: ${req.method} ${req.originalUrl}` });
+});
+
+// Middleware de manejo de errores global
+app.use((err, req, res, next) => {
+  console.error('Error no controlado:', err);
+  if (err.name === 'CastError') {
+    return res.status(400).json({ success: false, error: 'Identificador no válido para la operación.' });
+  }
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.message || 'Error interno del servidor'
+  });
+});
+
+// Cierre limpio de conexiones (Graceful Shutdown)
+process.on('SIGINT', async () => {
+  console.log('\nCerrando servidor y desconectando MongoDB Atlas limpiamente...');
+  try { await mongoose.disconnect(); } catch (e) {}
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('\nCerrando servidor y desconectando MongoDB Atlas limpiamente...');
+  try { await mongoose.disconnect(); } catch (e) {}
+  process.exit(0);
 });
 
 // ================= INICIAR SERVIDOR =================

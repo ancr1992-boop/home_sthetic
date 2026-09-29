@@ -876,9 +876,14 @@
         <select id="reprogramarOperaria" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white"></select>
       </div>
 
-      <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
-        <button type="button" onclick="closeModal('modalReprogramar')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
-        <button type="button" onclick="guardarReprogramacion()" class="bg-black text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm">Guardar Cambio</button>
+      <div class="pt-3 border-t border-brand-border flex items-center justify-between gap-2">
+        <button type="button" onclick="cancelarYEliminarCitaModal()" class="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1 transition" title="Anular y retirar cita de la agenda">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Anular Cita
+        </button>
+        <div class="flex gap-2">
+          <button type="button" onclick="closeModal('modalReprogramar')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cerrar</button>
+          <button type="button" onclick="guardarReprogramacion()" class="bg-black text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm hover:bg-neutral-800 transition">Guardar Cambio</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1949,7 +1954,7 @@
       try {
         const res = await fetch('/api/citas', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify(payload)
         });
         const data = await res.json();
@@ -2059,7 +2064,7 @@
       try {
         const res = await fetch('/api/citas', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify(payload)
         });
         const data = await res.json();
@@ -2114,7 +2119,7 @@
       try {
         const res = await fetch(`/api/citas/${citaId}/completar-cobro`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({ valor, metodo })
         });
         const data = await res.json();
@@ -2143,14 +2148,15 @@
 
     async function guardarReprogramacion() {
       const citaId = document.getElementById('reprogramarCitaId').value;
+      const fecha = document.getElementById('reprogramarFecha').value;
       const hora = document.getElementById('reprogramarHora').value;
       const operaria = document.getElementById('reprogramarOperaria').value;
 
       try {
         const res = await fetch(`/api/citas/${citaId}/reprogramar`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hora, operaria })
+          headers: authHeaders(),
+          body: JSON.stringify({ fecha, hora, operaria })
         });
         const data = await res.json();
         if (data.success) {
@@ -2159,6 +2165,29 @@
           alert('✓ Cita reprogramada correctamente en MongoDB Atlas.');
         } else {
           alert('Error al reprogramar: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    async function cancelarYEliminarCitaModal() {
+      const citaId = document.getElementById('reprogramarCitaId').value;
+      if (!citaId) return;
+      if (!confirm('¿Estás seguro de que deseas anular y retirar esta cita de la agenda?')) return;
+
+      try {
+        const res = await fetch(`/api/citas/${citaId}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalReprogramar');
+          await cargarDatosServidor();
+          alert('✓ Cita anulada correctamente.');
+        } else {
+          alert('Error al anular cita: ' + (data.error || 'Ocurrió un error'));
         }
       } catch (err) {
         alert('Error de conexión: ' + err.message);
@@ -2264,7 +2293,7 @@
       try {
         const res = await fetch('/api/clientes', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({ nombre, telefono, notas })
         });
         const data = await res.json();
@@ -2424,7 +2453,7 @@
       try {
         const res = await fetch('/api/caja/apertura', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({ fondoInicial })
         });
         const data = await res.json();
@@ -2452,7 +2481,7 @@
       try {
         const res = await fetch('/api/caja/venta-rapida', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify(payload)
         });
         const data = await res.json();
