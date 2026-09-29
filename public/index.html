@@ -368,17 +368,22 @@
           <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Atiende a tus clientas, agrega o quita zonas de depilación y envía la cuenta lista a recepción</p>
         </div>
 
-        <!-- Selector de fecha para la operaria -->
-        <div class="flex items-center gap-1.5 text-xs">
-          <button onclick="cambiarDiaOperaria(-1)" class="p-1.5 border border-brand-border bg-white rounded-sm hover:border-black transition" title="Día Anterior">
-            <i data-lucide="chevron-left" class="w-4 h-4"></i>
-          </button>
-          <input type="date" id="filtroFechaOperaria" onchange="seleccionarFechaOperaria(this.value)" class="border border-brand-border bg-white px-2 py-1 rounded-sm text-xs font-bold focus:border-black outline-none">
-          <button onclick="cambiarDiaOperaria(1)" class="p-1.5 border border-brand-border bg-white rounded-sm hover:border-black transition" title="Día Siguiente">
-            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-          </button>
-          <button onclick="verFechaHoyOperaria()" class="px-2.5 py-1 text-xs border border-brand-border bg-white hover:border-black font-semibold rounded-sm transition">
-            Hoy
+        <!-- Selector de fecha para la operaria y botón agendar -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <div class="flex items-center gap-1.5">
+            <button onclick="cambiarDiaOperaria(-1)" class="p-1.5 border border-brand-border bg-white rounded-sm hover:border-black transition" title="Día Anterior">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <input type="date" id="filtroFechaOperaria" onchange="seleccionarFechaOperaria(this.value)" class="border border-brand-border bg-white px-2 py-1 rounded-sm text-xs font-bold focus:border-black outline-none">
+            <button onclick="cambiarDiaOperaria(1)" class="p-1.5 border border-brand-border bg-white rounded-sm hover:border-black transition" title="Día Siguiente">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+            <button onclick="verFechaHoyOperaria()" class="px-2.5 py-1 text-xs border border-brand-border bg-white hover:border-black font-semibold rounded-sm transition">
+              Hoy
+            </button>
+          </div>
+          <button onclick="abrirCitaDesdeCabina()" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition shadow-sm">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Agendar Cita
           </button>
         </div>
       </div>
@@ -969,8 +974,11 @@
 
         // Guardar fecha de hoy en filtro de operaria
         const fechaOpInput = document.getElementById('filtroFechaOperaria');
-        if (fechaOpInput) fechaOpInput.value = appState.fechaHoy || new Date().toISOString().split('T')[0];
+        if (fechaOpInput && !fechaOpInput.value) {
+          fechaOpInput.value = appState.fechaHoy || new Date().toISOString().split('T')[0];
+        }
 
+        renderizarCabinaOperaria();
         return;
       }
 
@@ -1099,6 +1107,7 @@
           renderizarCaja();
           renderizarEquipo();
           renderizarUsuarios();
+          renderizarCabinaOperaria();
         } else {
           console.error('Error desde el servidor:', json.error);
         }
@@ -1126,6 +1135,9 @@
       if (activeTab) {
         activeTab.classList.add('active-tab');
         activeTab.classList.remove('text-brand-gray');
+      }
+      if (seccion === 'operaria') {
+        renderizarCabinaOperaria();
       }
       lucide.createIcons();
     }
@@ -2463,6 +2475,286 @@
       }
     }
 
+    // ================= CABINA DE ATENCIÓN DE OPERARIA =================
+
+    function renderizarCabinaOperaria() {
+      const cont = document.getElementById('contenedorCitasOperaria');
+      if (!cont) return;
+
+      const user = obtenerSesion();
+      if (!user) return;
+
+      const opNombreSesion = (user.operariaNombre || user.nombre || '').trim();
+      const opHeader = document.getElementById('opNombreCabinaHeader');
+      if (opHeader) opHeader.textContent = opNombreSesion;
+
+      const fechaInput = document.getElementById('filtroFechaOperaria');
+      if (fechaInput && !fechaInput.value) {
+        fechaInput.value = appState.fechaHoy || new Date().toISOString().split('T')[0];
+      }
+      const fechaFiltro = fechaInput ? fechaInput.value : (appState.fechaHoy || new Date().toISOString().split('T')[0]);
+
+      const opNorm = normalizarTexto(opNombreSesion);
+
+      // Filtrar citas de esta operaria para la fecha seleccionada
+      const citasDelDia = (appState.citas || []).filter(c => {
+        if (!c.fecha || c.fecha !== fechaFiltro) return false;
+        const cOpNorm = normalizarTexto(c.operaria || '');
+        return cOpNorm === opNorm ||
+               cOpNorm.includes(opNorm) || opNorm.includes(cOpNorm) ||
+               cOpNorm.split(' ').some(p => p.length > 2 && opNorm.includes(p)) ||
+               opNorm.split(' ').some(p => p.length > 2 && cOpNorm.includes(p));
+      });
+
+      // Ordenar por hora
+      citasDelDia.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+
+      if (citasDelDia.length === 0) {
+        // Buscar si tiene citas en otras fechas para informarle
+        const otrasCitas = (appState.citas || []).filter(c => {
+          const cOpNorm = normalizarTexto(c.operaria || '');
+          const match = cOpNorm === opNorm ||
+                        cOpNorm.includes(opNorm) || opNorm.includes(cOpNorm) ||
+                        cOpNorm.split(' ').some(p => p.length > 2 && opNorm.includes(p)) ||
+                        opNorm.split(' ').some(p => p.length > 2 && cOpNorm.includes(p));
+          return match && c.fecha !== fechaFiltro && c.estado !== 'Cancelada';
+        });
+
+        // Ordenar otras citas por fecha ascendente
+        otrasCitas.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || '') || (a.hora || '').localeCompare(b.hora || ''));
+
+        cont.innerHTML = `
+          <div class="col-span-full border border-dashed border-brand-border p-8 sm:p-12 text-center rounded-sm bg-white space-y-4">
+            <div class="w-14 h-14 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-brand-gray">
+              <i data-lucide="calendar-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wider text-black">No tienes citas para el ${formatearFechaLegible(fechaFiltro)}</h3>
+              <p class="text-xs text-brand-gray mt-1">Especialista activa: <strong>${opNombreSesion}</strong></p>
+            </div>
+
+            ${otrasCitas.length > 0 ? `
+              <div class="pt-4 border-t border-brand-border max-w-lg mx-auto text-left">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-brand-black mb-2 flex items-center gap-1.5">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-600"></i> Tus próximas citas en otras fechas (${otrasCitas.length}):
+                </p>
+                <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                  ${otrasCitas.map(oc => `
+                    <div onclick="irAFechaCabina('${oc.fecha}')" class="flex justify-between items-center p-2.5 bg-neutral-50 hover:bg-neutral-100 border border-brand-border rounded-sm cursor-pointer transition text-xs group">
+                      <div>
+                        <strong class="font-bold text-black">${oc.clienteNombre}</strong>
+                        <span class="text-brand-gray text-[11px]"> • ${oc.servicio}</span>
+                      </div>
+                      <span class="font-mono text-[11px] font-bold text-blue-700 bg-blue-50 group-hover:bg-blue-100 px-2 py-0.5 rounded-sm border border-blue-200">
+                        ${oc.fecha} ${oc.hora} →
+                      </span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : `
+              <p class="text-xs text-brand-gray">Aún no tienes citas registradas en el sistema. Puedes agendar una con el botón de abajo.</p>
+            `}
+
+            <div class="pt-2">
+              <button onclick="abrirCitaDesdeCabina()" class="bg-black hover:bg-neutral-800 text-white px-4 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider inline-flex items-center gap-1.5 transition shadow-sm">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Agendar Paciente en mi Cabina
+              </button>
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      cont.innerHTML = citasDelDia.map(c => {
+        const esLaser = (c.servicio || '').toLowerCase().includes('laser') || (c.servicio || '').toLowerCase().includes('láser');
+        const zonas = Array.isArray(c.zonas) ? c.zonas : [];
+
+        let badgeEstado = '';
+        if (c.estado === 'Pendiente') {
+          badgeEstado = `<span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-neutral-100 text-neutral-800 border border-neutral-300">En Cabina</span>`;
+        } else if (c.estado === 'Listo para Facturar') {
+          badgeEstado = `<span class="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1"><i data-lucide="bell-ring" class="w-3 h-3"></i> Enviada a Caja</span>`;
+        } else if (c.estado === 'Completada') {
+          badgeEstado = `<span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">Cobrada ✓</span>`;
+        } else {
+          badgeEstado = `<span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-red-100 text-red-800 border border-red-300">${c.estado}</span>`;
+        }
+
+        return `
+          <div class="border border-brand-border bg-white rounded-sm p-5 space-y-4 shadow-sm hover:border-black transition flex flex-col justify-between">
+            <div class="space-y-3">
+              <!-- Header Cita -->
+              <div class="flex justify-between items-start gap-2 border-b border-brand-border pb-3">
+                <div>
+                  <h3 class="font-extrabold text-base tracking-tight text-black">${c.clienteNombre}</h3>
+                  <div class="flex items-center gap-3 text-xs text-brand-gray mt-1">
+                    <span class="flex items-center gap-1"><i data-lucide="phone" class="w-3.5 h-3.5 text-brand-gray"></i> ${c.clienteTelefono || 'Sin teléfono'}</span>
+                    ${c.clienteTelefono ? `
+                      <a href="https://wa.me/57${c.clienteTelefono.replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-0.5">
+                        <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp
+                      </a>
+                    ` : ''}
+                  </div>
+                </div>
+
+                <div class="text-right flex flex-col items-end gap-1.5">
+                  <span class="bg-black text-white px-2.5 py-1 text-xs font-black font-mono rounded-sm">${c.hora} (${c.duracion || 45}m)</span>
+                  ${badgeEstado}
+                </div>
+              </div>
+
+              <!-- Tratamiento y Zonas -->
+              <div class="bg-neutral-50 p-3 rounded-sm border border-brand-border space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-gray"></i> ${c.servicio}
+                  </span>
+                  <span class="text-xs font-black text-black font-mono">${formatMoney(c.valor)}</span>
+                </div>
+
+                ${esLaser && zonas.length > 0 ? `
+                  <div class="pt-1.5 border-t border-brand-border/60">
+                    <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block mb-1">Zonas seleccionadas (${zonas.length}):</span>
+                    <div class="flex flex-wrap gap-1">
+                      ${zonas.map(z => `<span class="px-2 py-0.5 bg-white text-black text-[11px] font-semibold rounded-sm border border-brand-border">${z}</span>`).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+
+                ${c.notas ? `
+                  <div class="text-[11px] text-brand-gray italic pt-1 border-t border-brand-border/40">
+                    <strong>Nota recepción:</strong> ${c.notas}
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- Notas Técnicas de Cabina -->
+              <div>
+                <label class="block text-[10px] uppercase tracking-wider text-brand-gray font-bold mb-1">Notas Clínicas de Cabina (Parámetros, Reacción, etc.):</label>
+                <textarea id="nota-op-${c._id}" rows="2" placeholder="Ej: Potencia 14J, piel toleró bien, aplicar gel refrigerante..." class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none bg-white">${c.notasOperaria || ''}</textarea>
+              </div>
+            </div>
+
+            <!-- Acciones según estado -->
+            <div class="pt-3 border-t border-brand-border space-y-2">
+              ${c.estado === 'Pendiente' ? `
+                <button onclick="enviarAFacturarDesdeCabina('${c._id}')" class="w-full bg-black hover:bg-neutral-800 text-white py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 shadow-sm transition">
+                  <i data-lucide="send" class="w-4 h-4"></i> Finalizar y Enviar a Facturar en Caja
+                </button>
+              ` : c.estado === 'Listo para Facturar' ? `
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-sm text-center space-y-1">
+                  <p class="text-xs font-bold text-amber-900 flex items-center justify-center gap-1.5">
+                    <i data-lucide="clock" class="w-4 h-4 animate-spin text-amber-600"></i> Esperando cobro en Recepción...
+                  </p>
+                  <p class="text-[11px] text-amber-700">Recepción ya tiene la alerta para cobrar ${formatMoney(c.valor)}.</p>
+                  <button onclick="revertirEnvioCaja('${c._id}')" class="text-[10px] text-amber-800 hover:text-black underline mt-1">Revertir a Cabina</button>
+                </div>
+              ` : c.estado === 'Completada' ? `
+                <div class="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-sm text-xs">
+                  <span class="font-bold text-emerald-800 flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> Sesión Cobrada en Caja</span>
+                  <button onclick="abrirModalSiguienteSesion('${c.clienteId}', '${c.servicio}', '${c.operaria}', ${JSON.stringify(zonas).replace(/"/g, '&quot;')})" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-sm transition">
+                    + Siguiente Sesión
+                  </button>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function cambiarDiaOperaria(delta) {
+      const input = document.getElementById('filtroFechaOperaria');
+      if (!input) return;
+      const current = input.value || appState.fechaHoy;
+      const d = new Date(current + 'T12:00:00');
+      d.setDate(d.getDate() + delta);
+      input.value = d.toISOString().split('T')[0];
+      renderizarCabinaOperaria();
+    }
+
+    function seleccionarFechaOperaria(val) {
+      renderizarCabinaOperaria();
+    }
+
+    function verFechaHoyOperaria() {
+      const input = document.getElementById('filtroFechaOperaria');
+      if (input) input.value = appState.fechaHoy || new Date().toISOString().split('T')[0];
+      renderizarCabinaOperaria();
+    }
+
+    function irAFechaCabina(fecha) {
+      const input = document.getElementById('filtroFechaOperaria');
+      if (input) input.value = fecha;
+      renderizarCabinaOperaria();
+    }
+
+    function abrirCitaDesdeCabina() {
+      const session = obtenerSesion();
+      openModal('modalNuevaCita');
+      const selectOp = document.getElementById('citaOperaria');
+      if (selectOp && session) {
+        const opNombre = (session.operariaNombre || session.nombre || '').toLowerCase();
+        for (let opt of selectOp.options) {
+          const optVal = opt.value.toLowerCase();
+          if (optVal.includes(opNombre) || opNombre.includes(optVal) ||
+              optVal.split(' ').some(p => p.length > 2 && opNombre.includes(p))) {
+            selectOp.value = opt.value;
+            break;
+          }
+        }
+      }
+      const fechaCabina = document.getElementById('filtroFechaOperaria');
+      const fechaCita = document.getElementById('citaFecha');
+      if (fechaCabina && fechaCita && fechaCabina.value) {
+        fechaCita.value = fechaCabina.value;
+      }
+    }
+
+    async function enviarAFacturarDesdeCabina(citaId) {
+      const notasEl = document.getElementById(`nota-op-${citaId}`);
+      const notasOperaria = notasEl ? notasEl.value.trim() : '';
+
+      try {
+        const res = await fetch(`/api/citas/${citaId}/enviar-a-facturar`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ notasOperaria })
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert('✓ ¡Cita enviada a Recepción! Recepción ya tiene la alerta en pantalla para cobrar.');
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo enviar'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    async function revertirEnvioCaja(citaId) {
+      if (!confirm('¿Deseas revertir esta cita a estado En Cabina?')) return;
+      try {
+        const res = await fetch(`/api/citas/${citaId}/reprogramar`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ estado: 'Pendiente' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ================= INICIALIZACIÓN =================
     window.addEventListener('DOMContentLoaded', () => {
       // ── Verificar sesión ──────────────────────────────────────────────────
       const session = obtenerSesion();
