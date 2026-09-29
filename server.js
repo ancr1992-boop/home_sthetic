@@ -12,6 +12,12 @@ const MONGODB_URI = process.env.MONGODB_URI;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
+
+// Servir la página principal
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // ================= SCHEMAS & MODELS =================
 
@@ -40,7 +46,7 @@ const appointmentSchema = new mongoose.Schema({
   operaria: { type: String, required: true },
   fecha: { type: String, required: true }, // YYYY-MM-DD
   hora: { type: String, required: true }, // HH:MM
-  duracion: { type: Number, default: 60 },
+  duracion: { type: Number, default: 45 },
   estado: { type: String, enum: ['Pendiente', 'Completada', 'Cancelada'], default: 'Pendiente' },
   notas: { type: String, default: '' }
 }, { timestamps: true });
@@ -90,9 +96,9 @@ function getFechaHoy() {
   return `${year}-${month}-${day}`;
 }
 
-// Inicializar configuración y datos semilla si la base está nueva
-async function initDatabaseDefaults() {
-  let config = await Config.findOne({ key: 'main_config' });
+// Obtener o inicializar la configuración de forma 100% segura
+async function getOrCreateConfig() {
+  let config = await Config.findOne();
   if (!config) {
     config = await Config.create({
       key: 'main_config',
@@ -107,14 +113,47 @@ async function initDatabaseDefaults() {
         { nombre: 'Mariana Duque', rol: 'Masoterapeuta' }
       ],
       servicios: [
+        { nombre: 'Depilación Láser', duracion: 45, precio: 50000 },
         { nombre: 'Limpieza Facial Profunda', duracion: 60, precio: 95000 },
-        { nombre: 'Depilación Láser Diodo', duracion: 45, precio: 120000 },
         { nombre: 'Masaje Reductor / Moldeador', duracion: 50, precio: 80000 },
         { nombre: 'Hydrafacial Glow', duracion: 60, precio: 150000 }
       ]
     });
-    console.log('✓ Configuración por defecto de HOME STHETIC inicializada.');
+  } else {
+    let modificado = false;
+    if (!config.operarias || !Array.isArray(config.operarias)) {
+      config.operarias = [];
+      modificado = true;
+    }
+    if (!config.servicios || !Array.isArray(config.servicios)) {
+      config.servicios = [];
+      modificado = true;
+    }
+    // Asegurar operarias de muestra si la lista está vacía
+    if (config.operarias.length === 0) {
+      config.operarias.push(
+        { nombre: 'Valentina Restrepo', rol: 'Cosmiatra Especialista' },
+        { nombre: 'Camila Morales', rol: 'Especialista Láser & Cejas' },
+        { nombre: 'Mariana Duque', rol: 'Masoterapeuta' }
+      );
+      modificado = true;
+    }
+    // Asegurar que exista 'Depilación Láser' con precio base por zona de 50.000
+    const tieneLaser = config.servicios.some(s => s.nombre && (s.nombre.toLowerCase().includes('laser') || s.nombre.toLowerCase().includes('láser')));
+    if (!tieneLaser) {
+      config.servicios.unshift({ nombre: 'Depilación Láser', duracion: 45, precio: 50000 });
+      modificado = true;
+    }
+    if (modificado) {
+      await config.save();
+    }
   }
+  return config;
+}
+
+// Inicializar configuración y datos semilla si la base está nueva
+async function initDatabaseDefaults() {
+  await getOrCreateConfig();
 
   const clientCount = await Client.countDocuments();
   if (clientCount === 0) {
@@ -123,7 +162,9 @@ async function initDatabaseDefaults() {
       telefono: '3104567890',
       notas: 'Piel mixta, sensible en zona T',
       contadorServicios: {
-        'Depilación Láser Diodo': 4,
+        'Depilación Láser': 4,
+        'Láser: Bikini': 4,
+        'Láser: Axilas': 4,
         'Limpieza Facial Profunda': 2
       }
     });
@@ -154,8 +195,9 @@ async function initDatabaseDefaults() {
         clienteId: c1._id,
         clienteNombre: c1.nombre,
         clienteTelefono: c1.telefono,
-        servicio: 'Depilación Láser Diodo',
-        valor: 120000,
+        servicio: 'Depilación Láser',
+        zonas: ['Bikini', 'Axilas'],
+        valor: 100000,
         operaria: 'Camila Morales',
         fecha: hoy,
         hora: '09:00',
@@ -168,6 +210,7 @@ async function initDatabaseDefaults() {
         clienteNombre: c2.nombre,
         clienteTelefono: c2.telefono,
         servicio: 'Masaje Reductor / Moldeador',
+        zonas: [],
         valor: 80000,
         operaria: 'Mariana Duque',
         fecha: hoy,
@@ -181,6 +224,7 @@ async function initDatabaseDefaults() {
         clienteNombre: c3.nombre,
         clienteTelefono: c3.telefono,
         servicio: 'Limpieza Facial Profunda',
+        zonas: [],
         valor: 95000,
         operaria: 'Valentina Restrepo',
         fecha: hoy,
@@ -196,10 +240,10 @@ async function initDatabaseDefaults() {
       fecha: hoy,
       hora: '09:50',
       cliente: c1.nombre,
-      concepto: 'Depilación Láser Diodo',
+      concepto: 'Depilación Láser (Bikini, Axilas)',
       metodo: 'Tarjeta Débito',
       operaria: 'Camila Morales',
-      valor: 120000
+      valor: 100000
     });
 
     console.log('✓ Datos iniciales de demostración cargados en MongoDB Atlas.');
@@ -212,8 +256,8 @@ async function initDatabaseDefaults() {
 app.get('/api/bootstrap', async (req, res) => {
   try {
     const hoy = getFechaHoy();
-    const [config, clientes, citasHoy, ventasHoy] = await Promise.all([
-      Config.findOne({ key: 'main_config' }),
+    const config = await getOrCreateConfig();
+    const [clientes, citasHoy, ventasHoy] = await Promise.all([
       Client.find().sort({ nombre: 1 }),
       Appointment.find({ fecha: hoy }).sort({ hora: 1 }),
       Sale.find({ fecha: hoy }).sort({ createdAt: -1 })
@@ -230,6 +274,7 @@ app.get('/api/bootstrap', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error en bootstrap:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -238,14 +283,22 @@ app.get('/api/bootstrap', async (req, res) => {
 app.post('/api/clientes', async (req, res) => {
   try {
     const { nombre, telefono, notas } = req.body;
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({ success: false, error: 'El nombre del cliente es obligatorio' });
+    }
+    if (!telefono || !telefono.trim()) {
+      return res.status(400).json({ success: false, error: 'El teléfono celular es obligatorio' });
+    }
     const nuevo = await Client.create({
-      nombre,
-      telefono,
-      notas,
+      nombre: nombre.trim(),
+      telefono: telefono.trim(),
+      notas: (notas || '').trim(),
       contadorServicios: {}
     });
+    console.log(`✓ Nuevo cliente creado: ${nuevo.nombre} (${nuevo.telefono})`);
     res.json({ success: true, cliente: nuevo });
   } catch (error) {
+    console.error('Error al crear cliente:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -257,6 +310,7 @@ app.post('/api/citas', async (req, res) => {
     const cliente = await Client.findById(clienteId);
     if (!cliente) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
 
+    // Si tiene zonas seleccionadas (Depilación Láser), el valor es 50.000 COP por zona
     let finalValor = Number(valor);
     if (zonas && Array.isArray(zonas) && zonas.length > 0) {
       finalValor = zonas.length * 50000;
@@ -266,19 +320,21 @@ app.post('/api/citas', async (req, res) => {
       clienteId: cliente._id,
       clienteNombre: cliente.nombre,
       clienteTelefono: cliente.telefono,
-      servicio,
+      servicio: servicio || 'Depilación Láser',
       zonas: Array.isArray(zonas) ? zonas : [],
       valor: finalValor,
-      operaria,
+      operaria: operaria || 'General',
       fecha: fecha || getFechaHoy(),
-      hora,
-      duracion: Number(duracion) || 60,
-      notas: notas || '',
+      hora: hora || '10:00',
+      duracion: Number(duracion) || 45,
+      notas: (notas || '').trim(),
       estado: 'Pendiente'
     });
 
+    console.log(`✓ Nueva cita agendada para: ${nuevaCita.clienteNombre} - ${nuevaCita.servicio} ($${nuevaCita.valor})`);
     res.json({ success: true, cita: nuevaCita });
   } catch (error) {
+    console.error('Error al crear cita:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -297,6 +353,7 @@ app.put('/api/citas/:id/reprogramar', async (req, res) => {
 
     res.json({ success: true, cita });
   } catch (error) {
+    console.error('Error al reprogramar cita:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -359,6 +416,7 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
       venta
     });
   } catch (error) {
+    console.error('Error al completar cobro:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -367,7 +425,7 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
 app.post('/api/caja/apertura', async (req, res) => {
   try {
     const { fondoInicial } = req.body;
-    let config = await Config.findOne({ key: 'main_config' });
+    let config = await getOrCreateConfig();
     config.caja.abierta = true;
     config.caja.fondoInicial = Number(fondoInicial) || 0;
     config.caja.fechaApertura = getFechaHoy();
@@ -375,6 +433,7 @@ app.post('/api/caja/apertura', async (req, res) => {
 
     res.json({ success: true, caja: config.caja });
   } catch (error) {
+    console.error('Error en apertura de caja:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -389,62 +448,87 @@ app.post('/api/caja/venta-rapida', async (req, res) => {
     const venta = await Sale.create({
       fecha: getFechaHoy(),
       hora: horaStr,
-      cliente,
-      concepto,
-      metodo,
+      cliente: cliente || 'Cliente General',
+      concepto: concepto || 'Venta Rápida',
+      metodo: metodo || 'Efectivo',
       operaria: operaria || 'General',
-      valor: Number(valor)
+      valor: Number(valor) || 0
     });
 
     res.json({ success: true, venta });
   } catch (error) {
+    console.error('Error en venta rápida:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// 8. Agregar Operaria o Servicio
+// 8. Operarias: Crear y Eliminar
 app.post('/api/operarias', async (req, res) => {
   try {
     const { nombre, rol } = req.body;
-    let config = await Config.findOne({ key: 'main_config' });
-    config.operarias.push({ nombre, rol });
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({ success: false, error: 'El nombre de la operaria es obligatorio.' });
+    }
+    const config = await getOrCreateConfig();
+    const nuevaOp = {
+      nombre: nombre.trim(),
+      rol: (rol && rol.trim()) ? rol.trim() : 'Operaria Especialista'
+    };
+    config.operarias.push(nuevaOp);
     await config.save();
+    console.log(`✓ Nueva operaria agregada: ${nuevaOp.nombre} (${nuevaOp.rol})`);
     res.json({ success: true, operarias: config.operarias });
   } catch (error) {
+    console.error('Error al agregar operaria:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
 app.delete('/api/operarias/:id', async (req, res) => {
   try {
-    let config = await Config.findOne({ key: 'main_config' });
-    config.operarias = config.operarias.filter(o => o._id.toString() !== req.params.id);
+    const config = await getOrCreateConfig();
+    config.operarias = config.operarias.filter(o => o._id && o._id.toString() !== req.params.id);
     await config.save();
+    console.log(`✓ Operaria eliminada id: ${req.params.id}`);
     res.json({ success: true, operarias: config.operarias });
   } catch (error) {
+    console.error('Error al eliminar operaria:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
+// 9. Servicios: Crear y Eliminar
 app.post('/api/servicios', async (req, res) => {
   try {
     const { nombre, duracion, precio } = req.body;
-    let config = await Config.findOne({ key: 'main_config' });
-    config.servicios.push({ nombre, duracion: Number(duracion), precio: Number(precio) });
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({ success: false, error: 'El nombre del tratamiento es obligatorio.' });
+    }
+    const config = await getOrCreateConfig();
+    const nuevoServ = {
+      nombre: nombre.trim(),
+      duracion: Number(duracion) || 45,
+      precio: Number(precio) || 50000
+    };
+    config.servicios.push(nuevoServ);
     await config.save();
+    console.log(`✓ Nuevo servicio agregado: ${nuevoServ.nombre} - $${nuevoServ.precio}`);
     res.json({ success: true, servicios: config.servicios });
   } catch (error) {
+    console.error('Error al agregar servicio:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
 app.delete('/api/servicios/:id', async (req, res) => {
   try {
-    let config = await Config.findOne({ key: 'main_config' });
-    config.servicios = config.servicios.filter(s => s._id.toString() !== req.params.id);
+    const config = await getOrCreateConfig();
+    config.servicios = config.servicios.filter(s => s._id && s._id.toString() !== req.params.id);
     await config.save();
+    console.log(`✓ Servicio eliminado id: ${req.params.id}`);
     res.json({ success: true, servicios: config.servicios });
   } catch (error) {
+    console.error('Error al eliminar servicio:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -459,7 +543,7 @@ async function startServer() {
     await initDatabaseDefaults();
 
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🌸 HOME STHETIC ejecutándose en puerto: ${PORT}`);
+      console.log(`🌸 HOME STHETIC ejecutándose en: http://0.0.0.0:${PORT}`);
     });
   } catch (error) {
     console.error('Error fatal al iniciar:', error);

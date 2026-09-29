@@ -55,7 +55,7 @@
           <h1 class="text-xl font-bold tracking-[0.2em] text-brand-black uppercase">HOME STHETIC</h1>
           <div class="flex items-center gap-2">
             <span class="text-[10px] tracking-widest text-brand-gray uppercase">Esthetic Clinic</span>
-            <span class="inline-flex items-center gap-1 text-[9px] px-2 py-0.2 border border-emerald-300 bg-emerald-50 text-emerald-700 font-semibold rounded-full uppercase">
+            <span class="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 border border-emerald-300 bg-emerald-50 text-emerald-700 font-semibold rounded-full uppercase">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               MongoDB Conectado
             </span>
@@ -63,14 +63,14 @@
         </div>
       </div>
 
-      <!-- Estado de Caja Rápido -->
-      <div class="flex items-center gap-4">
+      <!-- Estado de Caja Rápido & Botón Nueva Cita -->
+      <div class="flex items-center gap-3 sm:gap-4">
         <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-brand-border rounded-full text-xs font-medium">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
           <span>Caja Hoy: <strong id="navCajaTotal">$0</strong></span>
         </div>
 
-        <button onclick="openModal('modalNuevaCita')" class="bg-black hover:bg-neutral-800 text-white px-5 py-2.5 rounded-sm text-xs font-semibold tracking-wider uppercase transition flex items-center gap-2 shadow-sm">
+        <button onclick="openModal('modalNuevaCita')" class="bg-black hover:bg-neutral-800 text-white px-4 sm:px-5 py-2.5 rounded-sm text-xs font-semibold tracking-wider uppercase transition flex items-center gap-2 shadow-sm">
           <i data-lucide="plus" class="w-4 h-4"></i>
           <span>Nueva Cita</span>
         </button>
@@ -79,23 +79,23 @@
 
     <!-- Pestañas Minimalistas -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-brand-border/40 overflow-x-auto py-2">
-      <button onclick="cambiarSeccion('agenda')" id="tab-agenda" class="tab-btn active-tab px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm transition flex items-center gap-2">
+      <button onclick="cambiarSeccion('agenda')" id="tab-agenda" class="tab-btn active-tab px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm transition flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="calendar" class="w-4 h-4"></i> Agenda
       </button>
-      <button onclick="cambiarSeccion('clientes')" id="tab-clientes" class="tab-btn px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2">
+      <button onclick="cambiarSeccion('clientes')" id="tab-clientes" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="users" class="w-4 h-4"></i> Clientes & Contador
       </button>
-      <button onclick="cambiarSeccion('caja')" id="tab-caja" class="tab-btn px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2">
+      <button onclick="cambiarSeccion('caja')" id="tab-caja" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="receipt" class="w-4 h-4"></i> Caja Diaria
       </button>
-      <button onclick="cambiarSeccion('equipo')" id="tab-equipo" class="tab-btn px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2">
+      <button onclick="cambiarSeccion('equipo')" id="tab-equipo" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="sparkles" class="w-4 h-4"></i> Operarias & Tratamientos
       </button>
     </div>
   </header>
 
   <!-- ================= CONTENEDOR PRINCIPAL ================= -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
     <!-- SECCIÓN 1: AGENDA -->
     <section id="sec-agenda" class="space-y-6">
@@ -105,11 +105,14 @@
           <p class="text-xs text-brand-gray uppercase tracking-wider mt-1" id="fechaHoyDisplay">Cargando fecha...</p>
         </div>
 
-        <div class="flex items-center gap-3 w-full sm:w-auto">
-          <label class="text-xs uppercase tracking-wider text-brand-gray font-medium whitespace-nowrap">Ver Operaria:</label>
-          <select id="filtroOperariaAgenda" onchange="renderizarAgenda()" class="w-full sm:w-48 bg-white border border-brand-border px-3 py-2 text-xs rounded-sm focus:outline-none focus:border-black transition">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <label class="text-xs uppercase tracking-wider text-brand-gray font-medium whitespace-nowrap">Operaria:</label>
+          <select id="filtroOperariaAgenda" onchange="renderizarAgenda()" class="bg-white border border-brand-border px-3 py-2 text-xs rounded-sm focus:outline-none focus:border-black transition flex-1 sm:w-44">
             <option value="todas">Todas las Operarias</option>
           </select>
+          <button onclick="openModal('modalNuevaOperaria')" class="border border-brand-border hover:border-black px-3 py-2 text-xs uppercase tracking-wider font-semibold rounded-sm whitespace-nowrap flex items-center gap-1 transition" title="Crear Operaria">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> + Operaria
+          </button>
         </div>
       </div>
 
@@ -131,21 +134,21 @@
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-brand-gray"></i>
             <input type="text" id="buscarClienteInput" onkeyup="renderizarClientes()" placeholder="Buscar por nombre o teléfono..." class="w-full pl-9 pr-3 py-2 border border-brand-border text-xs rounded-sm focus:outline-none focus:border-black">
           </div>
-          <button onclick="openModal('modalNuevoCliente')" class="bg-black text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition whitespace-nowrap">
-            + Nuevo Cliente
+          <button onclick="openModal('modalNuevoCliente')" class="bg-black text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition whitespace-nowrap flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> + Nuevo Cliente
           </button>
         </div>
       </div>
 
-      <div class="border border-brand-border rounded-sm overflow-hidden">
+      <div class="border border-brand-border rounded-sm overflow-hidden bg-white shadow-xs">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-brand-lightGray border-b border-brand-border uppercase tracking-wider font-semibold text-brand-gray">
               <tr>
                 <th class="p-4">Cliente</th>
                 <th class="p-4">Teléfono / WhatsApp</th>
-                <th class="p-4">Contador de Sesiones por Tratamiento</th>
-                <th class="p-4 text-right">Acción</th>
+                <th class="p-4">Contador de Sesiones por Tratamiento & Zonas</th>
+                <th class="p-4 text-right">Agendar Cita</th>
               </tr>
             </thead>
             <tbody id="tablaClientesBody" class="divide-y divide-brand-border">
@@ -195,7 +198,7 @@
       </div>
 
       <!-- Tabla de Ventas -->
-      <div class="border border-brand-border rounded-sm overflow-hidden mt-6">
+      <div class="border border-brand-border rounded-sm overflow-hidden mt-6 bg-white">
         <div class="p-4 bg-brand-lightGray border-b border-brand-border flex justify-between items-center">
           <h3 class="text-xs uppercase tracking-wider font-bold">Movimientos y Pagos del Día</h3>
           <button onclick="openModal('modalVentaManual')" class="bg-black text-white px-3 py-1.5 text-xs uppercase tracking-wider font-medium rounded-sm hover:bg-neutral-800">
@@ -231,22 +234,28 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Bloque Operarias -->
-        <div class="border border-brand-border p-6 rounded-sm">
+        <div class="border border-brand-border p-6 rounded-sm bg-white">
           <div class="flex justify-between items-center mb-4 pb-2 border-b border-brand-border">
-            <h3 class="text-sm font-bold uppercase tracking-wider">Operarias del Centro</h3>
-            <button onclick="openModal('modalNuevaOperaria')" class="text-xs font-semibold uppercase tracking-wider border border-black px-3 py-1 hover:bg-black hover:text-white transition rounded-sm">
-              + Agregar
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wider">Operarias del Centro</h3>
+              <p class="text-[11px] text-brand-gray">Gestiona el personal para asignar citas</p>
+            </div>
+            <button onclick="openModal('modalNuevaOperaria')" class="text-xs font-semibold uppercase tracking-wider bg-black text-white px-3 py-1.5 hover:bg-neutral-800 transition rounded-sm flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar Operaria
             </button>
           </div>
           <div id="listaOperarias" class="space-y-3"></div>
         </div>
 
         <!-- Bloque Servicios -->
-        <div class="border border-brand-border p-6 rounded-sm">
+        <div class="border border-brand-border p-6 rounded-sm bg-white">
           <div class="flex justify-between items-center mb-4 pb-2 border-b border-brand-border">
-            <h3 class="text-sm font-bold uppercase tracking-wider">Tratamientos & Precios</h3>
-            <button onclick="openModal('modalNuevoServicio')" class="text-xs font-semibold uppercase tracking-wider border border-black px-3 py-1 hover:bg-black hover:text-white transition rounded-sm">
-              + Agregar
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wider">Tratamientos & Precios</h3>
+              <p class="text-[11px] text-brand-gray">Catálogo disponible para citas</p>
+            </div>
+            <button onclick="openModal('modalNuevoServicio')" class="text-xs font-semibold uppercase tracking-wider border border-black px-3 py-1.5 hover:bg-black hover:text-white transition rounded-sm flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar Tratamiento
             </button>
           </div>
           <div id="listaServicios" class="space-y-3"></div>
@@ -259,10 +268,12 @@
   <!-- ================= MODALES ================= -->
 
   <!-- Modal: Nueva Cita -->
-  <div id="modalNuevaCita" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
+  <div id="modalNuevaCita" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white max-w-lg w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-brand-border pb-3">
-        <h3 class="text-sm font-bold uppercase tracking-wider">Agendar Nueva Cita</h3>
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="calendar-plus" class="w-4 h-4"></i> Agendar Nueva Cita
+        </h3>
         <button onclick="closeModal('modalNuevaCita')" class="text-brand-gray hover:text-black">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
@@ -270,7 +281,12 @@
 
       <form onsubmit="guardarCita(event)" class="space-y-4 text-xs">
         <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Cliente *</label>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold">Cliente *</label>
+            <button type="button" onclick="openModal('modalNuevoCliente')" class="text-[11px] text-black font-semibold hover:underline flex items-center gap-0.5">
+              <i data-lucide="user-plus" class="w-3 h-3"></i> + Nuevo Cliente
+            </button>
+          </div>
           <select id="citaCliente" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white"></select>
         </div>
 
@@ -279,72 +295,197 @@
           <select id="citaServicio" onchange="onCambioServicio()" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-medium"></select>
         </div>
 
-        <!-- Selector de Zonas para Depilación Láser (14 Zonas @ $50.000 COP) -->
-        <div id="bloqueZonasLaser" class="hidden border border-brand-border bg-neutral-50 p-3 rounded-sm space-y-2">
-          <div class="flex justify-between items-center border-b border-brand-border/60 pb-1.5">
-            <span class="font-bold text-xs uppercase tracking-wider text-brand-black flex items-center gap-1">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Zonas de Depilación Láser
-            </span>
-            <span class="text-[10px] font-bold bg-black text-white px-2 py-0.5 rounded-full">$50.000 / zona</span>
+        <!-- Selector de Zonas para Depilación Láser (14 Zonas @ $50.000 COP c/u) -->
+        <div id="bloqueZonasLaser" class="hidden border border-brand-border bg-neutral-50 p-3 rounded-sm space-y-2.5">
+          <div class="flex flex-wrap justify-between items-center border-b border-brand-border/60 pb-2 gap-2">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-black"></i>
+              <span class="font-bold text-xs uppercase tracking-wider text-brand-black">Zonas de Depilación Láser</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold bg-black text-white px-2 py-0.5 rounded-full">$50.000 COP / zona</span>
+              <button type="button" onclick="limpiarZonasLaser()" class="text-[10px] text-brand-gray hover:text-black underline">Limpiar</button>
+              <button type="button" onclick="seleccionarZonasPopulares()" class="text-[10px] text-black font-semibold hover:underline">Bikini + Axilas</button>
+            </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-1.5 pt-1 text-xs max-h-48 overflow-y-auto pr-1" id="gridZonasLaser">
-            <!-- Renderizado dinámico de las 14 zonas -->
+          <p class="text-[11px] text-brand-gray">Toca las zonas que se realizará la clienta. Cada zona suma automáticamente <strong>$50.000 COP</strong>:</p>
+
+          <div class="grid grid-cols-2 gap-2 pt-1 max-h-52 overflow-y-auto pr-1" id="gridZonasLaser">
+            <!-- 14 Zonas generadas dinámicamente con interacción táctil -->
           </div>
 
-          <div class="pt-2 border-t border-brand-border flex justify-between items-center bg-white p-2 rounded-sm border">
-            <span class="text-xs text-brand-gray font-medium">Zonas elegidas: <strong id="lblCantZonas" class="text-black">0</strong></span>
-            <span class="text-xs font-bold text-black">Total Láser: <strong id="lblTotalLaser">$0</strong></span>
+          <div class="pt-2 border-t border-brand-border flex justify-between items-center bg-white p-2.5 rounded-sm border">
+            <span class="text-xs text-brand-gray font-medium">Zonas elegidas: <strong id="lblCantZonas" class="text-black text-sm">0</strong></span>
+            <span class="text-xs font-bold text-black">Total Láser: <strong id="lblTotalLaser" class="text-sm font-extrabold">$0</strong></span>
           </div>
         </div>
 
-        <div class="flex justify-between items-center bg-brand-lightGray p-2.5 rounded-sm border border-brand-border">
+        <div class="flex justify-between items-center bg-brand-lightGray p-3 rounded-sm border border-brand-border">
           <span class="text-xs uppercase tracking-wider text-brand-gray font-semibold">Valor Estimado del Servicio:</span>
-          <span class="text-sm font-black text-black" id="citaPrecioDisplay">$0</span>
+          <span class="text-base font-black text-black" id="citaPrecioDisplay">$0</span>
         </div>
 
         <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Operaria Asignada *</label>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold">Operaria Asignada *</label>
+            <button type="button" onclick="openModal('modalNuevaOperaria')" class="text-[11px] text-black font-semibold hover:underline flex items-center gap-0.5">
+              <i data-lucide="plus" class="w-3 h-3"></i> + Nueva Operaria
+            </button>
+          </div>
           <select id="citaOperaria" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white"></select>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Hora *</label>
-            <input type="time" id="citaHora" required value="10:00" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+            <input type="time" id="citaHora" required value="10:00" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white">
           </div>
           <div>
             <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Duración (min)</label>
-            <input type="number" id="citaDuracion" value="60" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+            <input type="number" id="citaDuracion" value="45" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white">
           </div>
         </div>
 
         <div>
           <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Notas adicionales (opcional)</label>
-          <input type="text" id="citaNotas" placeholder="Ej: Zona facial, piel sensible..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+          <input type="text" id="citaNotas" placeholder="Ej: Piel sensible, traer bata..." class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
         </div>
 
         <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
-          <button type="button" onclick="closeModal('modalNuevaCita')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
-          <button type="submit" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm">Guardar Cita en Mongo</button>
+          <button type="button" onclick="closeModal('modalNuevaCita')" class="px-4 py-2.5 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-black hover:bg-neutral-800 text-white px-5 py-2.5 uppercase tracking-wider font-semibold rounded-sm shadow-sm transition">Guardar Cita en Mongo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Nuevo Cliente (con opción de asignar cita de inmediato) -->
+  <div id="modalNuevoCliente" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> Registrar Nuevo Cliente
+        </h3>
+        <button onclick="closeModal('modalNuevoCliente')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="formNuevoCliente" onsubmit="guardarNuevoCliente(event, false)" class="space-y-4">
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre Completo *</label>
+          <input type="text" id="clienteNombre" required placeholder="Ej: Camila Restrepo" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Teléfono Celular / WhatsApp *</label>
+          <input type="tel" id="clienteTelefono" required placeholder="Ej: 3001234567" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Notas Estéticas / Alergias</label>
+          <textarea id="clienteNotas" rows="2" placeholder="Piel reactiva, sensible en zona T, prefiere depilación con hielo..." class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex flex-col sm:flex-row justify-end gap-2">
+          <button type="button" onclick="closeModal('modalNuevoCliente')" class="px-4 py-2.5 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm text-center">
+            Cancelar
+          </button>
+          <button type="submit" class="px-4 py-2.5 border border-black text-black uppercase tracking-wider font-semibold rounded-sm hover:bg-neutral-100 transition text-center">
+            Guardar Solo Cliente
+          </button>
+          <button type="button" onclick="guardarNuevoCliente(null, true)" class="bg-black hover:bg-neutral-800 text-white px-5 py-2.5 uppercase tracking-wider font-semibold rounded-sm flex items-center justify-center gap-1.5 transition shadow-sm text-center">
+            <i data-lucide="calendar-plus" class="w-4 h-4"></i> Guardar y Asignar Cita →
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Nueva Operaria -->
+  <div id="modalNuevaOperaria" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="user-check" class="w-4 h-4"></i> Nueva Operaria
+        </h3>
+        <button onclick="closeModal('modalNuevaOperaria')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="guardarNuevaOperaria(event)" class="space-y-4">
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre Completo *</label>
+          <input type="text" id="opNombre" required placeholder="Ej: Daniela Zapata" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Rol / Especialidad *</label>
+          <input type="text" id="opRol" required placeholder="Ej: Especialista Láser & Cejas" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalNuevaOperaria')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-black text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm hover:bg-neutral-800 transition">Guardar Operaria</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Nuevo Servicio -->
+  <div id="modalNuevoServicio" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4"></i> Nuevo Tratamiento
+        </h3>
+        <button onclick="closeModal('modalNuevoServicio')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="guardarNuevoServicio(event)" class="space-y-4">
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre del Tratamiento *</label>
+          <input type="text" id="servNombre" required placeholder="Ej: Peeling Facial" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Duración estimada (minutos) *</label>
+          <input type="number" id="servDuracion" value="45" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Precio ($ COP) *</label>
+          <input type="number" id="servPrecio" placeholder="80000" required class="w-full border border-brand-border p-2.5 text-base font-bold rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalNuevoServicio')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-black text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm hover:bg-neutral-800 transition">Guardar Tratamiento</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- Modal: Cobrar Cita -->
-  <div id="modalCobrarCita" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
+  <div id="modalCobrarCita" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-brand-border pb-3">
-        <h3 class="text-sm font-bold uppercase tracking-wider">Cobrar Servicio & Registrar en Caja</h3>
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="receipt" class="w-4 h-4"></i> Cobrar Cita & Registrar en Caja
+        </h3>
         <button onclick="closeModal('modalCobrarCita')" class="text-brand-gray hover:text-black">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="bg-brand-lightGray p-3 rounded-sm text-xs space-y-1">
+      <div class="bg-brand-lightGray p-3 rounded-sm text-xs space-y-1.5 border border-brand-border">
         <p><strong>Cliente:</strong> <span id="cobroClienteNombre">-</span></p>
         <p><strong>Servicio:</strong> <span id="cobroServicioNombre">-</span></p>
+        <p id="cobroZonasContainer" class="hidden"><strong>Zonas:</strong> <span id="cobroZonasTexto" class="font-semibold text-black">-</span></p>
         <p><strong>Operaria:</strong> <span id="cobroOperariaNombre">-</span></p>
       </div>
 
@@ -353,7 +494,7 @@
         
         <div>
           <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Valor a Cobrar ($ COP) *</label>
-          <input type="number" id="cobroMonto" required class="w-full border border-brand-border p-2.5 text-base font-bold rounded-sm focus:border-black outline-none">
+          <input type="number" id="cobroMonto" required class="w-full border border-brand-border p-2.5 text-base font-bold rounded-sm focus:border-black outline-none bg-white">
         </div>
 
         <div>
@@ -377,8 +518,8 @@
   </div>
 
   <!-- Modal: Reprogramar Cita -->
-  <div id="modalReprogramar" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4 text-xs">
+  <div id="modalReprogramar" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 text-xs max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-brand-border pb-3">
         <h3 class="text-sm font-bold uppercase tracking-wider">Reprogramar Cita</h3>
         <button onclick="closeModal('modalReprogramar')" class="text-brand-gray hover:text-black">
@@ -390,7 +531,7 @@
       
       <div>
         <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nueva Hora *</label>
-        <input type="time" id="reprogramarHora" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+        <input type="time" id="reprogramarHora" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white">
       </div>
 
       <div>
@@ -405,43 +546,9 @@
     </div>
   </div>
 
-  <!-- Modal: Nuevo Cliente -->
-  <div id="modalNuevoCliente" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 text-xs">
-    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
-      <div class="flex justify-between items-center border-b border-brand-border pb-3">
-        <h3 class="text-sm font-bold uppercase tracking-wider">Registrar Nuevo Cliente</h3>
-        <button onclick="closeModal('modalNuevoCliente')" class="text-brand-gray hover:text-black">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <form onsubmit="guardarNuevoCliente(event)" class="space-y-4">
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre Completo *</label>
-          <input type="text" id="clienteNombre" required placeholder="Ej: Camila Restrepo" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
-        </div>
-
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Teléfono / WhatsApp *</label>
-          <input type="tel" id="clienteTelefono" required placeholder="Ej: 3001234567" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
-        </div>
-
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Notas Estéticas / Alergias</label>
-          <textarea id="clienteNotas" rows="2" placeholder="Piel reactiva, prefiere agua tibia..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none"></textarea>
-        </div>
-
-        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
-          <button type="button" onclick="closeModal('modalNuevoCliente')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
-          <button type="submit" class="bg-black text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm">Guardar Cliente en Mongo</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- Modal: Apertura de Caja -->
-  <div id="modalAperturaCaja" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 text-xs">
-    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
+  <div id="modalAperturaCaja" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-brand-border pb-3">
         <h3 class="text-sm font-bold uppercase tracking-wider">Apertura de Caja</h3>
         <button onclick="closeModal('modalAperturaCaja')" class="text-brand-gray hover:text-black">
@@ -464,8 +571,8 @@
   </div>
 
   <!-- Modal: Cobro Rápido / Venta Manual -->
-  <div id="modalVentaManual" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 text-xs">
-    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
+  <div id="modalVentaManual" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-brand-border pb-3">
         <h3 class="text-sm font-bold uppercase tracking-wider">Cobro Rápido en Caja</h3>
         <button onclick="closeModal('modalVentaManual')" class="text-brand-gray hover:text-black">
@@ -503,69 +610,6 @@
     </div>
   </div>
 
-  <!-- Modal: Nueva Operaria -->
-  <div id="modalNuevaOperaria" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 text-xs">
-    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
-      <div class="flex justify-between items-center border-b border-brand-border pb-3">
-        <h3 class="text-sm font-bold uppercase tracking-wider">Nueva Operaria</h3>
-        <button onclick="closeModal('modalNuevaOperaria')" class="text-brand-gray hover:text-black">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <form onsubmit="guardarNuevaOperaria(event)" class="space-y-4">
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre Completo *</label>
-          <input type="text" id="opNombre" required placeholder="Ej: Daniela Zapata" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
-        </div>
-
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Rol / Especialidad *</label>
-          <input type="text" id="opRol" required placeholder="Ej: Especialista Láser & Cejas" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
-        </div>
-
-        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
-          <button type="button" onclick="closeModal('modalNuevaOperaria')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
-          <button type="submit" class="bg-black text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm">Guardar Operaria</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal: Nuevo Servicio -->
-  <div id="modalNuevoServicio" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 text-xs">
-    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
-      <div class="flex justify-between items-center border-b border-brand-border pb-3">
-        <h3 class="text-sm font-bold uppercase tracking-wider">Nuevo Tratamiento</h3>
-        <button onclick="closeModal('modalNuevoServicio')" class="text-brand-gray hover:text-black">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <form onsubmit="guardarNuevoServicio(event)" class="space-y-4">
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre del Tratamiento *</label>
-          <input type="text" id="servNombre" required placeholder="Ej: Peeling Químico" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
-        </div>
-
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Duración estimada (minutos) *</label>
-          <input type="number" id="servDuracion" value="60" required class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
-        </div>
-
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Precio ($ COP) *</label>
-          <input type="number" id="servPrecio" placeholder="100000" required class="w-full border border-brand-border p-2 text-base font-bold rounded-sm focus:border-black outline-none">
-        </div>
-
-        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
-          <button type="button" onclick="closeModal('modalNuevoServicio')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
-          <button type="submit" class="bg-black text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm">Guardar Tratamiento</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- ================= JAVASCRIPT ================= -->
   <script>
     let appState = {
@@ -576,52 +620,7 @@
       fechaHoy: ''
     };
 
-    function formatMoney(amount) {
-      return '$' + Number(amount || 0).toLocaleString('es-CO');
-    }
-
-    async function cargarDatosServidor() {
-      try {
-        const res = await fetch('/api/bootstrap');
-        const json = await res.json();
-        if (json.success) {
-          appState = json.data;
-          document.getElementById('fechaHoyDisplay').innerText = `Hoy: ${appState.fechaHoy}`;
-          poblarSelects();
-          renderizarAgenda();
-          renderizarClientes();
-          renderizarCaja();
-          renderizarEquipo();
-        }
-      } catch (err) {
-        console.error('Error al conectar con MongoDB:', err);
-      }
-    }
-
-    function cambiarSeccion(seccion) {
-      const secciones = ['agenda', 'clientes', 'caja', 'equipo'];
-      secciones.forEach(sec => {
-        document.getElementById(`sec-${sec}`).classList.add('hidden');
-        const tabBtn = document.getElementById(`tab-${sec}`);
-        tabBtn.classList.remove('active-tab');
-        tabBtn.classList.add('text-brand-gray');
-      });
-
-      document.getElementById(`sec-${seccion}`).classList.remove('hidden');
-      const activeTab = document.getElementById(`tab-${seccion}`);
-      activeTab.classList.add('active-tab');
-      activeTab.classList.remove('text-brand-gray');
-      lucide.createIcons();
-    }
-
-    function openModal(id) {
-      document.getElementById(id).classList.remove('hidden');
-      lucide.createIcons();
-    }
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-    }
-
+    // Las 14 zonas oficiales de Depilación Láser ($50.000 COP c/u)
     const ZONAS_LASER = [
       'Bikini',
       'Axilas',
@@ -639,15 +638,86 @@
       'Rostro'
     ];
 
+    function formatMoney(amount) {
+      return '$' + Number(amount || 0).toLocaleString('es-CO');
+    }
+
+    async function cargarDatosServidor() {
+      try {
+        const res = await fetch('/api/bootstrap');
+        const json = await res.json();
+        if (json.success) {
+          appState = json.data;
+          document.getElementById('fechaHoyDisplay').innerText = `Hoy: ${appState.fechaHoy}`;
+          poblarSelects();
+          renderizarAgenda();
+          renderizarClientes();
+          renderizarCaja();
+          renderizarEquipo();
+        } else {
+          console.error('Error desde el servidor:', json.error);
+        }
+      } catch (err) {
+        console.error('Error al conectar con MongoDB Atlas:', err);
+      }
+    }
+
+    function cambiarSeccion(seccion) {
+      const secciones = ['agenda', 'clientes', 'caja', 'equipo'];
+      secciones.forEach(sec => {
+        const el = document.getElementById(`sec-${sec}`);
+        if (el) el.classList.add('hidden');
+        const tabBtn = document.getElementById(`tab-${sec}`);
+        if (tabBtn) {
+          tabBtn.classList.remove('active-tab');
+          tabBtn.classList.add('text-brand-gray');
+        }
+      });
+
+      const target = document.getElementById(`sec-${seccion}`);
+      if (target) target.classList.remove('hidden');
+      const activeTab = document.getElementById(`tab-${seccion}`);
+      if (activeTab) {
+        activeTab.classList.add('active-tab');
+        activeTab.classList.remove('text-brand-gray');
+      }
+      lucide.createIcons();
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('hidden');
+        lucide.createIcons();
+      }
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    }
+
     function poblarSelects() {
       // Clientes
       const selectCliente = document.getElementById('citaCliente');
-      selectCliente.innerHTML = appState.clientes.map(c => `<option value="${c._id}">${c.nombre} (${c.telefono})</option>`).join('');
+      if (selectCliente) {
+        if (appState.clientes.length === 0) {
+          selectCliente.innerHTML = `<option value="">-- No hay clientes registrados aún --</option>`;
+        } else {
+          selectCliente.innerHTML = appState.clientes.map(c => 
+            `<option value="${c._id}">${c.nombre} (${c.telefono})</option>`
+          ).join('');
+        }
+      }
 
       // Servicios
       const selectServicio = document.getElementById('citaServicio');
-      if (appState.config && appState.config.servicios) {
-        selectServicio.innerHTML = appState.config.servicios.map(s => `<option value="${s.nombre}" data-precio="${s.precio}" data-duracion="${s.duracion}">${s.nombre} - ${formatMoney(s.precio)}</option>`).join('');
+      if (selectServicio && appState.config && appState.config.servicios) {
+        selectServicio.innerHTML = appState.config.servicios.map(s => {
+          const isLaser = s.nombre.toLowerCase().includes('laser') || s.nombre.toLowerCase().includes('láser');
+          const labelPrecio = isLaser ? '$50.000 / zona' : formatMoney(s.precio);
+          return `<option value="${s.nombre}" data-precio="${s.precio}" data-duracion="${s.duracion}">${s.nombre} - ${labelPrecio}</option>`;
+        }).join('');
       }
 
       // Operarias
@@ -657,26 +727,33 @@
 
       if (appState.config && appState.config.operarias) {
         const opOptions = appState.config.operarias.map(o => `<option value="${o.nombre}">${o.nombre}</option>`).join('');
-        selectOperaria.innerHTML = opOptions;
-        selectReprogOp.innerHTML = opOptions;
-        selectFiltro.innerHTML = `<option value="todas">Todas las Operarias</option>` + opOptions;
+        if (selectOperaria) selectOperaria.innerHTML = opOptions;
+        if (selectReprogOp) selectReprogOp.innerHTML = opOptions;
+        if (selectFiltro) selectFiltro.innerHTML = `<option value="todas">Todas las Operarias</option>` + opOptions;
       }
 
-      // Renderizar los 14 checkboxes de Zonas Láser (@ $50.000 COP c/u)
+      // Renderizar los 14 botones/checkboxes táctiles de Zonas Láser (@ $50.000 COP c/u)
       const contZonas = document.getElementById('gridZonasLaser');
       if (contZonas) {
-        contZonas.innerHTML = ZONAS_LASER.map(z => `
-          <label class="flex items-center justify-between p-2 border border-brand-border bg-white rounded-sm hover:border-black cursor-pointer text-xs transition">
+        contZonas.innerHTML = ZONAS_LASER.map((z, idx) => `
+          <div onclick="toggleZonaCard(${idx})" class="zona-card flex items-center justify-between p-2.5 border border-brand-border bg-white rounded-sm hover:border-black cursor-pointer text-xs transition select-none">
             <div class="flex items-center gap-2">
-              <input type="checkbox" value="${z}" class="chk-zona-laser accent-black w-4 h-4 cursor-pointer" onchange="actualizarCalculoZonas()">
-              <span class="font-medium text-brand-black">${z}</span>
+              <input type="checkbox" id="chk-zona-${idx}" value="${z}" class="chk-zona-laser accent-black w-4 h-4 cursor-pointer" onclick="event.stopPropagation()" onchange="actualizarCalculoZonas()">
+              <span class="font-medium">${z}</span>
             </div>
-            <span class="text-[10px] font-bold text-brand-gray font-mono">+$50k</span>
-          </label>
+            <span class="zona-price text-[10px] font-bold text-brand-gray font-mono">+$50k</span>
+          </div>
         `).join('');
       }
 
       onCambioServicio();
+    }
+
+    function toggleZonaCard(index) {
+      const chk = document.getElementById(`chk-zona-${index}`);
+      if (!chk) return;
+      chk.checked = !chk.checked;
+      actualizarCalculoZonas();
     }
 
     function onCambioServicio() {
@@ -685,25 +762,75 @@
       const val = select.value.toLowerCase();
       const bloque = document.getElementById('bloqueZonasLaser');
 
-      if (val.includes('laser') || val.includes('láser')) {
-        bloque.classList.remove('hidden');
+      const esLaser = val.includes('laser') || val.includes('láser');
+
+      if (esLaser) {
+        if (bloque) bloque.classList.remove('hidden');
         actualizarCalculoZonas();
       } else {
-        bloque.classList.add('hidden');
-        document.querySelectorAll('.chk-zona-laser').forEach(chk => chk.checked = false);
+        if (bloque) bloque.classList.add('hidden');
+        limpiarZonasLaser(false);
         const opt = select.options[select.selectedIndex];
         const precioBase = Number(opt.getAttribute('data-precio') || 0);
-        document.getElementById('citaPrecioDisplay').innerText = formatMoney(precioBase);
+        const display = document.getElementById('citaPrecioDisplay');
+        if (display) display.innerText = formatMoney(precioBase);
       }
     }
 
     function actualizarCalculoZonas() {
-      const seleccionadas = Array.from(document.querySelectorAll('.chk-zona-laser:checked')).map(chk => chk.value);
-      const cant = seleccionadas.length;
+      const checkboxes = document.querySelectorAll('.chk-zona-laser');
+      let cant = 0;
+      checkboxes.forEach(chk => {
+        const card = chk.closest('.zona-card');
+        if (chk.checked) {
+          cant++;
+          if (card) {
+            card.classList.add('bg-black', 'text-white', 'border-black');
+            card.classList.remove('bg-white', 'text-brand-black', 'border-brand-border');
+            const priceTag = card.querySelector('.zona-price');
+            if (priceTag) priceTag.classList.add('text-neutral-300');
+          }
+        } else {
+          if (card) {
+            card.classList.remove('bg-black', 'text-white', 'border-black');
+            card.classList.add('bg-white', 'text-brand-black', 'border-brand-border');
+            const priceTag = card.querySelector('.zona-price');
+            if (priceTag) priceTag.classList.remove('text-neutral-300');
+          }
+        }
+      });
+
       const total = cant * 50000;
-      document.getElementById('lblCantZonas').innerText = cant;
-      document.getElementById('lblTotalLaser').innerText = formatMoney(total);
-      document.getElementById('citaPrecioDisplay').innerText = formatMoney(total);
+      const lblCant = document.getElementById('lblCantZonas');
+      const lblTotal = document.getElementById('lblTotalLaser');
+      const display = document.getElementById('citaPrecioDisplay');
+
+      if (lblCant) lblCant.innerText = cant;
+      if (lblTotal) lblTotal.innerText = formatMoney(total);
+      if (display) display.innerText = formatMoney(total);
+    }
+
+    function limpiarZonasLaser(actualizar = true) {
+      document.querySelectorAll('.chk-zona-laser').forEach(chk => {
+        chk.checked = false;
+        const card = chk.closest('.zona-card');
+        if (card) {
+          card.classList.remove('bg-black', 'text-white', 'border-black');
+          card.classList.add('bg-white', 'text-brand-black', 'border-brand-border');
+          const priceTag = card.querySelector('.zona-price');
+          if (priceTag) priceTag.classList.remove('text-neutral-300');
+        }
+      });
+      if (actualizar) actualizarCalculoZonas();
+    }
+
+    function seleccionarZonasPopulares() {
+      document.querySelectorAll('.chk-zona-laser').forEach(chk => {
+        if (chk.value === 'Bikini' || chk.value === 'Axilas') {
+          chk.checked = true;
+        }
+      });
+      actualizarCalculoZonas();
     }
 
     // --- RENDER AGENDA ---
@@ -718,9 +845,11 @@
 
       if (citasFiltradas.length === 0) {
         cont.innerHTML = `
-          <div class="col-span-full p-12 text-center border border-dashed border-brand-border rounded-sm">
-            <p class="text-xs font-semibold text-brand-gray uppercase tracking-wider">No hay citas para hoy</p>
-            <button onclick="openModal('modalNuevaCita')" class="mt-3 text-xs bg-black text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm">Agendar Cita</button>
+          <div class="col-span-full p-12 text-center border border-dashed border-brand-border rounded-sm bg-white">
+            <p class="text-xs font-semibold text-brand-gray uppercase tracking-wider">No hay citas registradas para hoy</p>
+            <button onclick="openModal('modalNuevaCita')" class="mt-3 text-xs bg-black text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm hover:bg-neutral-800 transition">
+              + Agendar Nueva Cita
+            </button>
           </div>
         `;
         return;
@@ -737,11 +866,11 @@
         }
 
         return `
-          <div class="border border-brand-border rounded-sm p-5 hover:border-black transition bg-white flex flex-col justify-between space-y-4">
+          <div class="border border-brand-border rounded-sm p-5 hover:border-black transition bg-white flex flex-col justify-between space-y-4 shadow-xs">
             <div>
               <div class="flex justify-between items-start">
                 <span class="text-2xl font-bold tracking-tight">${cita.hora}</span>
-                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-1 border ${badgeColor} rounded-full">
+                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border ${badgeColor} rounded-full">
                   ${cita.estado}
                 </span>
               </div>
@@ -758,13 +887,17 @@
 
               ${cita.zonas && cita.zonas.length > 0 ? `
                 <div class="mt-2.5 pt-2 border-t border-brand-border/60">
-                  <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block mb-1">Zonas a Depilar (${cita.zonas.length}):</span>
+                  <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block mb-1">Zonas seleccionadas (${cita.zonas.length}):</span>
                   <div class="flex flex-wrap gap-1">
                     ${cita.zonas.map(z => `<span class="bg-black text-white text-[10px] font-semibold px-2 py-0.5 rounded-xs">${z}</span>`).join('')}
                   </div>
-                  <span class="text-xs text-brand-gray mt-1.5 block">Valor Total: <strong class="text-black font-bold">${formatMoney(cita.valor)}</strong></span>
+                  <span class="text-xs text-brand-gray mt-1.5 block">Valor Total: <strong class="text-black font-bold">${formatMoney(cita.valor)}</strong> ($50.000 c/u)</span>
                 </div>
-              ` : ''}
+              ` : `
+                <div class="mt-2.5 pt-2 border-t border-brand-border/60">
+                  <span class="text-xs text-brand-gray block">Valor: <strong class="text-black font-bold">${formatMoney(cita.valor)}</strong></span>
+                </div>
+              `}
 
               <div class="mt-3 pt-3 border-t border-brand-border/60 flex items-center justify-between text-xs">
                 <span class="text-brand-gray">Historial en este servicio:</span>
@@ -781,11 +914,11 @@
                 <button onclick="iniciarCobroCita('${cita._id}')" class="flex-1 bg-black hover:bg-neutral-800 text-white py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition">
                   <i data-lucide="check" class="w-3.5 h-3.5"></i> Cobrar / Completar
                 </button>
-                <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition">
+                <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition" title="Reprogramar Cita">
                   <i data-lucide="clock" class="w-3.5 h-3.5"></i>
                 </button>
               ` : `
-                <div class="w-full text-center py-1.5 text-xs text-brand-gray font-medium flex items-center justify-center gap-1">
+                <div class="w-full text-center py-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 font-medium flex items-center justify-center gap-1 rounded-sm">
                   <i data-lucide="check-check" class="w-4 h-4 text-emerald-600"></i> Servicio Pagado en Caja
                 </div>
               `}
@@ -797,7 +930,7 @@
       lucide.createIcons();
     }
 
-    // Guardar Cita
+    // --- GUARDAR CITA ---
     async function guardarCita(e) {
       e.preventDefault();
       const selectServ = document.getElementById('citaServicio');
@@ -811,38 +944,69 @@
       if (esLaser) {
         zonasSeleccionadas = Array.from(document.querySelectorAll('.chk-zona-laser:checked')).map(chk => chk.value);
         if (zonasSeleccionadas.length === 0) {
-          alert('Por favor selecciona al menos una zona para el tratamiento de Depilación Láser.');
+          alert('⚠️ Por favor selecciona al menos una zona para la cita de Depilación Láser ($50.000 por zona).');
           return;
         }
         precioFinal = zonasSeleccionadas.length * 50000;
       }
 
+      const clienteSelect = document.getElementById('citaCliente');
+      if (!clienteSelect.value) {
+        alert('Por favor selecciona un cliente para la cita.');
+        return;
+      }
+
+      const operariaSelect = document.getElementById('citaOperaria');
+      if (!operariaSelect.value) {
+        alert('Por favor selecciona una operaria para la cita.');
+        return;
+      }
+
       const payload = {
-        clienteId: document.getElementById('citaCliente').value,
+        clienteId: clienteSelect.value,
         servicio: valServ,
         zonas: zonasSeleccionadas,
         valor: precioFinal,
-        operaria: document.getElementById('citaOperaria').value,
+        operaria: operariaSelect.value,
         hora: document.getElementById('citaHora').value,
         duracion: document.getElementById('citaDuracion').value,
         notas: document.getElementById('citaNotas').value
       };
 
-      const res = await fetch('/api/citas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        closeModal('modalNuevaCita');
-        document.querySelectorAll('.chk-zona-laser').forEach(chk => chk.checked = false);
-        await cargarDatosServidor();
-        alert('✓ Cita guardada en MongoDB Atlas con éxito.');
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn ? btn.innerText : 'Guardar';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Guardando cita...';
+      }
+
+      try {
+        const res = await fetch('/api/citas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalNuevaCita');
+          limpiarZonasLaser(false);
+          document.getElementById('citaNotas').value = '';
+          await cargarDatosServidor();
+          alert(`✓ Cita agendada con éxito para ${data.cita.clienteNombre} (${formatMoney(data.cita.valor)}).`);
+        } else {
+          alert('Error al guardar cita: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión al guardar cita: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = originalText;
+        }
       }
     }
 
-    // Cobrar Cita
+    // --- COBRAR CITA ---
     function iniciarCobroCita(citaId) {
       const cita = appState.citas.find(c => c._id == citaId);
       if (!cita) return;
@@ -853,6 +1017,15 @@
       document.getElementById('cobroOperariaNombre').innerText = cita.operaria;
       document.getElementById('cobroMonto').value = cita.valor;
 
+      const contZonas = document.getElementById('cobroZonasContainer');
+      const txtZonas = document.getElementById('cobroZonasTexto');
+      if (cita.zonas && cita.zonas.length > 0) {
+        contZonas.classList.remove('hidden');
+        txtZonas.innerText = `${cita.zonas.join(', ')} (${cita.zonas.length} zonas @ $50.000 c/u)`;
+      } else {
+        contZonas.classList.add('hidden');
+      }
+
       openModal('modalCobrarCita');
     }
 
@@ -862,20 +1035,25 @@
       const valor = document.getElementById('cobroMonto').value;
       const metodo = document.getElementById('cobroMetodo').value;
 
-      const res = await fetch(`/api/citas/${citaId}/completar-cobro`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ valor, metodo })
-      });
-      const data = await res.json();
-      if (data.success) {
-        closeModal('modalCobrarCita');
-        await cargarDatosServidor();
-        alert(`✅ Cobro registrado en MongoDB Atlas.\n✨ Se sumó +1 automáticamente al contador de sesiones del cliente.`);
+      try {
+        const res = await fetch(`/api/citas/${citaId}/completar-cobro`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ valor, metodo })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalCobrarCita');
+          await cargarDatosServidor();
+          alert('✓ Cita cobrada exitosamente. Sesión sumada al contador del cliente e ingreso registrado en Caja.');
+        } else {
+          alert('Error al procesar cobro: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
-    // Reprogramar
     function abrirReprogramar(citaId) {
       const cita = appState.citas.find(c => c._id == citaId);
       if (!cita) return;
@@ -891,20 +1069,26 @@
       const hora = document.getElementById('reprogramarHora').value;
       const operaria = document.getElementById('reprogramarOperaria').value;
 
-      const res = await fetch(`/api/citas/${citaId}/reprogramar`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hora, operaria })
-      });
-      const data = await res.json();
-      if (data.success) {
-        closeModal('modalReprogramar');
-        await cargarDatosServidor();
-        alert('Cita reprogramada en MongoDB Atlas.');
+      try {
+        const res = await fetch(`/api/citas/${citaId}/reprogramar`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hora, operaria })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalReprogramar');
+          await cargarDatosServidor();
+          alert('✓ Cita reprogramada correctamente en MongoDB Atlas.');
+        } else {
+          alert('Error al reprogramar: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
-    // Clientes
+    // --- CLIENTES ---
     function renderizarClientes() {
       const busqueda = (document.getElementById('buscarClienteInput').value || '').toLowerCase();
       const tbody = document.getElementById('tablaClientesBody');
@@ -913,6 +1097,11 @@
         c.nombre.toLowerCase().includes(busqueda) || 
         c.telefono.includes(busqueda)
       );
+
+      if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-brand-gray">No se encontraron clientes.</td></tr>`;
+        return;
+      }
 
       tbody.innerHTML = filtrados.map(c => {
         let contadoresHtml = '';
@@ -927,18 +1116,18 @@
             </div>
           `).join('');
         } else {
-          contadoresHtml = '<span class="text-brand-gray text-xs italic">Sin citas registradas aún</span>';
+          contadoresHtml = '<span class="text-brand-gray text-xs italic">Sin citas completadas aún</span>';
         }
 
         return `
           <tr class="hover:bg-neutral-50 transition">
             <td class="p-4 font-semibold text-brand-black">
               ${c.nombre}
-              ${c.notas ? `<p class="text-xs text-brand-gray font-normal">${c.notas}</p>` : ''}
+              ${c.notas ? `<p class="text-xs text-brand-gray font-normal mt-0.5">${c.notas}</p>` : ''}
             </td>
             <td class="p-4 text-brand-gray">
               <a href="https://wa.me/57${c.telefono}" target="_blank" class="hover:text-black hover:underline flex items-center gap-1 font-medium">
-                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> ${c.telefono}
+                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i> ${c.telefono}
               </a>
             </td>
             <td class="p-4">
@@ -947,8 +1136,8 @@
               </div>
             </td>
             <td class="p-4 text-right">
-              <button onclick="agendarDirectoCliente('${c._id}')" class="border border-brand-border hover:border-black px-2.5 py-1 rounded-sm text-xs uppercase tracking-wider font-semibold">
-                + Cita
+              <button onclick="agendarDirectoCliente('${c._id}')" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 rounded-sm text-xs uppercase tracking-wider font-semibold flex items-center gap-1 ml-auto shadow-xs">
+                <i data-lucide="calendar-plus" class="w-3 h-3"></i> + Cita
               </button>
             </td>
           </tr>
@@ -958,34 +1147,82 @@
       lucide.createIcons();
     }
 
-    async function guardarNuevoCliente(e) {
-      e.preventDefault();
-      const payload = {
-        nombre: document.getElementById('clienteNombre').value,
-        telefono: document.getElementById('clienteTelefono').value,
-        notas: document.getElementById('clienteNotas').value
-      };
+    async function guardarNuevoCliente(e, agendarInmediato = false) {
+      if (e) e.preventDefault();
+      const inputNombre = document.getElementById('clienteNombre');
+      const inputTelefono = document.getElementById('clienteTelefono');
+      const inputNotas = document.getElementById('clienteNotas');
 
-      const res = await fetch('/api/clientes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        closeModal('modalNuevoCliente');
-        await cargarDatosServidor();
-        alert(`Cliente ${payload.nombre} guardado en MongoDB Atlas.`);
+      const nombre = inputNombre.value.trim();
+      const telefono = inputTelefono.value.trim();
+      const notas = inputNotas.value.trim();
+
+      if (!nombre) {
+        alert('Por favor ingresa el nombre del cliente.');
+        inputNombre.focus();
+        return;
       }
+      if (!telefono) {
+        alert('Por favor ingresa el teléfono o WhatsApp del cliente.');
+        inputTelefono.focus();
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, telefono, notas })
+        });
+        const data = await res.json();
+        if (data.success && data.cliente) {
+          closeModal('modalNuevoCliente');
+          inputNombre.value = '';
+          inputTelefono.value = '';
+          inputNotas.value = '';
+          
+          await cargarDatosServidor();
+
+          if (agendarInmediato) {
+            // Abrir directamente modal para agendar cita a esta cliente
+            cambiarSeccion('agenda');
+            abrirCitaParaCliente(data.cliente._id, 'Depilación Láser');
+          } else {
+            alert(`✓ Cliente "${nombre}" guardado en MongoDB Atlas.`);
+          }
+        } else {
+          alert('Error al guardar cliente: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión al guardar cliente: ' + err.message);
+      }
+    }
+
+    function abrirCitaParaCliente(clienteId, servicioPreferido = 'Depilación Láser') {
+      openModal('modalNuevaCita');
+      if (clienteId) {
+        const selectCliente = document.getElementById('citaCliente');
+        if (selectCliente) selectCliente.value = clienteId;
+      }
+      
+      const selectServicio = document.getElementById('citaServicio');
+      if (selectServicio && servicioPreferido) {
+        for (let i = 0; i < selectServicio.options.length; i++) {
+          if (selectServicio.options[i].value.toLowerCase().includes(servicioPreferido.toLowerCase())) {
+            selectServicio.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      onCambioServicio();
     }
 
     function agendarDirectoCliente(clienteId) {
       cambiarSeccion('agenda');
-      document.getElementById('citaCliente').value = clienteId;
-      openModal('modalNuevaCita');
+      abrirCitaParaCliente(clienteId, 'Depilación Láser');
     }
 
-    // Caja
+    // --- CAJA ---
     function renderizarCaja() {
       const fondo = (appState.config && appState.config.caja && appState.config.caja.fondoInicial) || 0;
       let totalEf = 0;
@@ -1008,7 +1245,7 @@
 
       const tbody = document.getElementById('tablaVentasBody');
       if (appState.ventas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-brand-gray">No se han registrado ventas hoy.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-brand-gray">No se han registrado pagos hoy.</td></tr>`;
       } else {
         tbody.innerHTML = appState.ventas.map(v => `
           <tr class="hover:bg-neutral-50">
@@ -1025,16 +1262,22 @@
 
     async function confirmarAperturaCaja() {
       const fondoInicial = Number(document.getElementById('montoAperturaInput').value);
-      const res = await fetch('/api/caja/apertura', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fondoInicial })
-      });
-      const data = await res.json();
-      if (data.success) {
-        closeModal('modalAperturaCaja');
-        await cargarDatosServidor();
-        alert(`Caja abierta en MongoDB con base de ${formatMoney(fondoInicial)}`);
+      try {
+        const res = await fetch('/api/caja/apertura', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fondoInicial })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalAperturaCaja');
+          await cargarDatosServidor();
+          alert(`✓ Caja abierta con base inicial de ${formatMoney(fondoInicial)}`);
+        } else {
+          alert('Error: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
@@ -1047,16 +1290,22 @@
         metodo: document.getElementById('vrMetodo').value
       };
 
-      const res = await fetch('/api/caja/venta-rapida', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        closeModal('modalVentaManual');
-        await cargarDatosServidor();
-        alert('Cobro rápido registrado en caja.');
+      try {
+        const res = await fetch('/api/caja/venta-rapida', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalVentaManual');
+          await cargarDatosServidor();
+          alert('✓ Cobro rápido registrado en caja.');
+        } else {
+          alert('Error: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
@@ -1085,14 +1334,14 @@
         `-----------------------------------------\n` +
         `TOTAL VENTAS DEL DÍA: ${formatMoney(total)}\n` +
         `EFECTIVO TOTAL A CONTAR EN CAJA FÍSICA: ${formatMoney(dineroFisicoEsperado)}\n\n` +
-        `¿Deseas confirmar el cierre del día?`;
+        `¿Deseas confirmar el arqueo del día?`;
 
       if (confirm(resumen)) {
-        alert('Caja cerrada con éxito.');
+        alert('✓ Arqueo de caja finalizado exitosamente.');
       }
     }
 
-    // Equipo & Tratamientos
+    // --- OPERARIAS & TRATAMIENTOS ---
     function renderizarEquipo() {
       const contOp = document.getElementById('listaOperarias');
       if (appState.config && appState.config.operarias) {
@@ -1100,7 +1349,7 @@
           <div class="flex justify-between items-center p-3 border border-brand-border bg-white rounded-sm hover:border-black transition">
             <div>
               <p class="font-bold text-xs">${o.nombre}</p>
-              <p class="text-xs text-brand-gray">${o.rol || 'Especialista'}</p>
+              <p class="text-xs text-brand-gray">${o.rol || 'Operaria Especialista'}</p>
             </div>
             <div class="flex items-center gap-3">
               <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full" title="Activa"></span>
@@ -1114,84 +1363,158 @@
 
       const contServ = document.getElementById('listaServicios');
       if (appState.config && appState.config.servicios) {
-        contServ.innerHTML = appState.config.servicios.map(s => `
-          <div class="flex justify-between items-center p-3 border border-brand-border bg-white rounded-sm hover:border-black transition">
-            <div>
-              <p class="font-bold text-xs">${s.nombre}</p>
-              <p class="text-xs text-brand-gray">${s.duracion} minutos</p>
+        contServ.innerHTML = appState.config.servicios.map(s => {
+          const isLaser = s.nombre.toLowerCase().includes('laser') || s.nombre.toLowerCase().includes('láser');
+          const precioTxt = isLaser ? '$50.000 / zona' : formatMoney(s.precio);
+          return `
+            <div class="flex justify-between items-center p-3 border border-brand-border bg-white rounded-sm hover:border-black transition">
+              <div>
+                <p class="font-bold text-xs">${s.nombre}</p>
+                <p class="text-xs text-brand-gray">${s.duracion} minutos</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-bold text-xs">${precioTxt}</span>
+                <button onclick="eliminarServicio('${s._id}')" class="text-neutral-400 hover:text-red-600 transition p-1" title="Eliminar servicio">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="font-bold text-xs">${formatMoney(s.precio)}</span>
-              <button onclick="eliminarServicio('${s._id}')" class="text-neutral-400 hover:text-red-600 transition p-1" title="Eliminar servicio">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
       lucide.createIcons();
     }
 
     async function guardarNuevaOperaria(e) {
       e.preventDefault();
-      const payload = {
-        nombre: document.getElementById('opNombre').value,
-        rol: document.getElementById('opRol').value
-      };
+      const inputNombre = document.getElementById('opNombre');
+      const inputRol = document.getElementById('opRol');
+      const nombre = inputNombre.value.trim();
+      const rol = inputRol.value.trim();
 
-      const res = await fetch('/api/operarias', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        closeModal('modalNuevaOperaria');
-        document.getElementById('opNombre').value = '';
-        document.getElementById('opRol').value = '';
-        await cargarDatosServidor();
-        alert('✓ Operaria agregada exitosamente a HOME STHETIC.');
+      if (!nombre) {
+        alert('Por favor escribe el nombre de la operaria.');
+        inputNombre.focus();
+        return;
+      }
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn ? btn.innerText : 'Guardar';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Guardando...';
+      }
+
+      try {
+        const res = await fetch('/api/operarias', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, rol: rol || 'Operaria Especialista' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalNuevaOperaria');
+          inputNombre.value = '';
+          inputRol.value = '';
+          await cargarDatosServidor();
+          
+          // Si modalNuevaCita estaba abierto, auto-seleccionar la nueva operaria
+          const selectOp = document.getElementById('citaOperaria');
+          if (selectOp) {
+            selectOp.value = nombre;
+          }
+          alert(`✓ Operaria "${nombre}" agregada exitosamente a HOME STHETIC.`);
+        } else {
+          alert('Error al guardar operaria: ' + (data.error || 'Ocurrió un error.'));
+        }
+      } catch (err) {
+        alert('Error de conexión al agregar operaria: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = originalText;
+        }
       }
     }
 
     async function eliminarOperaria(id) {
       if (!confirm('¿Deseas eliminar esta operaria de la lista?')) return;
-      const res = await fetch(`/api/operarias/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        await cargarDatosServidor();
+      try {
+        const res = await fetch(`/api/operarias/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert('✓ Operaria eliminada.');
+        } else {
+          alert('Error al eliminar operaria: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
     async function guardarNuevoServicio(e) {
       e.preventDefault();
-      const payload = {
-        nombre: document.getElementById('servNombre').value,
-        duracion: document.getElementById('servDuracion').value,
-        precio: document.getElementById('servPrecio').value
-      };
+      const inputNombre = document.getElementById('servNombre');
+      const inputDuracion = document.getElementById('servDuracion');
+      const inputPrecio = document.getElementById('servPrecio');
 
-      const res = await fetch('/api/servicios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        closeModal('modalNuevoServicio');
-        document.getElementById('servNombre').value = '';
-        document.getElementById('servPrecio').value = '';
-        await cargarDatosServidor();
-        alert('✓ Tratamiento agregado exitosamente.');
+      const nombre = inputNombre.value.trim();
+      const duracion = inputDuracion.value;
+      const precio = inputPrecio.value;
+
+      if (!nombre) {
+        alert('Por favor escribe el nombre del tratamiento.');
+        inputNombre.focus();
+        return;
+      }
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn ? btn.innerText : 'Guardar';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Guardando...';
+      }
+
+      try {
+        const res = await fetch('/api/servicios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, duracion, precio })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalNuevoServicio');
+          inputNombre.value = '';
+          inputPrecio.value = '';
+          await cargarDatosServidor();
+          alert(`✓ Tratamiento "${nombre}" agregado exitosamente.`);
+        } else {
+          alert('Error al guardar tratamiento: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = originalText;
+        }
       }
     }
 
     async function eliminarServicio(id) {
       if (!confirm('¿Deseas eliminar este tratamiento del catálogo?')) return;
-      const res = await fetch(`/api/servicios/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        await cargarDatosServidor();
+      try {
+        const res = await fetch(`/api/servicios/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert('✓ Tratamiento eliminado.');
+        } else {
+          alert('Error al eliminar tratamiento: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
