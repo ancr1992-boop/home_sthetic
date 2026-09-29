@@ -257,9 +257,9 @@ app.get('/api/bootstrap', async (req, res) => {
   try {
     const hoy = getFechaHoy();
     const config = await getOrCreateConfig();
-    const [clientes, citasHoy, ventasHoy] = await Promise.all([
+    const [clientes, todasLasCitas, ventasHoy] = await Promise.all([
       Client.find().sort({ nombre: 1 }),
-      Appointment.find({ fecha: hoy }).sort({ hora: 1 }),
+      Appointment.find().sort({ fecha: 1, hora: 1 }),
       Sale.find({ fecha: hoy }).sort({ createdAt: -1 })
     ]);
 
@@ -268,7 +268,7 @@ app.get('/api/bootstrap', async (req, res) => {
       data: {
         config,
         clientes,
-        citas: citasHoy,
+        citas: todasLasCitas,
         ventas: ventasHoy,
         fechaHoy: hoy
       }
@@ -310,6 +310,12 @@ app.post('/api/citas', async (req, res) => {
     const cliente = await Client.findById(clienteId);
     if (!cliente) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
 
+    // Normalizar servicio si es Láser
+    let nombreServicio = (servicio || 'Depilación Láser').trim();
+    if (nombreServicio.toLowerCase().includes('laser') || nombreServicio.toLowerCase().includes('láser')) {
+      nombreServicio = 'Depilación Láser';
+    }
+
     // Si tiene zonas seleccionadas (Depilación Láser), el valor es 50.000 COP por zona
     let finalValor = Number(valor);
     if (zonas && Array.isArray(zonas) && zonas.length > 0) {
@@ -319,8 +325,8 @@ app.post('/api/citas', async (req, res) => {
     const nuevaCita = await Appointment.create({
       clienteId: cliente._id,
       clienteNombre: cliente.nombre,
-      clienteTelefono: cliente.telefono,
-      servicio: servicio || 'Depilación Láser',
+      clienteTelefono: cliente.telefono || '',
+      servicio: nombreServicio,
       zonas: Array.isArray(zonas) ? zonas : [],
       valor: finalValor,
       operaria: operaria || 'General',

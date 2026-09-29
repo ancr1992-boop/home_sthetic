@@ -99,13 +99,33 @@
 
     <!-- SECCIÓN 1: AGENDA -->
     <section id="sec-agenda" class="space-y-6">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
-        <div>
-          <h2 class="text-2xl font-bold tracking-tight">Agenda de Citas</h2>
-          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1" id="fechaHoyDisplay">Cargando fecha...</p>
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-brand-border pb-5">
+        <!-- Navegación de Fecha en Agenda -->
+        <div class="space-y-2 w-full lg:w-auto">
+          <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-bold tracking-tight">Agenda de Citas</h2>
+            <span id="badgeCitasContador" class="text-xs bg-black text-white font-semibold px-2.5 py-0.5 rounded-full">0 citas</span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <button onclick="cambiarDiaAgenda(-1)" class="p-1.5 border border-brand-border bg-white rounded-sm hover:border-black transition" title="Día Anterior">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <input type="date" id="filtroFechaAgenda" onchange="seleccionarFechaAgenda(this.value)" class="border border-brand-border bg-white px-2 py-1 rounded-sm text-xs font-bold focus:border-black outline-none">
+            <button onclick="cambiarDiaAgenda(1)" class="p-1.5 border border-brand-border bg-white rounded-sm hover:border-black transition" title="Día Siguiente">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+            <button onclick="verFechaHoy()" class="px-2.5 py-1 text-xs border border-brand-border bg-white hover:border-black font-semibold rounded-sm transition">
+              Hoy
+            </button>
+            <button onclick="toggleVerTodasCitas()" id="btnVerTodasCitas" class="px-2.5 py-1 text-xs border border-brand-border bg-white hover:border-black font-medium text-brand-gray hover:text-black rounded-sm transition">
+              Ver Próximas Citas
+            </button>
+          </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+        <!-- Filtro por Operaria y botón agregar -->
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto">
           <label class="text-xs uppercase tracking-wider text-brand-gray font-medium whitespace-nowrap">Operaria:</label>
           <select id="filtroOperariaAgenda" onchange="renderizarAgenda()" class="bg-white border border-brand-border px-3 py-2 text-xs rounded-sm focus:outline-none focus:border-black transition flex-1 sm:w-44">
             <option value="todas">Todas las Operarias</option>
@@ -147,7 +167,7 @@
               <tr>
                 <th class="p-4">Cliente</th>
                 <th class="p-4">Teléfono / WhatsApp</th>
-                <th class="p-4">Contador de Sesiones por Tratamiento & Zonas</th>
+                <th class="p-4">Contador de Sesiones & Próxima Cita</th>
                 <th class="p-4 text-right">Agendar Cita</th>
               </tr>
             </thead>
@@ -267,7 +287,109 @@
 
   <!-- ================= MODALES ================= -->
 
-  <!-- Modal: Nueva Cita -->
+  <!-- Modal: Asignar Siguiente Sesión & Enviar WhatsApp Business -->
+  <div id="modalSiguienteSesion" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-lg w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-600"></i> Asignar Siguiente Sesión
+        </h3>
+        <button onclick="closeModal('modalSiguienteSesion')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Resumen de la Clienta -->
+      <div class="bg-neutral-50 p-3 rounded-sm border border-brand-border flex justify-between items-center">
+        <div>
+          <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block">Clienta:</span>
+          <span id="sigClienteNombre" class="text-sm font-bold text-black">-</span>
+          <span id="sigClienteTelefonoDisplay" class="text-xs text-brand-gray flex items-center gap-1 mt-0.5">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i> <span id="sigClienteTelefonoVal">-</span>
+          </span>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block">Tratamiento:</span>
+          <span id="sigServicioNombre" class="text-xs font-semibold text-black">Depilación Láser</span>
+        </div>
+      </div>
+
+      <form onsubmit="guardarSiguienteSesion(event)" class="space-y-4">
+        <input type="hidden" id="sigClienteId">
+        <input type="hidden" id="sigClienteTelefonoRaw">
+
+        <!-- Selector de Fecha con accesos rápidos -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold">Fecha de la Próxima Cita *</label>
+            <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Recomendado: 3 a 4 semanas</span>
+          </div>
+          <input type="date" id="sigFecha" required onchange="actualizarPreviewWhatsApp()" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-semibold">
+          
+          <!-- Chips de semanas -->
+          <div class="flex items-center gap-2 mt-2">
+            <button type="button" onclick="sumarSemanasFecha(3)" class="px-2.5 py-1 text-[11px] border border-brand-border bg-neutral-50 hover:bg-black hover:text-white rounded-sm font-medium transition">+3 Semanas</button>
+            <button type="button" onclick="sumarSemanasFecha(4)" class="px-2.5 py-1 text-[11px] border border-black bg-black text-white rounded-sm font-bold transition shadow-xs">+4 Semanas (1 mes)</button>
+            <button type="button" onclick="sumarSemanasFecha(5)" class="px-2.5 py-1 text-[11px] border border-brand-border bg-neutral-50 hover:bg-black hover:text-white rounded-sm font-medium transition">+5 Semanas</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Hora *</label>
+            <input type="time" id="sigHora" required value="10:00" onchange="actualizarPreviewWhatsApp()" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-semibold">
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Especialista / Operaria *</label>
+            <select id="sigOperaria" required onchange="actualizarPreviewWhatsApp()" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-medium"></select>
+          </div>
+        </div>
+
+        <!-- Zonas para la Siguiente Sesión -->
+        <div id="sigBloqueZonas" class="border border-brand-border bg-neutral-50 p-3 rounded-sm space-y-2">
+          <div class="flex justify-between items-center border-b border-brand-border/60 pb-1.5">
+            <span class="font-bold text-xs uppercase tracking-wider text-black flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Zonas para la siguiente sesión
+            </span>
+            <span class="text-[10px] font-bold bg-black text-white px-2 py-0.5 rounded-full">$50.000 COP c/u</span>
+          </div>
+          <p class="text-[11px] text-brand-gray">Se preseleccionaron las zonas de su sesión anterior. Toca para agregar o quitar zonas:</p>
+          <div class="grid grid-cols-2 gap-2 pt-1 max-h-44 overflow-y-auto pr-1" id="sigGridZonas"></div>
+          
+          <div class="pt-2 border-t border-brand-border flex justify-between items-center bg-white p-2.5 rounded-sm border">
+            <span class="text-xs text-brand-gray font-medium">Zonas elegidas: <strong id="sigLblCantZonas" class="text-black text-sm">0</strong></span>
+            <span class="text-xs font-bold text-black">Total Láser: <strong id="sigLblTotal" class="text-sm font-extrabold">$0</strong></span>
+          </div>
+        </div>
+
+        <!-- Bloque WhatsApp Business -->
+        <div class="border border-emerald-300 bg-emerald-50/40 p-3.5 rounded-sm space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer font-bold text-xs text-emerald-900">
+              <input type="checkbox" id="chkEnviarWhatsApp" checked class="w-4 h-4 accent-emerald-600 rounded-sm">
+              <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i>
+              Enviar confirmación por WhatsApp Business al agendar
+            </label>
+            <span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-full">Automático</span>
+          </div>
+
+          <div>
+            <span class="text-[10px] uppercase font-bold text-emerald-800 tracking-wider block mb-1">Vista previa del mensaje a enviar:</span>
+            <div id="previewMensajeWhatsApp" class="bg-white p-3 border border-emerald-200 rounded-sm text-[11px] font-mono whitespace-pre-wrap text-neutral-800 max-h-36 overflow-y-auto leading-relaxed shadow-2xs"></div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex flex-col sm:flex-row justify-end gap-2">
+          <button type="button" onclick="closeModal('modalSiguienteSesion')" class="px-4 py-2.5 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm text-center">Cancelar</button>
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 uppercase tracking-wider font-semibold rounded-sm flex items-center justify-center gap-2 transition shadow-sm text-center">
+            <i data-lucide="send" class="w-4 h-4"></i> Agendar & Enviar a WhatsApp
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Nueva Cita General -->
   <div id="modalNuevaCita" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
     <div class="bg-white max-w-lg w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-brand-border pb-3">
@@ -338,12 +460,12 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Hora *</label>
-            <input type="time" id="citaHora" required value="10:00" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white">
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Fecha *</label>
+            <input type="date" id="citaFecha" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-semibold">
           </div>
           <div>
-            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Duración (min)</label>
-            <input type="number" id="citaDuracion" value="45" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white">
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Hora *</label>
+            <input type="time" id="citaHora" required value="10:00" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-semibold">
           </div>
         </div>
 
@@ -530,8 +652,13 @@
       <input type="hidden" id="reprogramarCitaId">
       
       <div>
+        <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nueva Fecha</label>
+        <input type="date" id="reprogramarFecha" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white font-semibold">
+      </div>
+
+      <div>
         <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nueva Hora *</label>
-        <input type="time" id="reprogramarHora" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white">
+        <input type="time" id="reprogramarHora" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white font-semibold">
       </div>
 
       <div>
@@ -620,6 +747,10 @@
       fechaHoy: ''
     };
 
+    let fechaAgendaActiva = '';
+    let modoVerTodasAgenda = false;
+    let citaActualSiguiente = null;
+
     // Las 14 zonas oficiales de Depilación Láser ($50.000 COP c/u)
     const ZONAS_LASER = [
       'Bikini',
@@ -642,13 +773,56 @@
       return '$' + Number(amount || 0).toLocaleString('es-CO');
     }
 
+    function normalizarTexto(txt) {
+      return (txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    }
+
+    function formatearFechaLegible(fechaStr) {
+      if (!fechaStr) return '';
+      const partes = fechaStr.split('-');
+      if (partes.length !== 3) return fechaStr;
+      const [y, m, d] = partes.map(Number);
+      const fechaObj = new Date(y, m - 1, d);
+      const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const str = fechaObj.toLocaleDateString('es-CO', opciones);
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function obtenerContadorSesiones(cliente, servicioNombre) {
+      if (!cliente || !cliente.contadorServicios) return 0;
+      const contadorObj = cliente.contadorServicios;
+      
+      if (contadorObj[servicioNombre] !== undefined) return contadorObj[servicioNombre];
+      
+      const targetNorm = normalizarTexto(servicioNombre);
+      for (const [k, v] of Object.entries(contadorObj)) {
+        if (normalizarTexto(k) === targetNorm) return v;
+      }
+      
+      if (targetNorm.includes('laser')) {
+        for (const [k, v] of Object.entries(contadorObj)) {
+          const kNorm = normalizarTexto(k);
+          if (kNorm.includes('laser') && !kNorm.includes(':')) return v;
+        }
+      }
+      return 0;
+    }
+
     async function cargarDatosServidor() {
       try {
         const res = await fetch('/api/bootstrap');
         const json = await res.json();
         if (json.success) {
           appState = json.data;
-          document.getElementById('fechaHoyDisplay').innerText = `Hoy: ${appState.fechaHoy}`;
+          if (!fechaAgendaActiva) {
+            fechaAgendaActiva = appState.fechaHoy;
+          }
+          const inputFecha = document.getElementById('filtroFechaAgenda');
+          if (inputFecha) inputFecha.value = fechaAgendaActiva;
+
+          const citaFechaInput = document.getElementById('citaFecha');
+          if (citaFechaInput && !citaFechaInput.value) citaFechaInput.value = appState.fechaHoy;
+
           poblarSelects();
           renderizarAgenda();
           renderizarClientes();
@@ -724,11 +898,13 @@
       const selectOperaria = document.getElementById('citaOperaria');
       const selectFiltro = document.getElementById('filtroOperariaAgenda');
       const selectReprogOp = document.getElementById('reprogramarOperaria');
+      const selectSigOp = document.getElementById('sigOperaria');
 
       if (appState.config && appState.config.operarias) {
         const opOptions = appState.config.operarias.map(o => `<option value="${o.nombre}">${o.nombre}</option>`).join('');
         if (selectOperaria) selectOperaria.innerHTML = opOptions;
         if (selectReprogOp) selectReprogOp.innerHTML = opOptions;
+        if (selectSigOp) selectSigOp.innerHTML = opOptions;
         if (selectFiltro) selectFiltro.innerHTML = `<option value="todas">Todas las Operarias</option>` + opOptions;
       }
 
@@ -817,8 +993,6 @@
         if (card) {
           card.classList.remove('bg-black', 'text-white', 'border-black');
           card.classList.add('bg-white', 'text-brand-black', 'border-brand-border');
-          const priceTag = card.querySelector('.zona-price');
-          if (priceTag) priceTag.classList.remove('text-neutral-300');
         }
       });
       if (actualizar) actualizarCalculoZonas();
@@ -833,20 +1007,78 @@
       actualizarCalculoZonas();
     }
 
+    // --- NAVEGACIÓN DE FECHA EN AGENDA ---
+    function cambiarDiaAgenda(offset) {
+      modoVerTodasAgenda = false;
+      const [y, m, d] = fechaAgendaActiva.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      dt.setDate(dt.getDate() + offset);
+      const year = dt.getFullYear();
+      const month = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      fechaAgendaActiva = `${year}-${month}-${day}`;
+      document.getElementById('filtroFechaAgenda').value = fechaAgendaActiva;
+      renderizarAgenda();
+    }
+
+    function seleccionarFechaAgenda(val) {
+      if (!val) return;
+      modoVerTodasAgenda = false;
+      fechaAgendaActiva = val;
+      renderizarAgenda();
+    }
+
+    function verFechaHoy() {
+      modoVerTodasAgenda = false;
+      fechaAgendaActiva = appState.fechaHoy;
+      document.getElementById('filtroFechaAgenda').value = fechaAgendaActiva;
+      renderizarAgenda();
+    }
+
+    function toggleVerTodasCitas() {
+      modoVerTodasAgenda = !modoVerTodasAgenda;
+      renderizarAgenda();
+    }
+
     // --- RENDER AGENDA ---
     function renderizarAgenda() {
       const cont = document.getElementById('contenedorCitas');
-      const filtro = document.getElementById('filtroOperariaAgenda').value;
+      const filtroOp = document.getElementById('filtroOperariaAgenda').value;
+      const btnTodas = document.getElementById('btnVerTodasCitas');
       
-      let citasFiltradas = appState.citas;
-      if (filtro !== 'todas') {
-        citasFiltradas = citasFiltradas.filter(c => c.operaria === filtro);
+      let citasFiltradas = appState.citas || [];
+
+      if (modoVerTodasAgenda) {
+        if (btnTodas) {
+          btnTodas.classList.add('bg-black', 'text-white');
+          btnTodas.classList.remove('bg-white', 'text-brand-gray');
+          btnTodas.innerText = 'Ver Solo Fecha Elegida';
+        }
+        // Filtrar citas desde hoy en adelante o todas
+        citasFiltradas = citasFiltradas.sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+      } else {
+        if (btnTodas) {
+          btnTodas.classList.remove('bg-black', 'text-white');
+          btnTodas.classList.add('bg-white', 'text-brand-gray');
+          btnTodas.innerText = 'Ver Próximas Citas';
+        }
+        citasFiltradas = citasFiltradas.filter(c => c.fecha === fechaAgendaActiva);
+      }
+
+      if (filtroOp !== 'todas') {
+        citasFiltradas = citasFiltradas.filter(c => c.operaria === filtroOp);
+      }
+
+      const badge = document.getElementById('badgeCitasContador');
+      if (badge) {
+        badge.innerText = `${citasFiltradas.length} ${citasFiltradas.length === 1 ? 'cita' : 'citas'}`;
       }
 
       if (citasFiltradas.length === 0) {
+        const fechaTexto = modoVerTodasAgenda ? 'próximas citas' : `citas para el ${formatearFechaLegible(fechaAgendaActiva)}`;
         cont.innerHTML = `
           <div class="col-span-full p-12 text-center border border-dashed border-brand-border rounded-sm bg-white">
-            <p class="text-xs font-semibold text-brand-gray uppercase tracking-wider">No hay citas registradas para hoy</p>
+            <p class="text-xs font-semibold text-brand-gray uppercase tracking-wider">No hay ${fechaTexto}</p>
             <button onclick="openModal('modalNuevaCita')" class="mt-3 text-xs bg-black text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm hover:bg-neutral-800 transition">
               + Agendar Nueva Cita
             </button>
@@ -856,23 +1088,33 @@
       }
 
       cont.innerHTML = citasFiltradas.map(cita => {
-        const cliente = appState.clientes.find(c => c._id == cita.clienteId) || { nombre: cita.clienteNombre, contadorServicios: {} };
-        const contadorObj = cliente.contadorServicios || {};
-        const countSesion = contadorObj[cita.servicio] || (typeof contadorObj.get === 'function' ? contadorObj.get(cita.servicio) : 0) || 0;
+        const cliente = appState.clientes.find(c => c._id == cita.clienteId) || { nombre: cita.clienteNombre, telefono: cita.clienteTelefono, contadorServicios: {} };
+        const countSesion = obtenerContadorSesiones(cliente, cita.servicio);
 
         let badgeColor = 'border-black text-black';
         if (cita.estado === 'Completada') {
           badgeColor = 'border-emerald-600 text-emerald-700 bg-emerald-50';
         }
 
+        const esHoy = cita.fecha === appState.fechaHoy;
+        const fechaBadge = !esHoy ? `<span class="text-[10px] font-bold bg-neutral-100 text-neutral-800 px-2 py-0.5 rounded-xs border border-brand-border">${cita.fecha}</span>` : '';
+
         return `
           <div class="border border-brand-border rounded-sm p-5 hover:border-black transition bg-white flex flex-col justify-between space-y-4 shadow-xs">
             <div>
               <div class="flex justify-between items-start">
-                <span class="text-2xl font-bold tracking-tight">${cita.hora}</span>
-                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border ${badgeColor} rounded-full">
-                  ${cita.estado}
-                </span>
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl font-bold tracking-tight">${cita.hora}</span>
+                  ${fechaBadge}
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="enviarWhatsAppCita('${cita._id}')" class="px-2 py-0.5 text-[10px] font-semibold border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 rounded-full flex items-center gap-1 transition" title="Enviar recordatorio / confirmación por WhatsApp">
+                    <i data-lucide="message-circle" class="w-3 h-3 text-emerald-600"></i> WhatsApp
+                  </button>
+                  <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border ${badgeColor} rounded-full">
+                    ${cita.estado}
+                  </span>
+                </div>
               </div>
 
               <div class="mt-3">
@@ -909,17 +1151,24 @@
               ${cita.notas ? `<p class="text-xs text-brand-gray italic mt-2 bg-neutral-50 p-1.5 border border-brand-border/40">Nota: ${cita.notas}</p>` : ''}
             </div>
 
-            <div class="pt-3 border-t border-brand-border flex gap-2">
+            <div class="pt-3 border-t border-brand-border flex flex-col gap-2">
               ${cita.estado !== 'Completada' ? `
-                <button onclick="iniciarCobroCita('${cita._id}')" class="flex-1 bg-black hover:bg-neutral-800 text-white py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition">
-                  <i data-lucide="check" class="w-3.5 h-3.5"></i> Cobrar / Completar
-                </button>
-                <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition" title="Reprogramar Cita">
-                  <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-                </button>
+                <div class="flex gap-2">
+                  <button onclick="iniciarCobroCita('${cita._id}')" class="flex-1 bg-black hover:bg-neutral-800 text-white py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i> Cobrar / Completar
+                  </button>
+                  <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition" title="Reprogramar Cita">
+                    <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
               ` : `
-                <div class="w-full text-center py-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 font-medium flex items-center justify-center gap-1 rounded-sm">
-                  <i data-lucide="check-check" class="w-4 h-4 text-emerald-600"></i> Servicio Pagado en Caja
+                <div class="w-full space-y-2">
+                  <div class="w-full text-center py-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 font-medium flex items-center justify-center gap-1.5 rounded-sm">
+                    <i data-lucide="check-check" class="w-4 h-4 text-emerald-600"></i> Servicio Pagado en Caja
+                  </div>
+                  <button onclick="iniciarSiguienteSesion('${cita._id}')" class="w-full bg-black hover:bg-neutral-800 text-white py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 transition shadow-xs">
+                    <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i> Asignar Siguiente Sesión
+                  </button>
                 </div>
               `}
             </div>
@@ -930,7 +1179,247 @@
       lucide.createIcons();
     }
 
-    // --- GUARDAR CITA ---
+    // --- ASIGNAR SIGUIENTE SESIÓN & WHATSAPP ---
+    function iniciarSiguienteSesion(citaId) {
+      const cita = appState.citas.find(c => c._id === citaId);
+      if (!cita) return;
+
+      citaActualSiguiente = cita;
+      const cliente = appState.clientes.find(c => c._id == cita.clienteId) || { nombre: cita.clienteNombre, telefono: cita.clienteTelefono };
+
+      document.getElementById('sigClienteId').value = cita.clienteId;
+      document.getElementById('sigClienteNombre').innerText = cita.clienteNombre;
+      document.getElementById('sigClienteTelefonoVal').innerText = cliente.telefono || cita.clienteTelefono || 'Sin teléfono';
+      document.getElementById('sigClienteTelefonoRaw').value = cliente.telefono || cita.clienteTelefono || '';
+      document.getElementById('sigServicioNombre').innerText = cita.servicio;
+
+      // Sugerir fecha a 4 semanas (28 días) de la cita actual o de hoy
+      const [y, m, d] = (cita.fecha || appState.fechaHoy).split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      dt.setDate(dt.getDate() + 28);
+      const year = dt.getFullYear();
+      const month = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      const sugerida = `${year}-${month}-${day}`;
+
+      document.getElementById('sigFecha').value = sugerida;
+      document.getElementById('sigHora').value = cita.hora || '10:00';
+
+      const selectOp = document.getElementById('sigOperaria');
+      if (selectOp) {
+        selectOp.value = cita.operaria;
+      }
+
+      // Renderizar zonas con las que traía la clienta ya pre-seleccionadas
+      const contZonas = document.getElementById('sigGridZonas');
+      const zonasPrevias = cita.zonas || [];
+      if (contZonas) {
+        contZonas.innerHTML = ZONAS_LASER.map((z, idx) => {
+          const checked = zonasPrevias.includes(z);
+          return `
+            <div onclick="toggleSigZonaCard(${idx})" class="sig-zona-card flex items-center justify-between p-2.5 border ${checked ? 'bg-black text-white border-black' : 'bg-white text-black border-brand-border'} rounded-sm hover:border-black cursor-pointer text-xs transition select-none">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" id="chk-sig-zona-${idx}" value="${z}" ${checked ? 'checked' : ''} class="chk-sig-zona accent-black w-4 h-4 cursor-pointer" onclick="event.stopPropagation()" onchange="actualizarCalculoSigZonas()">
+                <span class="font-medium">${z}</span>
+              </div>
+              <span class="sig-zona-price text-[10px] font-bold ${checked ? 'text-neutral-300' : 'text-brand-gray'} font-mono">+$50k</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      actualizarCalculoSigZonas();
+      openModal('modalSiguienteSesion');
+    }
+
+    function sumarSemanasFecha(semanas) {
+      if (!citaActualSiguiente) return;
+      const base = citaActualSiguiente.fecha || appState.fechaHoy;
+      const [y, m, d] = base.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      dt.setDate(dt.getDate() + (semanas * 7));
+      const year = dt.getFullYear();
+      const month = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      document.getElementById('sigFecha').value = `${year}-${month}-${day}`;
+      actualizarPreviewWhatsApp();
+    }
+
+    function toggleSigZonaCard(index) {
+      const chk = document.getElementById(`chk-sig-zona-${index}`);
+      if (!chk) return;
+      chk.checked = !chk.checked;
+      actualizarCalculoSigZonas();
+    }
+
+    function actualizarCalculoSigZonas() {
+      const checkboxes = document.querySelectorAll('.chk-sig-zona');
+      let cant = 0;
+      checkboxes.forEach(chk => {
+        const card = chk.closest('.sig-zona-card');
+        if (chk.checked) {
+          cant++;
+          if (card) {
+            card.classList.add('bg-black', 'text-white', 'border-black');
+            card.classList.remove('bg-white', 'text-black', 'border-brand-border');
+            const p = card.querySelector('.sig-zona-price');
+            if (p) p.classList.add('text-neutral-300');
+          }
+        } else {
+          if (card) {
+            card.classList.remove('bg-black', 'text-white', 'border-black');
+            card.classList.add('bg-white', 'text-black', 'border-brand-border');
+            const p = card.querySelector('.sig-zona-price');
+            if (p) p.classList.remove('text-neutral-300');
+          }
+        }
+      });
+
+      const total = cant * 50000;
+      document.getElementById('sigLblCantZonas').innerText = cant;
+      document.getElementById('sigLblTotal').innerText = formatMoney(total);
+      actualizarPreviewWhatsApp();
+    }
+
+    function construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor }) {
+      const fechaLegible = formatearFechaLegible(fecha);
+      const zonasTexto = (zonas && zonas.length > 0) ? `\n📍 *Zonas:* ${zonas.join(', ')} (${zonas.length} zonas)` : '';
+      const valorTexto = valor ? `\n💰 *Valor:* ${formatMoney(valor)} COP` : '';
+      const especialistaTexto = operaria ? `\n👩‍⚕️ *Especialista:* ${operaria}` : '';
+
+      let recomendaciones = '';
+      if (servicio.toLowerCase().includes('laser') || servicio.toLowerCase().includes('láser')) {
+        recomendaciones = 
+          `\n\n💡 *Recomendaciones para tu sesión de depilación láser:*\n` +
+          `• Venir con las zonas a tratar completamente rasuradas con cuchilla 24 horas antes.\n` +
+          `• No aplicar cremas, desodorante, aceites ni autobronceador el día de la cita.\n` +
+          `• Evitar la exposición solar directa 3 días antes y después de tu cita.`;
+      }
+
+      return (
+        `🌸 ¡Hola *${nombre}*! Te confirmamos tu próxima sesión en *HOME STHETIC*:\n\n` +
+        `📅 *Fecha:* ${fechaLegible}\n` +
+        `⏰ *Hora:* ${hora}` +
+        especialistaTexto +
+        `\n✨ *Tratamiento:* ${servicio}` +
+        zonasTexto +
+        valorTexto +
+        recomendaciones +
+        `\n\nSi necesitas reprogramar, por favor avísanos con anticipación. ¡Te esperamos para seguir cuidando de ti! 🌸✨`
+      );
+    }
+
+    function actualizarPreviewWhatsApp() {
+      const nombre = document.getElementById('sigClienteNombre').innerText;
+      const fecha = document.getElementById('sigFecha').value;
+      const hora = document.getElementById('sigHora').value;
+      const operaria = document.getElementById('sigOperaria').value;
+      const servicio = document.getElementById('sigServicioNombre').innerText;
+      const zonas = Array.from(document.querySelectorAll('.chk-sig-zona:checked')).map(chk => chk.value);
+      const valor = zonas.length * 50000;
+
+      const mensaje = construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor });
+      const preview = document.getElementById('previewMensajeWhatsApp');
+      if (preview) preview.innerText = mensaje;
+    }
+
+    async function guardarSiguienteSesion(e) {
+      e.preventDefault();
+      const clienteId = document.getElementById('sigClienteId').value;
+      const fecha = document.getElementById('sigFecha').value;
+      const hora = document.getElementById('sigHora').value;
+      const operaria = document.getElementById('sigOperaria').value;
+      const servicio = document.getElementById('sigServicioNombre').innerText;
+      const telefono = document.getElementById('sigClienteTelefonoRaw').value;
+      const nombre = document.getElementById('sigClienteNombre').innerText;
+      const enviarPorWhatsApp = document.getElementById('chkEnviarWhatsApp').checked;
+
+      const zonas = Array.from(document.querySelectorAll('.chk-sig-zona:checked')).map(chk => chk.value);
+      if (zonas.length === 0) {
+        alert('⚠️ Por favor selecciona al menos una zona para la siguiente sesión.');
+        return;
+      }
+      const valor = zonas.length * 50000;
+
+      const payload = {
+        clienteId,
+        servicio,
+        zonas,
+        valor,
+        operaria,
+        fecha,
+        hora,
+        duracion: 45,
+        notas: `Siguiente sesión programada desde la cita anterior.`
+      };
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn ? btn.innerText : 'Guardar';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Agendando...';
+      }
+
+      try {
+        const res = await fetch('/api/citas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalSiguienteSesion');
+          await cargarDatosServidor();
+
+          if (enviarPorWhatsApp && telefono) {
+            const mensaje = construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor });
+            const telLimpio = String(telefono).replace(/\D/g, '');
+            const telFinal = telLimpio.startsWith('57') ? telLimpio : '57' + telLimpio;
+            const waUrl = `https://wa.me/${telFinal}?text=${encodeURIComponent(mensaje)}`;
+            window.open(waUrl, '_blank');
+          }
+
+          alert(`✓ ¡Siguiente sesión agendada con éxito para el ${formatearFechaLegible(fecha)} a las ${hora}!`);
+        } else {
+          alert('Error al agendar siguiente sesión: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = originalText;
+        }
+      }
+    }
+
+    function enviarWhatsAppCita(citaId) {
+      const cita = appState.citas.find(c => c._id === citaId);
+      if (!cita) return;
+      const cliente = appState.clientes.find(c => c._id == cita.clienteId) || { nombre: cita.clienteNombre, telefono: cita.clienteTelefono };
+      const telefono = cliente.telefono || cita.clienteTelefono;
+      if (!telefono) {
+        alert('Este cliente no tiene número de teléfono registrado.');
+        return;
+      }
+
+      const mensaje = construirMensajeWhatsApp({
+        nombre: cita.clienteNombre,
+        fecha: cita.fecha,
+        hora: cita.hora,
+        servicio: cita.servicio,
+        zonas: cita.zonas,
+        operaria: cita.operaria,
+        valor: cita.valor
+      });
+
+      const telLimpio = String(telefono).replace(/\D/g, '');
+      const telFinal = telLimpio.startsWith('57') ? telLimpio : '57' + telLimpio;
+      const waUrl = `https://wa.me/${telFinal}?text=${encodeURIComponent(mensaje)}`;
+      window.open(waUrl, '_blank');
+    }
+
+    // --- GUARDAR CITA GENERAL ---
     async function guardarCita(e) {
       e.preventDefault();
       const selectServ = document.getElementById('citaServicio');
@@ -968,8 +1457,9 @@
         zonas: zonasSeleccionadas,
         valor: precioFinal,
         operaria: operariaSelect.value,
+        fecha: document.getElementById('citaFecha').value || appState.fechaHoy,
         hora: document.getElementById('citaHora').value,
-        duracion: document.getElementById('citaDuracion').value,
+        duracion: 45,
         notas: document.getElementById('citaNotas').value
       };
 
@@ -1059,6 +1549,7 @@
       if (!cita) return;
 
       document.getElementById('reprogramarCitaId').value = cita._id;
+      document.getElementById('reprogramarFecha').value = cita.fecha;
       document.getElementById('reprogramarHora').value = cita.hora;
       document.getElementById('reprogramarOperaria').value = cita.operaria;
       openModal('modalReprogramar');
@@ -1119,6 +1610,21 @@
           contadoresHtml = '<span class="text-brand-gray text-xs italic">Sin citas completadas aún</span>';
         }
 
+        // Buscar próxima cita programada de este cliente
+        const proximaCita = (appState.citas || [])
+          .filter(ci => ci.clienteId == c._id && ci.estado === 'Pendiente' && ci.fecha >= appState.fechaHoy)
+          .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora))[0];
+
+        let proximaHtml = '';
+        if (proximaCita) {
+          proximaHtml = `
+            <div class="mt-2 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-sm inline-flex items-center gap-1.5 font-medium">
+              <i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-600"></i>
+              Próxima cita: <strong>${proximaCita.fecha} a las ${proximaCita.hora}</strong> (${proximaCita.servicio})
+            </div>
+          `;
+        }
+
         return `
           <tr class="hover:bg-neutral-50 transition">
             <td class="p-4 font-semibold text-brand-black">
@@ -1126,7 +1632,7 @@
               ${c.notas ? `<p class="text-xs text-brand-gray font-normal mt-0.5">${c.notas}</p>` : ''}
             </td>
             <td class="p-4 text-brand-gray">
-              <a href="https://wa.me/57${c.telefono}" target="_blank" class="hover:text-black hover:underline flex items-center gap-1 font-medium">
+              <a href="https://wa.me/57${c.telefono.replace(/\\D/g, '')}" target="_blank" class="hover:text-black hover:underline flex items-center gap-1 font-medium">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i> ${c.telefono}
               </a>
             </td>
@@ -1134,6 +1640,7 @@
               <div class="flex flex-wrap items-center">
                 ${contadoresHtml}
               </div>
+              ${proximaHtml}
             </td>
             <td class="p-4 text-right">
               <button onclick="agendarDirectoCliente('${c._id}')" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 rounded-sm text-xs uppercase tracking-wider font-semibold flex items-center gap-1 ml-auto shadow-xs">
@@ -1184,7 +1691,6 @@
           await cargarDatosServidor();
 
           if (agendarInmediato) {
-            // Abrir directamente modal para agendar cita a esta cliente
             cambiarSeccion('agenda');
             abrirCitaParaCliente(data.cliente._id, 'Depilación Láser');
           } else {
@@ -1418,7 +1924,6 @@
           inputRol.value = '';
           await cargarDatosServidor();
           
-          // Si modalNuevaCita estaba abierto, auto-seleccionar la nueva operaria
           const selectOp = document.getElementById('citaOperaria');
           if (selectOp) {
             selectOp.value = nombre;
