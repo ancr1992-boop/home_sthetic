@@ -17,11 +17,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Login: siempre disponible
 app.get('/login', (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.sendFile('login.html', { root: path.join(__dirname, 'public') });
 });
 
 // Servir la página principal (la verificación de sesión la hace el JS del cliente)
 app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.sendFile('index.html', { root: path.join(__dirname, 'public') });
 });
 

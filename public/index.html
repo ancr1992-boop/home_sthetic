@@ -584,7 +584,12 @@
           </div>
 
           <div>
-            <span class="text-[10px] uppercase font-bold text-emerald-800 tracking-wider block mb-1">Vista previa del mensaje a enviar:</span>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] uppercase font-bold text-emerald-800 tracking-wider">Vista previa del mensaje:</span>
+              <button type="button" onclick="copiarMensajeWhatsAppPreview()" class="text-[10px] text-emerald-800 hover:text-emerald-950 font-bold underline flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar texto con emojis
+              </button>
+            </div>
             <div id="previewMensajeWhatsApp" class="bg-white p-3 border border-emerald-200 rounded-sm text-[11px] font-mono whitespace-pre-wrap text-neutral-800 max-h-36 overflow-y-auto leading-relaxed shadow-2xs"></div>
           </div>
         </div>
@@ -1964,10 +1969,7 @@
 
           if (enviarPorWhatsApp && telefono) {
             const mensaje = construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor });
-            const telLimpio = String(telefono).replace(/\D/g, '');
-            const telFinal = telLimpio.startsWith('57') ? telLimpio : '57' + telLimpio;
-            const waUrl = `https://wa.me/${telFinal}?text=${encodeURIComponent(mensaje)}`;
-            window.open(waUrl, '_blank');
+            abrirWhatsAppConMensaje(telefono, mensaje);
           }
 
           alert(`✓ ¡Siguiente sesión agendada con éxito para el ${formatearFechaLegible(fecha)} a las ${hora}!`);
@@ -1982,6 +1984,46 @@
           btn.innerText = originalText;
         }
       }
+    }
+
+    function abrirWhatsAppConMensaje(telefono, mensaje) {
+      const telLimpio = String(telefono).replace(/\D/g, '');
+      const telFinal = telLimpio.startsWith('57') ? telLimpio : '57' + telLimpio;
+
+      // Copiar automáticamente al portapapeles como respaldo seguro de emojis
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(mensaje).catch(() => {});
+      }
+
+      // Usar api.whatsapp.com en lugar de wa.me (wa.me sufre de un bug de redirección 302 que corrompe emojis UTF-8 de 4 bytes convirtiéndolos en diamantes con signo de interrogación)
+      const waUrl = `https://api.whatsapp.com/send?phone=${telFinal}&text=${encodeURIComponent(mensaje)}`;
+      window.open(waUrl, '_blank');
+    }
+
+    function copiarMensajeWhatsAppPreview() {
+      const preview = document.getElementById('previewMensajeWhatsApp');
+      if (!preview || !preview.innerText) return;
+      copiarTextoConFeedback(preview.innerText);
+    }
+
+    function copiarTextoConFeedback(texto) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(() => {
+          alert('✓ ¡Mensaje con emojis copiado al portapapeles!\nSi tu navegador no pasa los emojis a WhatsApp Web, puedes simplemente presionar Ctrl+V (o Cmd+V) para pegarlo.');
+        }).catch(() => fallbackCopiar(texto));
+      } else {
+        fallbackCopiar(texto);
+      }
+    }
+
+    function fallbackCopiar(texto) {
+      const ta = document.createElement('textarea');
+      ta.value = texto;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      alert('✓ ¡Mensaje copiado al portapapeles!');
     }
 
     function enviarWhatsAppCita(citaId) {
@@ -2004,10 +2046,7 @@
         valor: cita.valor
       });
 
-      const telLimpio = String(telefono).replace(/\D/g, '');
-      const telFinal = telLimpio.startsWith('57') ? telLimpio : '57' + telLimpio;
-      const waUrl = `https://wa.me/${telFinal}?text=${encodeURIComponent(mensaje)}`;
-      window.open(waUrl, '_blank');
+      abrirWhatsAppConMensaje(telefono, mensaje);
     }
 
     // --- GUARDAR CITA GENERAL ---
