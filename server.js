@@ -35,6 +35,7 @@ const appointmentSchema = new mongoose.Schema({
   clienteNombre: { type: String, required: true },
   clienteTelefono: { type: String, default: '' },
   servicio: { type: String, required: true },
+  zonas: { type: [String], default: [] },
   valor: { type: Number, required: true },
   operaria: { type: String, required: true },
   fecha: { type: String, required: true }, // YYYY-MM-DD
@@ -252,16 +253,22 @@ app.post('/api/clientes', async (req, res) => {
 // 3. Crear Cita
 app.post('/api/citas', async (req, res) => {
   try {
-    const { clienteId, servicio, valor, operaria, fecha, hora, duracion, notas } = req.body;
+    const { clienteId, servicio, valor, operaria, fecha, hora, duracion, notas, zonas } = req.body;
     const cliente = await Client.findById(clienteId);
     if (!cliente) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
+
+    let finalValor = Number(valor);
+    if (zonas && Array.isArray(zonas) && zonas.length > 0) {
+      finalValor = zonas.length * 50000;
+    }
 
     const nuevaCita = await Appointment.create({
       clienteId: cliente._id,
       clienteNombre: cliente.nombre,
       clienteTelefono: cliente.telefono,
       servicio,
-      valor: Number(valor),
+      zonas: Array.isArray(zonas) ? zonas : [],
+      valor: finalValor,
       operaria,
       fecha: fecha || getFechaHoy(),
       hora,
@@ -294,7 +301,7 @@ app.put('/api/citas/:id/reprogramar', async (req, res) => {
   }
 });
 
-// 5. Cobrar y Completar Cita (¡Incrementa contador y suma a caja!)
+// 5. Cobrar y Completar Cita (¡Incrementa contador por zona y suma a caja!)
 app.post('/api/citas/:id/completar-cobro', async (req, res) => {
   try {
     const { id } = req.params;
@@ -310,19 +317,36 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
     // Incrementar CONTADOR de servicios del cliente en MongoDB
     const cliente = await Client.findById(cita.clienteId);
     if (cliente) {
-      const actual = cliente.contadorServicios.get(cita.servicio) || 0;
-      cliente.contadorServicios.set(cita.servicio, actual + 1);
+      if (cita.zonas && cita.zonas.length > 0) {
+        // Incrementar cada zona seleccionada (ej: "Láser: Bikini")
+        cita.zonas.forEach(z => {
+          const key = `Láser: ${z}`;
+          const actual = cliente.contadorServicios.get(key) || 0;
+          cliente.contadorServicios.set(key, actual + 1);
+        });
+        // Y el contador general de Depilación Láser
+        const totalLaser = cliente.contadorServicios.get('Depilación Láser') || 0;
+        cliente.contadorServicios.set('Depilación Láser', totalLaser + 1);
+      } else {
+        const actual = cliente.contadorServicios.get(cita.servicio) || 0;
+        cliente.contadorServicios.set(cita.servicio, actual + 1);
+      }
       await cliente.save();
     }
 
     // Registrar en Caja
     const now = new Date();
     const horaStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let concepto = cita.servicio;
+    if (cita.zonas && cita.zonas.length > 0) {
+      concepto = `${cita.servicio} (${cita.zonas.join(', ')})`;
+    }
+
     const venta = await Sale.create({
       fecha: getFechaHoy(),
       hora: horaStr,
       cliente: cita.clienteNombre,
-      concepto: cita.servicio,
+      concepto: concepto,
       metodo: metodo || 'Efectivo',
       operaria: cita.operaria,
       valor: Number(valor) || cita.valor
@@ -391,11 +415,33 @@ app.post('/api/operarias', async (req, res) => {
   }
 });
 
+app.delete('/api/operarias/:id', async (req, res) => {
+  try {
+    let config = await Config.findOne({ key: 'main_config' });
+    config.operarias = config.operarias.filter(o => o._id.toString() !== req.params.id);
+    await config.save();
+    res.json({ success: true, operarias: config.operarias });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/servicios', async (req, res) => {
   try {
     const { nombre, duracion, precio } = req.body;
     let config = await Config.findOne({ key: 'main_config' });
     config.servicios.push({ nombre, duracion: Number(duracion), precio: Number(precio) });
+    await config.save();
+    res.json({ success: true, servicios: config.servicios });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/servicios/:id', async (req, res) => {
+  try {
+    let config = await Config.findOne({ key: 'main_config' });
+    config.servicios = config.servicios.filter(s => s._id.toString() !== req.params.id);
     await config.save();
     res.json({ success: true, servicios: config.servicios });
   } catch (error) {
