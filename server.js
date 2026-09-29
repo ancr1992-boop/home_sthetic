@@ -16,12 +16,12 @@ app.use(express.static(__dirname));
 
 // Login: siempre disponible
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile('login.html', { root: path.join(__dirname, 'public') });
 });
 
 // Servir la página principal (la verificación de sesión la hace el JS del cliente)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile('index.html', { root: path.join(__dirname, 'public') });
 });
 
 // ================= SCHEMAS & MODELS =================
