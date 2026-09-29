@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOME STHETIC - Sistema de Gestión</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#0a0a0a',
+              dark: '#171717',
+              gray: '#737373',
+              lightGray: '#f5f5f5',
+              border: '#e5e5e5'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Estilos minimalistas personalizados */
+    body {
+      background-color: #ffffff;
+      color: #0a0a0a;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #d4d4d4;
+      border-radius: 4px;
+    }
+    .active-tab {
+      background-color: #0a0a0a !important;
+      color: #ffffff !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans bg-white selection:bg-black selection:text-white">
+
+  <!-- ================= NAVBAR SUPERIOR ================= -->
+  <header class="border-b border-brand-border sticky top-0 bg-white/95 backdrop-blur z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- Marca y Slogan -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-black text-white flex items-center justify-center font-bold text-xl tracking-tighter rounded-sm">
+          HS
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-[0.2em] text-brand-black uppercase">HOME STHETIC</h1>
+          <p class="text-[10px] tracking-widest text-brand-gray uppercase">Esthetic Clinic & Spa</p>
+        </div>
+      </div>
+
+      <!-- Estado de Caja Rápido -->
+      <div class="flex items-center gap-4">
+        <div id="cajaStatusBadge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-brand-border rounded-full text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Caja: <strong id="navCajaTotal">$0</strong></span>
+        </div>
+
+        <button onclick="openModal('modalNuevaCita')" class="bg-black hover:bg-neutral-800 text-white px-5 py-2.5 rounded-sm text-xs font-semibold tracking-wider uppercase transition-all duration-200 flex items-center gap-2 shadow-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Nueva Cita</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navegación por Pestañas Minimalista -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-brand-border/40 overflow-x-auto py-2">
+      <button onclick="cambiarSeccion('agenda')" id="tab-agenda" class="tab-btn active-tab px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm transition-all flex items-center gap-2">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Agenda
+      </button>
+      <button onclick="cambiarSeccion('clientes')" id="tab-clientes" class="tab-btn px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition-all flex items-center gap-2">
+        <i data-lucide="users" class="w-4 h-4"></i> Clientes & Contador
+      </button>
+      <button onclick="cambiarSeccion('caja')" id="tab-caja" class="tab-btn px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition-all flex items-center gap-2">
+        <i data-lucide="receipt" class="w-4 h-4"></i> Caja Diaria
+      </button>
+      <button onclick="cambiarSeccion('equipo')" id="tab-equipo" class="tab-btn px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition-all flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-4 h-4"></i> Operarias & Servicios
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= CONTENEDOR PRINCIPAL ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- SECCIÓN 1: AGENDA -->
+    <section id="sec-agenda" class="space-y-6">
+      <!-- Barra superior de Agenda -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
+        <div>
+          <h2 class="text-2xl font-bold tracking-tight">Agenda de Citas</h2>
+          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1" id="fechaHoyDisplay">Lunes, 28 de Septiembre 2026</p>
+        </div>
+
+        <!-- Filtro rápido de Operaria para que sea fácil para el equipo -->
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <label class="text-xs uppercase tracking-wider text-brand-gray font-medium whitespace-nowrap">Ver Operaria:</label>
+          <select id="filtroOperariaAgenda" onchange="renderizarAgenda()" class="w-full sm:w-48 bg-white border border-brand-border px-3 py-2 text-xs rounded-sm focus:outline-none focus:border-black transition">
+            <option value="todas">Todas las Operarias</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Citas del Día -->
+      <div id="contenedorCitas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Generado dinámicamente con JS -->
+      </div>
+    </section>
+
+    <!-- SECCIÓN 2: CLIENTES & CONTADOR DE SESIONES -->
+    <section id="sec-clientes" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
+        <div>
+          <h2 class="text-2xl font-bold tracking-tight">Directorio de Clientes</h2>
+          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Historial y contador de citas por servicio</p>
+        </div>
+        
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <div class="relative w-full sm:w-64">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-brand-gray"></i>
+            <input type="text" id="buscarClienteInput" onkeyup="renderizarClientes()" placeholder="Buscar por nombre o teléfono..." class="w-full pl-9 pr-3 py-2 border border-brand-border text-xs rounded-sm focus:outline-none focus:border-black">
+          </div>
+          <button onclick="openModal('modalNuevoCliente')" class="bg-black text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition whitespace-nowrap">
+            + Nuevo Cliente
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista / Tabla de Clientes con Contador -->
+      <div class="border border-brand-border rounded-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-brand-lightGray border-b border-brand-border uppercase tracking-wider font-semibold text-brand-gray">
+              <tr>
+                <th class="p-4">Cliente</th>
+                <th class="p-4">Teléfono / WhatsApp</th>
+                <th class="p-4">Contador de Sesiones por Tratamiento</th>
+                <th class="p-4 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tablaClientesBody" class="divide-y divide-brand-border">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 3: CAJA DIARIA & VENTAS -->
+    <section id="sec-caja" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
+        <div>
+          <h2 class="text-2xl font-bold tracking-tight">Caja Diaria</h2>
+          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Apertura, cobros con múltiples métodos y arqueo de cierre</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button id="btnAperturaCaja" onclick="openModal('modalAperturaCaja')" class="border border-black px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-black hover:text-white transition">
+            Abrir Caja
+          </button>
+          <button id="btnCierreCaja" onclick="cerrarCajaDelDia()" class="bg-black text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition">
+            Cerrar Caja del Día
+          </button>
+        </div>
+      </div>
+
+      <!-- Métricas Resumen de Caja -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-5 border border-brand-border rounded-sm bg-white">
+          <p class="text-[11px] uppercase tracking-wider text-brand-gray font-medium">Fondo Inicial en Caja</p>
+          <p class="text-2xl font-bold mt-2" id="resumenFondoInicial">$0</p>
+        </div>
+        <div class="p-5 border border-brand-border rounded-sm bg-white">
+          <p class="text-[11px] uppercase tracking-wider text-brand-gray font-medium">Ventas Efectivo</p>
+          <p class="text-2xl font-bold mt-2" id="resumenEfectivo">$0</p>
+        </div>
+        <div class="p-5 border border-brand-border rounded-sm bg-white">
+          <p class="text-[11px] uppercase tracking-wider text-brand-gray font-medium">Tarjetas (Débito/Crédito)</p>
+          <p class="text-2xl font-bold mt-2" id="resumenTarjetas">$0</p>
+        </div>
+        <div class="p-5 border border-black bg-brand-lightGray rounded-sm">
+          <p class="text-[11px] uppercase tracking-wider text-brand-black font-semibold">Total Ingresos Hoy</p>
+          <p class="text-2xl font-black mt-2" id="resumenTotalGeneral">$0</p>
+        </div>
+      </div>
+
+      <!-- Registro de Ventas del Día -->
+      <div class="border border-brand-border rounded-sm overflow-hidden mt-6">
+        <div class="p-4 bg-brand-lightGray border-b border-brand-border flex justify-between items-center">
+          <h3 class="text-xs uppercase tracking-wider font-bold">Movimientos y Pagos del Día</h3>
+          <button onclick="openModal('modalVentaManual')" class="bg-black text-white px-3 py-1.5 text-xs uppercase tracking-wider font-medium rounded-sm hover:bg-neutral-800">
+            + Cobro Rápido
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="border-b border-brand-border uppercase tracking-wider font-semibold text-brand-gray">
+              <tr>
+                <th class="p-3">Hora</th>
+                <th class="p-3">Concepto / Cita</th>
+                <th class="p-3">Cliente</th>
+                <th class="p-3">Medio de Pago</th>
+                <th class="p-3">Operaria</th>
+                <th class="p-3 text-right">Valor</th>
+              </tr>
+            </thead>
+            <tbody id="tablaVentasBody" class="divide-y divide-brand-border">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 4: OPERARIAS & SERVICIOS -->
+    <section id="sec-equipo" class="hidden space-y-8">
+      <div class="border-b border-brand-border pb-5">
+        <h2 class="text-2xl font-bold tracking-tight">Operarias & Catálogo de Servicios</h2>
+        <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Configuración del personal y tratamientos de HOME STHETIC</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- Bloque Operarias -->
+        <div class="border border-brand-border p-6 rounded-sm">
+          <div class="flex justify-between items-center mb-4 pb-2 border-b border-brand-border">
+            <h3 class="text-sm font-bold uppercase tracking-wider">Operarias del Centro</h3>
+            <button onclick="openModal('modalNuevaOperaria')" class="text-xs font-semibold uppercase tracking-wider border border-black px-3 py-1 hover:bg-black hover:text-white transition rounded-sm">
+              + Agregar
+            </button>
+          </div>
+          <div id="listaOperarias" class="space-y-3">
+            <!-- Dinámico -->
+          </div>
+        </div>
+
+        <!-- Bloque Servicios -->
+        <div class="border border-brand-border p-6 rounded-sm">
+          <div class="flex justify-between items-center mb-4 pb-2 border-b border-brand-border">
+            <h3 class="text-sm font-bold uppercase tracking-wider">Tratamientos & Precios</h3>
+            <button onclick="openModal('modalNuevoServicio')" class="text-xs font-semibold uppercase tracking-wider border border-black px-3 py-1 hover:bg-black hover:text-white transition rounded-sm">
+              + Agregar
+            </button>
+          </div>
+          <div id="listaServicios" class="space-y-3">
+            <!-- Dinámico -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= MODALES (INTERACTIVIDAD SIMPLE) ================= -->
+
+  <!-- Modal 1: Nueva Cita -->
+  <div id="modalNuevaCita" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider">Agendar Nueva Cita</h3>
+        <button onclick="closeModal('modalNuevaCita')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="formNuevaCita" onsubmit="guardarCita(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Cliente *</label>
+          <select id="citaCliente" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white">
+            <!-- Dinámico -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Servicio / Tratamiento *</label>
+          <select id="citaServicio" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white">
+            <!-- Dinámico -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Operaria Asignada *</label>
+          <select id="citaOperaria" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white">
+            <!-- Dinámico -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Hora *</label>
+            <input type="time" id="citaHora" required value="10:00" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Duración (min)</label>
+            <input type="number" id="citaDuracion" value="60" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Notas adicionales (opcional)</label>
+          <input type="text" id="citaNotas" placeholder="Ej: Zona bozo y axilas, piel sensible..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalNuevaCita')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm">Guardar Cita</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Cobrar Cita / Registrar Venta -->
+  <div id="modalCobrarCita" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider">Cobrar Servicio & Registrar en Caja</h3>
+        <button onclick="closeModal('modalCobrarCita')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="bg-brand-lightGray p-3 rounded-sm text-xs space-y-1">
+        <p><strong>Cliente:</strong> <span id="cobroClienteNombre">-</span></p>
+        <p><strong>Servicio:</strong> <span id="cobroServicioNombre">-</span></p>
+        <p><strong>Operaria:</strong> <span id="cobroOperariaNombre">-</span></p>
+      </div>
+
+      <form id="formCobro" onsubmit="procesarCobro(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="cobroCitaId">
+        
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Valor a Cobrar ($ COP) *</label>
+          <input type="number" id="cobroMonto" required class="w-full border border-brand-border p-2.5 text-base font-bold rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Medio de Pago *</label>
+          <select id="cobroMetodo" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white text-xs font-semibold">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta Débito">Tarjeta Débito</option>
+            <option value="Tarjeta Crédito">Tarjeta Crédito</option>
+            <option value="Transferencia (Nequi / Daviplata)">Transferencia (Nequi / Daviplata / Banco)</option>
+          </select>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalCobrarCita')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i> Confirmar Cobro & Sumar Cita
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Reprogramar Cita -->
+  <div id="modalReprogramar" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4 text-xs">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider">Reprogramar Cita</h3>
+        <button onclick="closeModal('modalReprogramar')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="reprogramarCitaId">
+      
+      <div>
+        <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nueva Hora *</label>
+        <input type="time" id="reprogramarHora" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+      </div>
+
+      <div>
+        <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Cambiar Operaria (opcional)</label>
+        <select id="reprogramarOperaria" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white">
+          <!-- Dinámico -->
+        </select>
+      </div>
+
+      <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+        <button type="button" onclick="closeModal('modalReprogramar')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+        <button type="button" onclick="guardarReprogramacion()" class="bg-black text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm">Actualizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Nuevo Cliente -->
+  <div id="modalNuevoCliente" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 text-xs">
+    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider">Registrar Nuevo Cliente</h3>
+        <button onclick="closeModal('modalNuevoCliente')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="guardarNuevoCliente(event)" class="space-y-4">
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre Completo *</label>
+          <input type="text" id="clienteNombre" required placeholder="Ej: Camila Restrepo" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Teléfono / WhatsApp *</label>
+          <input type="tel" id="clienteTelefono" required placeholder="Ej: 3001234567" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Notas Estéticas / Alergias</label>
+          <textarea id="clienteNotas" rows="2" placeholder="Piel reactiva, prefiere agua fría..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalNuevoCliente')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-black text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm">Guardar Cliente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Apertura de Caja -->
+  <div id="modalAperturaCaja" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 text-xs">
+    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider">Apertura de Caja</h3>
+        <button onclick="closeModal('modalAperturaCaja')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-brand-gray">Ingresa el dinero base en efectivo con el que se inicia la jornada en HOME STHETIC.</p>
+
+      <div>
+        <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Monto Inicial en Efectivo ($ COP) *</label>
+        <input type="number" id="montoAperturaInput" value="50000" class="w-full border border-brand-border p-2 text-base font-bold rounded-sm focus:border-black outline-none">
+      </div>
+
+      <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+        <button type="button" onclick="closeModal('modalAperturaCaja')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+        <button type="button" onclick="confirmarAperturaCaja()" class="bg-black text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm">Abrir Caja</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LÓGICA ================= -->
+  <script>
+    // --- ESTADO INICIAL / DATOS DEMO PARA HOME STHETIC ---
+    const DB_KEY = 'home_sthetic_db_v1';
+
+    const estadoInicial = {
+      caja: {
+        abierta: true,
+        fondoInicial: 50000,
+        fechaApertura: 'Hoy'
+      },
+      operarias: [
+        { id: 1, nombre: 'Valentina Restrepo', rol: 'Cosmiatra Especialista' },
+        { id: 2, nombre: 'Camila Morales', rol: 'Especialista Láser & Cejas' },
+        { id: 3, nombre: 'Mariana Duque', rol: 'Masoterapeuta' }
+      ],
+      servicios: [
+        { id: 1, nombre: 'Limpieza Facial Profunda', duracion: 60, precio: 95000 },
+        { id: 2, nombre: 'Depilación Láser Diodo', duracion: 45, precio: 120000 },
+        { id: 3, nombre: 'Masaje Reductor / Moldeador', duracion: 50, precio: 80000 },
+        { id: 4, nombre: 'Hydrafacial Glow', duracion: 60, precio: 150000 }
+      ],
+      clientes: [
+        {
+          id: 1,
+          nombre: 'Carolina Gómez',
+          telefono: '3104567890',
+          notas: 'Piel mixta, sensible en zona T',
+          contadorServicios: {
+            'Depilación Láser Diodo': 4,
+            'Limpieza Facial Profunda': 2
+          }
+        },
+        {
+          id: 2,
+          nombre: 'Laura Mendoza',
+          telefono: '3209876543',
+          notas: 'Plan 10 sesiones de masaje',
+          contadorServicios: {
+            'Masaje Reductor / Moldeador': 6,
+            'Hydrafacial Glow': 1
+          }
+        },
+        {
+          id: 3,
+          nombre: 'Sofía Castaño',
+          telefono: '3012345678',
+          notas: 'Primera vez',
+          contadorServicios: {
+            'Limpieza Facial Profunda': 1
+          }
+        }
+      ],
+      citas: [
+        {
+          id: 101,
+          clienteId: 1,
+          servicioId: 2,
+          operariaId: 2,
+          hora: '09:00',
+          duracion: 45,
+          estado: 'Completada', // Pendiente, En proceso, Completada, Cancelada
+          notas: 'Sesión #4 de paquete'
+        },
+        {
+          id: 102,
+          clienteId: 2,
+          servicioId: 3,
+          operariaId: 3,
+          hora: '11:00',
+          duracion: 50,
+          estado: 'Pendiente',
+          notas: 'Traer toalla personal'
+        },
+        {
+          id: 103,
+          clienteId: 3,
+          servicioId: 1,
+          operariaId: 1,
+          hora: '14:30',
+          duracion: 60,
+          estado: 'Pendiente',
+          notas: 'Valoración inicial de cutis'
+        }
+      ],
+      ventas: [
+        {
+          id: 501,
+          hora: '09:50',
+          cliente: 'Carolina Gómez',
+          concepto: 'Depilación Láser Diodo',
+          metodo: 'Tarjeta Débito',
+          operaria: 'Camila Morales',
+          valor: 120000
+        }
+      ]
+    };
+
+    // Cargar o inicializar LocalStorage
+    let db = JSON.parse(localStorage.getItem(DB_KEY)) || estadoInicial;
+    function guardarDB() {
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+    }
+
+    // Formateador de moneda en pesos colombianos
+    function formatMoney(amount) {
+      return '$' + Number(amount).toLocaleString('es-CO');
+    }
+
+    // --- NAVEGACIÓN ENTRE PESTAÑAS ---
+    function cambiarSeccion(seccion) {
+      const secciones = ['agenda', 'clientes', 'caja', 'equipo'];
+      secciones.forEach(sec => {
+        document.getElementById(`sec-${sec}`).classList.add('hidden');
+        const tabBtn = document.getElementById(`tab-${sec}`);
+        tabBtn.classList.remove('active-tab');
+        tabBtn.classList.add('text-brand-gray');
+      });
+
+      document.getElementById(`sec-${seccion}`).classList.remove('hidden');
+      const activeTab = document.getElementById(`tab-${seccion}`);
+      activeTab.classList.add('active-tab');
+      activeTab.classList.remove('text-brand-gray');
+
+      lucide.createIcons();
+    }
+
+    // --- GESTIÓN DE MODALES ---
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    // --- RENDERIZADO: SELECTS DE FORMULARIOS ---
+    function poblarSelects() {
+      // Clientes
+      const selectCliente = document.getElementById('citaCliente');
+      selectCliente.innerHTML = db.clientes.map(c => `<option value="${c.id}">${c.nombre} (${c.telefono})</option>`).join('');
+
+      // Servicios
+      const selectServicio = document.getElementById('citaServicio');
+      selectServicio.innerHTML = db.servicios.map(s => `<option value="${s.id}">${s.nombre} - ${formatMoney(s.precio)}</option>`).join('');
+
+      // Operarias
+      const selectOperaria = document.getElementById('citaOperaria');
+      const selectFiltro = document.getElementById('filtroOperariaAgenda');
+      const selectReprogOp = document.getElementById('reprogramarOperaria');
+
+      const opOptions = db.operarias.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('');
+      selectOperaria.innerHTML = opOptions;
+      selectReprogOp.innerHTML = opOptions;
+      selectFiltro.innerHTML = `<option value="todas">Todas las Operarias</option>` + opOptions;
+    }
+
+    // --- RENDERIZADO DE AGENDA ---
+    function renderizarAgenda() {
+      const cont = document.getElementById('contenedorCitas');
+      const filtro = document.getElementById('filtroOperariaAgenda').value;
+      
+      let citasFiltradas = db.citas;
+      if (filtro !== 'todas') {
+        citasFiltradas = citasFiltradas.filter(c => c.operariaId == filtro);
+      }
+
+      if (citasFiltradas.length === 0) {
+        cont.innerHTML = `
+          <div class="col-span-full p-12 text-center border border-dashed border-brand-border rounded-sm">
+            <p class="text-sm font-semibold text-brand-gray uppercase tracking-wider">No hay citas para esta selección</p>
+            <button onclick="openModal('modalNuevaCita')" class="mt-3 text-xs bg-black text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm">Agendar Cita</button>
+          </div>
+        `;
+        return;
+      }
+
+      cont.innerHTML = citasFiltradas.map(cita => {
+        const cliente = db.clientes.find(c => c.id == cita.clienteId) || { nombre: 'Cliente no encontrado' };
+        const servicio = db.servicios.find(s => s.id == cita.servicioId) || { nombre: 'Servicio', precio: 0 };
+        const operaria = db.operarias.find(o => o.id == cita.operariaId) || { nombre: 'No asignada' };
+        
+        // Conteo actual de este servicio para este cliente
+        const countSesion = (cliente.contadorServicios && cliente.contadorServicios[servicio.nombre]) || 0;
+
+        // Estilos según estado
+        let badgeColor = 'border-black text-black';
+        let badgeBg = 'bg-white';
+        if (cita.estado === 'Completada') {
+          badgeColor = 'border-emerald-600 text-emerald-700 bg-emerald-50';
+        }
+
+        return `
+          <div class="border border-brand-border rounded-sm p-5 hover:border-black transition duration-200 bg-white flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex justify-between items-start">
+                <span class="text-2xl font-bold tracking-tight">${cita.hora}</span>
+                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-1 border ${badgeColor} rounded-full">
+                  ${cita.estado}
+                </span>
+              </div>
+
+              <div class="mt-3">
+                <h4 class="text-base font-bold">${cliente.nombre}</h4>
+                <p class="text-xs text-brand-gray flex items-center gap-1 mt-0.5">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-black"></i> ${servicio.nombre}
+                </p>
+                <p class="text-[11px] text-brand-gray mt-1">
+                  Operaria: <strong class="text-black font-semibold">${operaria.nombre}</strong>
+                </p>
+              </div>
+
+              <!-- Contador de la sesión actual -->
+              <div class="mt-3 pt-3 border-t border-brand-border/60 flex items-center justify-between text-[11px]">
+                <span class="text-brand-gray">Historial en este servicio:</span>
+                <span class="font-bold bg-brand-lightGray px-2 py-0.5 rounded-sm border border-brand-border">
+                  ${countSesion} ${countSesion === 1 ? 'cita realizada' : 'citas realizadas'}
+                </span>
+              </div>
+
+              ${cita.notas ? `<p class="text-[10px] text-brand-gray italic mt-2 bg-neutral-50 p-1.5 border border-brand-border/40">Nota: ${cita.notas}</p>` : ''}
+            </div>
+
+            <!-- Acciones Rápidas para Operaria -->
+            <div class="pt-3 border-t border-brand-border flex gap-2">
+              ${cita.estado !== 'Completada' ? `
+                <button onclick="iniciarCobroCita(${cita.id})" class="flex-1 bg-black hover:bg-neutral-800 text-white py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i> Cobrar / Completar
+                </button>
+                <button onclick="abrirReprogramar(${cita.id})" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition">
+                  <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : `
+                <div class="w-full text-center py-1.5 text-xs text-brand-gray font-medium flex items-center justify-center gap-1">
+                  <i data-lucide="check-check" class="w-4 h-4 text-emerald-600"></i> Servicio Pagado y Finalizado
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // --- ACCIÓN: GUARDAR NUEVA CITA ---
+    function guardarCita(e) {
+      e.preventDefault();
+      const nueva = {
+        id: Date.now(),
+        clienteId: Number(document.getElementById('citaCliente').value),
+        servicioId: Number(document.getElementById('citaServicio').value),
+        operariaId: Number(document.getElementById('citaOperaria').value),
+        hora: document.getElementById('citaHora').value,
+        duracion: Number(document.getElementById('citaDuracion').value),
+        estado: 'Pendiente',
+        notas: document.getElementById('citaNotas').value
+      };
+
+      db.citas.push(nueva);
+      guardarDB();
+      closeModal('modalNuevaCita');
+      renderizarAgenda();
+      alert('¡Cita agendada con éxito para HOME STHETIC!');
+    }
+
+    // --- ACCIÓN: COBRAR CITA & CONTADOR AUTOMÁTICO ---
+    function iniciarCobroCita(citaId) {
+      const cita = db.citas.find(c => c.id === citaId);
+      if (!cita) return;
+
+      const cliente = db.clientes.find(c => c.id == cita.clienteId);
+      const servicio = db.servicios.find(s => s.id == cita.servicioId);
+      const operaria = db.operarias.find(o => o.id == cita.operariaId);
+
+      document.getElementById('cobroCitaId').value = cita.id;
+      document.getElementById('cobroClienteNombre').innerText = cliente.nombre;
+      document.getElementById('cobroServicioNombre').innerText = servicio.nombre;
+      document.getElementById('cobroOperariaNombre').innerText = operaria.nombre;
+      document.getElementById('cobroMonto').value = servicio.precio;
+
+      openModal('modalCobrarCita');
+    }
+
+    function procesarCobro(e) {
+      e.preventDefault();
+      const citaId = Number(document.getElementById('cobroCitaId').value);
+      const monto = Number(document.getElementById('cobroMonto').value);
+      const metodo = document.getElementById('cobroMetodo').value;
+
+      const cita = db.citas.find(c => c.id === citaId);
+      if (!cita) return;
+
+      const cliente = db.clientes.find(c => c.id == cita.clienteId);
+      const servicio = db.servicios.find(s => s.id == cita.servicioId);
+      const operaria = db.operarias.find(o => o.id == cita.operariaId);
+
+      // 1. Marcar cita como completada
+      cita.estado = 'Completada';
+
+      // 2. Incrementar CONTADOR de servicios del cliente
+      if (!cliente.contadorServicios) {
+        cliente.contadorServicios = {};
+      }
+      cliente.contadorServicios[servicio.nombre] = (cliente.contadorServicios[servicio.nombre] || 0) + 1;
+
+      // 3. Registrar venta en Caja
+      const now = new Date();
+      const horaStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      db.ventas.unshift({
+        id: Date.now(),
+        hora: horaStr,
+        cliente: cliente.nombre,
+        concepto: servicio.nombre,
+        metodo: metodo,
+        operaria: operaria.nombre,
+        valor: monto
+      });
+
+      guardarDB();
+      closeModal('modalCobrarCita');
+      renderizarAgenda();
+      renderizarClientes();
+      renderizarCaja();
+
+      alert(`✅ Cobro registrado en caja.\n✨ ¡El contador de ${cliente.nombre} en "${servicio.nombre}" subió a ${cliente.contadorServicios[servicio.nombre]} citas!`);
+    }
+
+    // --- ACCIÓN: REPROGRAMAR CITA ---
+    function abrirReprogramar(citaId) {
+      const cita = db.citas.find(c => c.id === citaId);
+      if (!cita) return;
+
+      document.getElementById('reprogramarCitaId').value = cita.id;
+      document.getElementById('reprogramarHora').value = cita.hora;
+      document.getElementById('reprogramarOperaria').value = cita.operariaId;
+      openModal('modalReprogramar');
+    }
+
+    function guardarReprogramacion() {
+      const citaId = Number(document.getElementById('reprogramarCitaId').value);
+      const cita = db.citas.find(c => c.id === citaId);
+      if (!cita) return;
+
+      cita.hora = document.getElementById('reprogramarHora').value;
+      cita.operariaId = Number(document.getElementById('reprogramarOperaria').value);
+
+      guardarDB();
+      closeModal('modalReprogramar');
+      renderizarAgenda();
+      alert('Cita reprogramada correctamente.');
+    }
+
+    // --- RENDERIZADO: CLIENTES & CONTADOR DE CITAS ---
+    function renderizarClientes() {
+      const busqueda = (document.getElementById('buscarClienteInput').value || '').toLowerCase();
+      const tbody = document.getElementById('tablaClientesBody');
+
+      const clientesFiltrados = db.clientes.filter(c => 
+        c.nombre.toLowerCase().includes(busqueda) || 
+        c.telefono.includes(busqueda)
+      );
+
+      tbody.innerHTML = clientesFiltrados.map(c => {
+        // Formatear contador de servicios
+        let contadoresHtml = '';
+        if (c.contadorServicios && Object.keys(c.contadorServicios).length > 0) {
+          contadoresHtml = Object.entries(c.contadorServicios).map(([serv, count]) => `
+            <div class="inline-flex items-center gap-1.5 bg-brand-lightGray border border-brand-border px-2.5 py-1 rounded-sm text-[11px] mr-1.5 mb-1">
+              <span class="font-medium text-brand-black">${serv}:</span>
+              <span class="font-bold bg-black text-white px-1.5 py-0.2 rounded-xs">${count} ${count === 1 ? 'cita' : 'citas'}</span>
+            </div>
+          `).join('');
+        } else {
+          contadoresHtml = '<span class="text-brand-gray text-[11px] italic">Sin citas registradas aún</span>';
+        }
+
+        return `
+          <tr class="hover:bg-neutral-50 transition">
+            <td class="p-4 font-semibold text-brand-black">
+              ${c.nombre}
+              ${c.notas ? `<p class="text-[10px] text-brand-gray font-normal">${c.notas}</p>` : ''}
+            </td>
+            <td class="p-4 text-brand-gray">
+              <a href="https://wa.me/57${c.telefono}" target="_blank" class="hover:text-black hover:underline flex items-center gap-1 font-medium">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> ${c.telefono}
+              </a>
+            </td>
+            <td class="p-4">
+              <div class="flex flex-wrap items-center">
+                ${contadoresHtml}
+              </div>
+            </td>
+            <td class="p-4 text-right">
+              <button onclick="agendarDirectoCliente(${c.id})" class="border border-brand-border hover:border-black px-2.5 py-1 rounded-sm text-[11px] uppercase tracking-wider font-semibold">
+                + Cita
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function guardarNuevoCliente(e) {
+      e.preventDefault();
+      const nuevo = {
+        id: Date.now(),
+        nombre: document.getElementById('clienteNombre').value,
+        telefono: document.getElementById('clienteTelefono').value,
+        notas: document.getElementById('clienteNotas').value,
+        contadorServicios: {}
+      };
+      db.clientes.push(nuevo);
+      guardarDB();
+      closeModal('modalNuevoCliente');
+      poblarSelects();
+      renderizarClientes();
+      alert(`Cliente ${nuevo.nombre} guardado.`);
+    }
+
+    function agendarDirectoCliente(clienteId) {
+      cambiarSeccion('agenda');
+      document.getElementById('citaCliente').value = clienteId;
+      openModal('modalNuevaCita');
+    }
+
+    // --- RENDERIZADO: CAJA DIARIA ---
+    function renderizarCaja() {
+      const fondo = db.caja.fondoInicial || 0;
+      let totalEf = 0;
+      let totalTarj = 0;
+      let totalTransf = 0;
+
+      db.ventas.forEach(v => {
+        if (v.metodo === 'Efectivo') totalEf += v.valor;
+        else if (v.metodo.includes('Tarjeta')) totalTarj += v.valor;
+        else totalTransf += v.valor;
+      });
+
+      const totalVentas = totalEf + totalTarj + totalTransf;
+
+      document.getElementById('resumenFondoInicial').innerText = formatMoney(fondo);
+      document.getElementById('resumenEfectivo').innerText = formatMoney(totalEf);
+      document.getElementById('resumenTarjetas').innerText = formatMoney(totalTarj);
+      document.getElementById('resumenTotalGeneral').innerText = formatMoney(totalVentas);
+      document.getElementById('navCajaTotal').innerText = formatMoney(totalVentas + fondo);
+
+      // Tabla de ventas
+      const tbody = document.getElementById('tablaVentasBody');
+      if (db.ventas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-brand-gray">No se han registrado ventas hoy.</td></tr>`;
+      } else {
+        tbody.innerHTML = db.ventas.map(v => `
+          <tr class="hover:bg-neutral-50">
+            <td class="p-3 text-brand-gray font-mono">${v.hora}</td>
+            <td class="p-3 font-semibold">${v.concepto}</td>
+            <td class="p-3">${v.cliente}</td>
+            <td class="p-3"><span class="px-2 py-0.5 border border-brand-border bg-white text-[10px] uppercase font-bold tracking-wider rounded-xs">${v.metodo}</span></td>
+            <td class="p-3 text-brand-gray">${v.operaria}</td>
+            <td class="p-3 text-right font-bold">${formatMoney(v.valor)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function confirmarAperturaCaja() {
+      const monto = Number(document.getElementById('montoAperturaInput').value);
+      db.caja.abierta = true;
+      db.caja.fondoInicial = monto;
+      guardarDB();
+      closeModal('modalAperturaCaja');
+      renderizarCaja();
+      alert(`Caja abierta con fondo inicial de ${formatMoney(monto)}`);
+    }
+
+    function cerrarCajaDelDia() {
+      const fondo = db.caja.fondoInicial || 0;
+      let totalEf = 0;
+      let totalTarj = 0;
+      let totalTransf = 0;
+
+      db.ventas.forEach(v => {
+        if (v.metodo === 'Efectivo') totalEf += v.valor;
+        else if (v.metodo.includes('Tarjeta')) totalTarj += v.valor;
+        else totalTransf += v.valor;
+      });
+
+      const total = totalEf + totalTarj + totalTransf;
+      const dineroFisicoEsperado = fondo + totalEf;
+
+      const resumen = 
+        `🌸 CIERRE DE CAJA - HOME STHETIC 🌸\n` +
+        `-----------------------------------------\n` +
+        `Fondo Inicial en Caja: ${formatMoney(fondo)}\n` +
+        `Ventas en Efectivo: ${formatMoney(totalEf)}\n` +
+        `Ventas Tarjetas (Datáfono): ${formatMoney(totalTarj)}\n` +
+        `Ventas Transferencias: ${formatMoney(totalTransf)}\n` +
+        `-----------------------------------------\n` +
+        `TOTAL VENTAS DEL DÍA: ${formatMoney(total)}\n` +
+        `EFECTIVO TOTAL A CONTAR EN CAJA FÍSICA: ${formatMoney(dineroFisicoEsperado)}\n\n` +
+        `¿Deseas confirmar el cierre del día?`;
+
+      if (confirm(resumen)) {
+        alert('Caja cerrada con éxito. ¡Excelente jornada en HOME STHETIC!');
+      }
+    }
+
+    // --- RENDERIZADO: OPERARIAS & SERVICIOS ---
+    function renderizarEquipo() {
+      // Operarias
+      const contOp = document.getElementById('listaOperarias');
+      contOp.innerHTML = db.operarias.map(o => `
+        <div class="flex justify-between items-center p-3 border border-brand-border bg-white rounded-sm">
+          <div>
+            <p class="font-bold text-xs">${o.nombre}</p>
+            <p class="text-[11px] text-brand-gray">${o.rol}</p>
+          </div>
+          <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full" title="Activa"></span>
+        </div>
+      `).join('');
+
+      // Servicios
+      const contServ = document.getElementById('listaServicios');
+      contServ.innerHTML = db.servicios.map(s => `
+        <div class="flex justify-between items-center p-3 border border-brand-border bg-white rounded-sm">
+          <div>
+            <p class="font-bold text-xs">${s.nombre}</p>
+            <p class="text-[11px] text-brand-gray">${s.duracion} minutos</p>
+          </div>
+          <span class="font-bold text-xs">${formatMoney(s.precio)}</span>
+        </div>
+      `).join('');
+    }
+
+    // --- INICIALIZACIÓN GENERAL ---
+    window.addEventListener('DOMContentLoaded', () => {
+      poblarSelects();
+      renderizarAgenda();
+      renderizarClientes();
+      renderizarCaja();
+      renderizarEquipo();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
