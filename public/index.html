@@ -65,7 +65,8 @@
 
       <!-- Estado de Caja Rápido, Perfil de Usuario & Botón Nueva Cita -->
       <div class="flex items-center gap-2 sm:gap-4">
-        <div id="navCajaBadgeContainer" class="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-brand-border rounded-full text-xs font-medium">
+        <!-- Badge Caja Hoy: Exclusivo solo para el Administrador -->
+        <div id="navCajaBadgeContainer" style="display: none;" class="items-center gap-2 px-3 py-1.5 border border-brand-border rounded-full text-xs font-medium">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
           <span>Caja Hoy: <strong id="navCajaTotal">$0</strong></span>
         </div>
@@ -1108,6 +1109,16 @@
         navRole.textContent = labels[rol] || rol;
       }
 
+      // ── Badge "Caja Hoy" en Navbar: EXCLUSIVO Y ÚNICAMENTE PARA ADMINISTRADOR ──
+      const navCaja = document.getElementById('navCajaBadgeContainer');
+      if (navCaja) {
+        if (rol === 'admin') {
+          navCaja.style.display = 'flex';
+        } else {
+          navCaja.style.display = 'none';
+        }
+      }
+
       if (rol === 'operaria') {
         // ── OPERARIA: ocultar casi todo, mostrar solo "Mi Cabina" ──
 
@@ -1124,10 +1135,6 @@
         // Ocultar botón "Nueva Cita" del navbar (operaria no agenda)
         const btnNuevaCita = document.getElementById('btnNavNuevaCita');
         if (btnNuevaCita) btnNuevaCita.classList.add('hidden');
-
-        // Ocultar badge caja en navbar (operaria no ve caja)
-        const navCaja = document.getElementById('navCajaBadgeContainer');
-        if (navCaja) navCaja.classList.add('hidden');
 
         // Iniciar en sección cabina
         cambiarSeccion('operaria');
@@ -3450,9 +3457,12 @@
         return;
       }
 
+      // Aplicar restricciones inmediatamente para ocultar elementos restringidos sin parpadeos
+      aplicarRestriccionesPorRol(session);
+
       // ── Cargar datos del servidor ─────────────────────────────────────────
       cargarDatosServidor().then(() => {
-        // Aplicar restricciones DESPUÉS de que los datos (operarias, etc.) estén listos
+        // Re-aplicar restricciones una vez los datos y listas estén poblados
         aplicarRestriccionesPorRol(session);
         lucide.createIcons();
       });
