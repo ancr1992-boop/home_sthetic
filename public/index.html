@@ -397,6 +397,61 @@
           </table>
         </div>
       </div>
+
+      <!-- TARJETA: COPIAS DE SEGURIDAD (BACKUP AUTOMÁTICO 7:00 PM & MANUAL) -->
+      <div class="border border-brand-border rounded-sm overflow-hidden bg-white shadow-2xs">
+        <div class="p-4 sm:p-5 bg-brand-lightGray border-b border-brand-border flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <i data-lucide="database-backup" class="w-5 h-5 text-purple-700"></i>
+              <h3 class="text-xs uppercase tracking-wider font-bold text-neutral-900">Copias de Seguridad (Respaldo Completo de la BD)</h3>
+              <span class="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-2xs">
+                <i data-lucide="clock" class="w-3 h-3 text-emerald-600"></i> Auto 7:00 PM Diario (Colombia)
+              </span>
+            </div>
+            <p class="text-xs text-brand-gray mt-1 leading-relaxed">
+              Respaldo total de <strong>Clientes, Citas, Facturación en Caja, Operarias y Usuarios</strong>. Se ejecuta automáticamente todos los días a las <strong>7:00 PM</strong> hora Colombia para garantizar cero pérdida de datos.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="generarBackupManual()" id="btnGenerarBackup" class="bg-white hover:bg-neutral-100 text-black border border-brand-border px-3.5 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition shadow-2xs">
+              <i data-lucide="hard-drive-download" class="w-3.5 h-3.5"></i>
+              <span>Crear Backup Ahora</span>
+            </button>
+            <button onclick="descargarBackupInmediato()" class="bg-black hover:bg-neutral-800 text-white px-3.5 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition shadow-2xs">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Descargar JSON Inmediato</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="p-3 bg-purple-50/50 border-b border-purple-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2 text-purple-950 font-medium">
+            <i data-lucide="shield-check" class="w-4 h-4 text-purple-700 flex-shrink-0"></i>
+            <span>Historial guardado en el servidor (retención de los últimos 30 días para máxima seguridad):</span>
+          </div>
+          <button onclick="cargarHistorialBackups()" class="text-xs text-purple-800 hover:text-black font-semibold flex items-center gap-1 self-start sm:self-auto underline">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refrescar lista
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="border-b border-brand-border uppercase tracking-wider font-semibold text-brand-gray bg-white">
+              <tr>
+                <th class="p-3">Archivo de Respaldo</th>
+                <th class="p-3">Fecha y Hora (Colombia)</th>
+                <th class="p-3">Tamaño</th>
+                <th class="p-3 text-center">Descargar</th>
+              </tr>
+            </thead>
+            <tbody id="tablaBackupsBody" class="divide-y divide-brand-border">
+              <tr><td colspan="4" class="p-6 text-center text-brand-gray">Cargando copias de seguridad...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <!-- SECCIÓN 6: CABINA DE ATENCIÓN DE OPERARIA (EXCLUSIVO OPERARIAS) -->
@@ -1206,6 +1261,7 @@
           renderizarCaja();
           renderizarEquipo();
           renderizarUsuarios();
+          cargarHistorialBackups();
           renderizarCabinaOperaria();
           renderizarBannerCitasFacturar();
         } else {
@@ -1238,6 +1294,9 @@
       }
       if (seccion === 'operaria') {
         renderizarCabinaOperaria();
+      } else if (seccion === 'usuarios') {
+        renderizarUsuarios();
+        cargarHistorialBackups();
       } else {
         renderizarBannerCitasFacturar();
       }
@@ -2748,6 +2807,138 @@
         }
       } catch (err) {
         alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    // ================= COPIAS DE SEGURIDAD (BACKUPS) =================
+
+    async function cargarHistorialBackups() {
+      const session = obtenerSesion();
+      if (!session || session.rol !== 'admin') return;
+
+      const tbody = document.getElementById('tablaBackupsBody');
+      if (!tbody) return;
+
+      try {
+        const res = await fetch('/api/backup/listar', { headers: authHeaders() });
+        const data = await res.json();
+        if (data.success && data.backups) {
+          if (data.backups.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-brand-gray">Aún no hay copias de seguridad guardadas en el servidor. Presiona "Crear Backup Ahora".</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = data.backups.map(b => {
+            const d = new Date(b.creadoEn);
+            const fechaFormateada = isNaN(d.getTime()) ? b.creadoEn : d.toLocaleString('es-CO', { timeZone: 'America/Bogota' });
+            const esAuto = b.filename.includes('7pm') || b.filename.includes('automatico');
+            const esInicial = b.filename.includes('inicial');
+            let badge = '<span class="ml-2 px-1.5 py-0.5 text-[9px] font-bold uppercase bg-neutral-100 text-neutral-800 rounded">Manual</span>';
+            if (esAuto) {
+              badge = '<span class="ml-2 px-1.5 py-0.5 text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800 rounded">Auto 7 PM</span>';
+            } else if (esInicial) {
+              badge = '<span class="ml-2 px-1.5 py-0.5 text-[9px] font-bold uppercase bg-blue-100 text-blue-800 rounded">Sistema</span>';
+            }
+
+            return `
+              <tr class="hover:bg-neutral-50 transition">
+                <td class="p-3 font-mono font-medium flex items-center">
+                  <i data-lucide="file-json" class="w-4 h-4 text-purple-600 mr-2 flex-shrink-0"></i>
+                  <span class="truncate max-w-xs sm:max-w-md">${b.filename}</span>
+                  ${badge}
+                </td>
+                <td class="p-3 text-neutral-700">${fechaFormateada}</td>
+                <td class="p-3 font-mono font-semibold">${b.sizeKb} KB</td>
+                <td class="p-3 text-center">
+                  <button onclick="descargarArchivoBackup('${b.filename}')"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 border border-brand-border bg-white hover:bg-neutral-100 rounded text-xs font-semibold transition" title="Descargar este archivo">
+                    <i data-lucide="download" class="w-3.5 h-3.5 text-black"></i> Descargar
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+          lucide.createIcons();
+        }
+      } catch (err) {
+        console.error('Error al cargar historial de backups:', err);
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-600">Error al consultar las copias de seguridad.</td></tr>`;
+      }
+    }
+
+    async function generarBackupManual() {
+      const btn = document.getElementById('btnGenerarBackup');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> <span>Generando...</span>`;
+        lucide.createIcons();
+      }
+
+      try {
+        const res = await fetch('/api/backup/generar', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success && data.backup) {
+          alert(`✓ Copia de seguridad guardada con éxito en el servidor:\n${data.backup.filename} (${data.backup.sizeKb} KB)\n\nRegistros guardados:\n- Clientes: ${data.backup.totalRegistros.clientes}\n- Citas: ${data.backup.totalRegistros.citas}\n- Ventas: ${data.backup.totalRegistros.ventas}\n- Usuarios: ${data.backup.totalRegistros.usuarios}`);
+          await cargarHistorialBackups();
+        } else {
+          alert('Error al generar backup: ' + (data.error || 'Desconocido'));
+        }
+      } catch (err) {
+        alert('Error de conexión al generar backup: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="hard-drive-download" class="w-3.5 h-3.5"></i> <span>Crear Backup Ahora</span>`;
+          lucide.createIcons();
+        }
+      }
+    }
+
+    async function descargarBackupInmediato() {
+      try {
+        const res = await fetch('/api/backup/descargar', { headers: authHeaders() });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert('Error al descargar: ' + (data.error || 'No autorizado'));
+          return;
+        }
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const hoy = new Date().toISOString().split('T')[0];
+        a.href = url;
+        a.download = `backup_homesthetic_${hoy}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Error al descargar copia de seguridad: ' + err.message);
+      }
+    }
+
+    async function descargarArchivoBackup(filename) {
+      try {
+        const res = await fetch(`/api/backup/archivo/${encodeURIComponent(filename)}`, { headers: authHeaders() });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert('Error al descargar archivo: ' + (data.error || 'No encontrado'));
+          return;
+        }
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Error al descargar archivo: ' + err.message);
       }
     }
 

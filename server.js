@@ -3,6 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const cron = require('node-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -108,12 +110,12 @@ const User = mongoose.model('User', userSchema);
 // Helper para verificar usuario autenticado en peticiones
 async function getAuthUser(req) {
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.headers['x-user-id'] || req.query.user_id;
     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
       const u = await User.findById(userId);
       if (u && u.activo) return u;
     }
-    const roleHeader = req.headers['x-user-role'];
+    const roleHeader = req.headers['x-user-role'] || req.query.user_role;
     if (roleHeader) {
       return { rol: roleHeader, nombre: 'Usuario Sesión' };
     }
@@ -854,6 +856,203 @@ app.delete('/api/usuarios/:id', async (req, res) => {
   }
 });
 
+// ================= BACKUPS DE LA BASE DE DATOS (PROGRAMADO 7:00 PM) =================
+const BACKUPS_DIR = path.join(__dirname, 'backups');
+if (!fs.existsSync(BACKUPS_DIR)) {
+  fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+}
+
+// Exportar colecciones completas a objeto
+async function exportarTodaLaBaseDeDatos() {
+  const [clientes, citas, ventas, config, usuarios] = await Promise.all([
+    Client.find().lean(),
+    Appointment.find().lean(),
+    Sale.find().lean(),
+    Config.findOne({ key: 'main_config' }).lean(),
+    User.find().select('-password').lean()
+  ]);
+
+  const now = new Date();
+  const fechaISO = now.toISOString();
+  const fechaLocal = now.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
+  const horaLocal = now.toLocaleTimeString('es-CO', { timeZone: 'America/Bogota' });
+
+  return {
+    sistema: 'HOME STHETIC CLINIC',
+    version: '1.0.0',
+    generadoEn: fechaISO,
+    fechaLocal,
+    horaLocal,
+    zonaHoraria: 'America/Bogota',
+    totalRegistros: {
+      clientes: (clientes || []).length,
+      citas: (citas || []).length,
+      ventas: (ventas || []).length,
+      usuarios: (usuarios || []).length
+    },
+    data: {
+      config: config || {},
+      clientes: clientes || [],
+      citas: citas || [],
+      ventas: ventas || [],
+      usuarios: usuarios || []
+    }
+  };
+}
+
+// Guardar copia en disco local del servidor
+async function guardarBackupEnDisco(tipo = 'manual') {
+  const backupData = await exportarTodaLaBaseDeDatos();
+  const now = new Date();
+
+  // Fecha y hora formateadas para el nombre de archivo (hora de Colombia)
+  const d = new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  }).formatToParts(now).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+
+  const timestampStr = `${d.year}-${d.month}-${d.day}_${d.hour}-${d.minute}-${d.second}`;
+  const filename = `backup_homesthetic_${timestampStr}_${tipo}.json`;
+  const filepath = path.join(BACKUPS_DIR, filename);
+
+  fs.writeFileSync(filepath, JSON.stringify(backupData, null, 2), 'utf-8');
+  const stats = fs.statSync(filepath);
+
+  console.log(`💾 [BACKUP] Copia de seguridad guardada con éxito: ${filename} (${(stats.size / 1024).toFixed(1)} KB)`);
+
+  // Mantener los últimos 30 backups para optimizar espacio
+  try {
+    const files = fs.readdirSync(BACKUPS_DIR)
+      .filter(f => f.startsWith('backup_homesthetic_') && f.endsWith('.json'))
+      .map(f => ({ name: f, time: fs.statSync(path.join(BACKUPS_DIR, f)).mtime.getTime() }))
+      .sort((a, b) => b.time - a.time);
+
+    if (files.length > 30) {
+      files.slice(30).forEach(f => {
+        try { fs.unlinkSync(path.join(BACKUPS_DIR, f.name)); } catch (e) {}
+      });
+    }
+  } catch (err) {
+    console.error('Error al depurar backups antiguos:', err);
+  }
+
+  return {
+    filename,
+    filepath,
+    sizeBytes: stats.size,
+    sizeKb: (stats.size / 1024).toFixed(1),
+    fechaLocal: backupData.fechaLocal,
+    horaLocal: backupData.horaLocal,
+    totalRegistros: backupData.totalRegistros
+  };
+}
+
+// Programador Cron: Todos los días a las 7:00 PM (19:00:00) hora de Colombia
+function iniciarProgramadorBackups() {
+  // '0 19 * * *' = 19:00 todos los días
+  cron.schedule('0 19 * * *', async () => {
+    console.log('⏰ [CRON 7:00 PM] Ejecutando copia de seguridad diaria programada...');
+    try {
+      const res = await guardarBackupEnDisco('automatico_7pm');
+      console.log(`✓ [CRON 7:00 PM] Backup generado exitosamente: ${res.filename}`);
+    } catch (err) {
+      console.error('❌ [CRON 7:00 PM] Error en backup automático:', err);
+    }
+  }, {
+    scheduled: true,
+    timezone: 'America/Bogota'
+  });
+
+  console.log('⏰ Programador de Backups activado: Todos los días a las 7:00 PM (Hora Colombia America/Bogota)');
+}
+
+// 14. Descargar backup directo en JSON (Admin)
+app.get('/api/backup/descargar', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede descargar la copia de seguridad.' });
+    }
+    const backup = await exportarTodaLaBaseDeDatos();
+    const fechaStr = new Date().toISOString().split('T')[0];
+    const filename = `backup_homesthetic_${fechaStr}.json`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(JSON.stringify(backup, null, 2));
+  } catch (err) {
+    console.error('Error al descargar backup:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 15. Generar backup manual en servidor (Admin)
+app.post('/api/backup/generar', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede generar copias de seguridad.' });
+    }
+    const resultado = await guardarBackupEnDisco('manual_admin');
+    res.json({ success: true, backup: resultado });
+  } catch (err) {
+    console.error('Error al generar backup manual:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 16. Listar historial de backups en el servidor (Admin)
+app.get('/api/backup/listar', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+    }
+    if (!fs.existsSync(BACKUPS_DIR)) {
+      return res.json({ success: true, backups: [] });
+    }
+    const files = fs.readdirSync(BACKUPS_DIR)
+      .filter(f => f.startsWith('backup_homesthetic_') && f.endsWith('.json'))
+      .map(f => {
+        const p = path.join(BACKUPS_DIR, f);
+        const stats = fs.statSync(p);
+        return {
+          filename: f,
+          sizeKb: (stats.size / 1024).toFixed(1),
+          creadoEn: stats.mtime
+        };
+      })
+      .sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
+    res.json({ success: true, backups: files });
+  } catch (err) {
+    console.error('Error al listar backups:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 17. Descargar archivo de backup específico existente (Admin)
+app.get('/api/backup/archivo/:filename', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+    }
+    const safeName = path.basename(req.params.filename);
+    const target = path.join(BACKUPS_DIR, safeName);
+    if (!fs.existsSync(target)) {
+      return res.status(404).json({ success: false, error: 'Archivo de backup no encontrado.' });
+    }
+    res.download(target, safeName);
+  } catch (err) {
+    console.error('Error al descargar archivo de backup:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ================= INICIAR SERVIDOR =================
 async function startServer() {
   try {
@@ -862,6 +1061,15 @@ async function startServer() {
     console.log('✓ Conectado exitosamente a MongoDB Atlas.');
 
     await initDatabaseDefaults();
+
+    // Activar programador automático de copias de seguridad (7:00 PM)
+    iniciarProgramadorBackups();
+
+    // Generar un backup inicial si la carpeta está vacía
+    const backupsExistentes = fs.existsSync(BACKUPS_DIR) ? fs.readdirSync(BACKUPS_DIR).filter(f => f.endsWith('.json')) : [];
+    if (backupsExistentes.length === 0) {
+      await guardarBackupEnDisco('inicial_inicio_sistema');
+    }
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🌸 HOME STHETIC ejecutándose en: http://0.0.0.0:${PORT}`);
