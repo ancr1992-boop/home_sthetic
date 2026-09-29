@@ -248,14 +248,17 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
         <div>
           <h2 class="text-2xl font-bold tracking-tight">Caja Diaria</h2>
-          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Apertura, cobros con múltiples métodos y arqueo</p>
+          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Apertura, ingresos por ventas, gastos y arqueo del día</p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <button onclick="openModal('modalAperturaCaja')" class="border border-black px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-black hover:text-white transition">
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="abrirModalNuevoGasto()" class="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center gap-1.5 transition shadow-2xs">
+            <i data-lucide="minus-circle" class="w-4 h-4"></i> + Registrar Gasto
+          </button>
+          <button onclick="openModal('modalAperturaCaja')" class="border border-black px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-black hover:text-white transition">
             Abrir Caja
           </button>
-          <button onclick="cerrarCajaDelDia()" class="bg-black text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition">
+          <button onclick="cerrarCajaDelDia()" class="bg-black text-white px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition">
             Cerrar Caja del Día
           </button>
         </div>
@@ -274,44 +277,71 @@
       </div>
 
       <!-- Métricas Resumen -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="p-5 border border-brand-border rounded-sm bg-white">
-          <p class="text-xs uppercase tracking-wider text-brand-gray font-medium">Fondo Inicial en Caja</p>
-          <p class="text-2xl font-bold mt-2" id="resumenFondoInicial">$0</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <div class="p-4 border border-brand-border rounded-sm bg-white">
+          <p class="text-[10px] uppercase tracking-wider text-brand-gray font-semibold">Fondo Inicial</p>
+          <p class="text-xl font-bold mt-1" id="resumenFondoInicial">$0</p>
+          <span class="text-[10px] text-brand-gray">Base de apertura</span>
         </div>
-        <div class="p-5 border border-brand-border rounded-sm bg-white">
-          <p class="text-xs uppercase tracking-wider text-brand-gray font-medium">Ventas Efectivo</p>
-          <p class="text-2xl font-bold mt-2" id="resumenEfectivo">$0</p>
+        <div class="p-4 border border-emerald-200 bg-emerald-50/40 rounded-sm">
+          <p class="text-[10px] uppercase tracking-wider text-emerald-800 font-bold flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-600"></i> Ventas Hoy
+          </p>
+          <p class="text-xl font-bold mt-1 text-emerald-950" id="resumenTotalGeneral">$0</p>
+          <span class="text-[10px] text-emerald-700" id="resumenDesgloseVentas">Ef: $0 | Tarj: $0</span>
         </div>
-        <div class="p-5 border border-brand-border rounded-sm bg-white">
-          <p class="text-xs uppercase tracking-wider text-brand-gray font-medium">Tarjetas (Débito/Crédito)</p>
-          <p class="text-2xl font-bold mt-2" id="resumenTarjetas">$0</p>
+        <div class="p-4 border border-rose-200 bg-rose-50/40 rounded-sm">
+          <p class="text-[10px] uppercase tracking-wider text-rose-800 font-bold flex items-center gap-1">
+            <i data-lucide="minus-circle" class="w-3.5 h-3.5 text-rose-600"></i> Gastos / Egresos
+          </p>
+          <p class="text-xl font-bold mt-1 text-rose-700 font-mono" id="resumenTotalGastos">-$0</p>
+          <span class="text-[10px] text-rose-700" id="resumenDesgloseGastos">0 gastos registrados</span>
         </div>
-        <div class="p-5 border border-black bg-brand-lightGray rounded-sm">
-          <p class="text-xs uppercase tracking-wider text-brand-black font-semibold">Total Ingresos Hoy</p>
-          <p class="text-2xl font-black mt-2" id="resumenTotalGeneral">$0</p>
+        <div class="p-4 border border-brand-border rounded-sm bg-white">
+          <p class="text-[10px] uppercase tracking-wider text-brand-gray font-semibold">Efectivo en Caja</p>
+          <p class="text-xl font-bold mt-1 text-black font-mono" id="resumenEfectivoCaja">$0</p>
+          <span class="text-[10px] text-brand-gray">Fondo + Ef. - Gastos Ef.</span>
+        </div>
+        <div class="p-4 border-2 border-black bg-brand-lightGray rounded-sm">
+          <p class="text-[10px] uppercase tracking-wider text-brand-black font-black">Balance Neto Hoy</p>
+          <p class="text-xl font-black mt-1 text-black font-mono" id="resumenBalanceNeto">$0</p>
+          <span class="text-[10px] text-neutral-600 font-semibold">Ventas - Gastos</span>
         </div>
       </div>
 
-      <!-- Tabla de Ventas -->
-      <div class="border border-brand-border rounded-sm overflow-hidden mt-6 bg-white">
-        <div class="p-4 bg-brand-lightGray border-b border-brand-border flex justify-between items-center">
-          <h3 class="text-xs uppercase tracking-wider font-bold">Movimientos y Pagos del Día</h3>
-          <button onclick="openModal('modalVentaManual')" class="bg-black text-white px-3 py-1.5 text-xs uppercase tracking-wider font-medium rounded-sm hover:bg-neutral-800">
-            + Cobro Rápido
-          </button>
+      <!-- Tabla de Movimientos de Caja (Ventas & Gastos) -->
+      <div class="border border-brand-border rounded-sm overflow-hidden mt-6 bg-white shadow-2xs">
+        <div class="p-4 bg-brand-lightGray border-b border-brand-border flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <div class="flex items-center gap-3">
+            <h3 class="text-xs uppercase tracking-wider font-bold">Movimientos de Caja del Día</h3>
+            <!-- Filtro de tipo de movimiento -->
+            <div class="flex items-center bg-white border border-brand-border rounded-sm p-0.5 text-[11px]">
+              <button type="button" onclick="filtrarMovimientosCaja('todos')" id="btnFiltroCajaTodos" class="px-2.5 py-1 font-bold rounded-xs bg-black text-white">Todos</button>
+              <button type="button" onclick="filtrarMovimientosCaja('ventas')" id="btnFiltroCajaVentas" class="px-2.5 py-1 text-brand-gray hover:text-black">Ventas</button>
+              <button type="button" onclick="filtrarMovimientosCaja('gastos')" id="btnFiltroCajaGastos" class="px-2.5 py-1 text-brand-gray hover:text-black">Gastos</button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="abrirModalNuevoGasto()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1 shadow-2xs">
+              <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i> + Registrar Gasto
+            </button>
+            <button onclick="openModal('modalVentaManual')" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 text-xs uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1 shadow-2xs">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Cobro Rápido
+            </button>
+          </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
-            <thead class="border-b border-brand-border uppercase tracking-wider font-semibold text-brand-gray">
+            <thead class="border-b border-brand-border uppercase tracking-wider font-semibold text-brand-gray bg-white">
               <tr>
                 <th class="p-3">Hora</th>
-                <th class="p-3">Concepto / Cita</th>
-                <th class="p-3">Cliente</th>
+                <th class="p-3">Tipo</th>
+                <th class="p-3">Concepto / Detalle</th>
+                <th class="p-3">Cliente / Categoría</th>
                 <th class="p-3">Medio de Pago</th>
-                <th class="p-3">Operaria</th>
-                <th class="p-3 text-right">Valor</th>
-                <th id="thAccionesVenta" class="p-3 text-center hidden">Acciones</th>
+                <th class="p-3">Operaria / Responsable</th>
+                <th class="p-3 text-right">Monto</th>
+                <th id="thAccionesVenta" class="p-3 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody id="tablaVentasBody" class="divide-y divide-brand-border">
@@ -958,6 +988,60 @@
     </div>
   </div>
 
+  <!-- Modal: Registrar Gasto / Egreso en Caja -->
+  <div id="modalNuevoGasto" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-rose-600">
+          <i data-lucide="minus-circle" class="w-4 h-4"></i> Registrar Gasto / Egreso
+        </h3>
+        <button onclick="closeModal('modalNuevoGasto')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="guardarGastoCaja(event)" class="space-y-3">
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Concepto / Detalle del Gasto *</label>
+          <input type="text" id="gastoConcepto" required placeholder="Ej: Alcohol, gasas, agua, taxi domicilio, aseo..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-medium">
+        </div>
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Categoría *</label>
+          <select id="gastoCategoria" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white font-medium">
+            <option value="Insumos y Materiales">Insumos y Materiales Médicos</option>
+            <option value="Servicios y Domicilios">Servicios, Domicilios y Envíos</option>
+            <option value="Mantenimiento y Aseo">Mantenimiento, Limpieza y Aseo</option>
+            <option value="Alimentación y Cafetería">Alimentación, Refrigerio y Cafetería</option>
+            <option value="Papelería y Oficina">Papelería y Oficina</option>
+            <option value="Otros">Otros Gastos Varios</option>
+          </select>
+        </div>
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Monto ($ COP) *</label>
+          <input type="number" id="gastoValor" required min="1" placeholder="Ej: 25000" class="w-full border border-rose-300 p-2 text-base font-bold text-rose-700 rounded-sm focus:border-rose-500 outline-none">
+        </div>
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Medio de Pago del Gasto *</label>
+          <select id="gastoMetodo" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white font-medium">
+            <option value="Efectivo">Efectivo (Sale del dinero físico de caja)</option>
+            <option value="Transferencia">Transferencia (Nequi / Daviplata / Banco)</option>
+          </select>
+          <p class="text-[10px] text-brand-gray mt-1">Si es Efectivo, se descuenta directamente del dinero físico en caja.</p>
+        </div>
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Responsable / Entregado a</label>
+          <input type="text" id="gastoResponsable" placeholder="Ej: Recepción, Domiciliario, Gloria..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-medium">
+        </div>
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalNuevoGasto')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="check" class="w-4 h-4"></i> Guardar Gasto
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal: Crear Nuevo Usuario (Solo Admin) -->
   <div id="modalNuevoUsuario" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
     <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
@@ -1068,9 +1152,11 @@
       clientes: [],
       citas: [],
       ventas: [],
+      gastos: [],
       fechaHoy: ''
     };
 
+    let filtroCajaActivo = 'todos';
     let fechaAgendaActiva = '';
     let modoVerTodasAgenda = false;
     let citaActualSiguiente = null;
@@ -2389,29 +2475,184 @@
       abrirCitaParaCliente(clienteId, 'Depilación Láser');
     }
 
-    // --- CAJA ---
+    // --- CAJA DIARIA (VENTAS, GASTOS & ARQUEO) ---
+    function filtrarMovimientosCaja(tipo) {
+      filtroCajaActivo = tipo;
+      const btnTodos = document.getElementById('btnFiltroCajaTodos');
+      const btnVentas = document.getElementById('btnFiltroCajaVentas');
+      const btnGastos = document.getElementById('btnFiltroCajaGastos');
+
+      const activoClass = ['bg-black', 'text-white', 'font-bold'];
+      const inactivoClass = ['text-brand-gray', 'hover:text-black', 'bg-transparent', 'font-normal'];
+
+      [btnTodos, btnVentas, btnGastos].forEach(b => {
+        if (b) {
+          b.classList.remove(...activoClass);
+          b.classList.add(...inactivoClass);
+        }
+      });
+
+      if (tipo === 'todos' && btnTodos) {
+        btnTodos.classList.remove(...inactivoClass);
+        btnTodos.classList.add(...activoClass);
+      } else if (tipo === 'ventas' && btnVentas) {
+        btnVentas.classList.remove(...inactivoClass);
+        btnVentas.classList.add(...activoClass);
+      } else if (tipo === 'gastos' && btnGastos) {
+        btnGastos.classList.remove(...inactivoClass);
+        btnGastos.classList.add(...activoClass);
+      }
+
+      renderizarCaja();
+    }
+
+    function abrirModalNuevoGasto() {
+      const form = document.getElementById('gastoConcepto');
+      if (form) form.value = '';
+      const cat = document.getElementById('gastoCategoria');
+      if (cat) cat.selectedIndex = 0;
+      const val = document.getElementById('gastoValor');
+      if (val) val.value = '';
+      const met = document.getElementById('gastoMetodo');
+      if (met) met.value = 'Efectivo';
+      const resp = document.getElementById('gastoResponsable');
+      const session = obtenerSesion();
+      if (resp) resp.value = session ? session.nombre : 'Recepción';
+
+      openModal('modalNuevoGasto');
+      setTimeout(() => {
+        const inp = document.getElementById('gastoConcepto');
+        if (inp) inp.focus();
+      }, 100);
+    }
+
+    async function guardarGastoCaja(e) {
+      e.preventDefault();
+      const concepto = (document.getElementById('gastoConcepto')?.value || '').trim();
+      const categoria = document.getElementById('gastoCategoria')?.value || 'Otros';
+      const valor = Number(document.getElementById('gastoValor')?.value || 0);
+      const metodo = document.getElementById('gastoMetodo')?.value || 'Efectivo';
+      const responsable = (document.getElementById('gastoResponsable')?.value || '').trim();
+
+      if (!concepto) {
+        alert('Por favor escribe el concepto o detalle del gasto.');
+        return;
+      }
+      if (!valor || valor <= 0) {
+        alert('Por favor ingresa un monto válido mayor a 0.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/caja/gastos', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ concepto, categoria, valor, metodo, responsable })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalNuevoGasto');
+          await cargarDatosServidor();
+          alert(`✓ Gasto de ${formatMoney(valor)} registrado exitosamente.`);
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo guardar el gasto.'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    async function eliminarGastoCaja(id) {
+      if (!confirm('⚠️ ¿Deseas eliminar este registro de gasto? Esta acción anulará el egreso y recalculará la caja.')) return;
+      try {
+        const res = await fetch(`/api/caja/gastos/${id}`, { method: 'DELETE', headers: authHeaders() });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert('✓ Gasto eliminado de caja.');
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo eliminar'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
     function renderizarCaja() {
       const session = obtenerSesion();
       const esAdmin = session && session.rol === 'admin';
+      const puedeEliminarGasto = session && (session.rol === 'admin' || session.rol === 'recepcionista');
 
       const fondo = (appState.config && appState.config.caja && appState.config.caja.fondoInicial) || 0;
+      
+      // 1. Cálculo de Ventas
       let totalEf = 0;
       let totalTarj = 0;
       let totalTransf = 0;
 
-      appState.ventas.forEach(v => {
+      (appState.ventas || []).forEach(v => {
         if (v.metodo === 'Efectivo') totalEf += v.valor;
         else if (v.metodo.includes('Tarjeta')) totalTarj += v.valor;
         else totalTransf += v.valor;
       });
-
       const totalVentas = totalEf + totalTarj + totalTransf;
 
-      document.getElementById('resumenFondoInicial').innerText = formatMoney(fondo);
-      document.getElementById('resumenEfectivo').innerText = formatMoney(totalEf);
-      document.getElementById('resumenTarjetas').innerText = formatMoney(totalTarj);
-      document.getElementById('resumenTotalGeneral').innerText = formatMoney(totalVentas);
-      document.getElementById('navCajaTotal').innerText = formatMoney(totalVentas + fondo);
+      // 2. Cálculo de Gastos
+      let totalGastos = 0;
+      let totalGastosEf = 0;
+      let totalGastosTransf = 0;
+
+      (appState.gastos || []).forEach(g => {
+        totalGastos += (g.valor || 0);
+        if (g.metodo === 'Efectivo') totalGastosEf += (g.valor || 0);
+        else totalGastosTransf += (g.valor || 0);
+      });
+
+      // 3. Efectivo Físico en Caja = Fondo Inicial + Ventas Efectivo - Gastos Efectivo
+      const efectivoEnCaja = fondo + totalEf - totalGastosEf;
+
+      // 4. Balance Neto del Día = Total Ventas - Total Gastos
+      const balanceNeto = totalVentas - totalGastos;
+
+      // Actualizar Tarjetas de Resumen
+      const elFondo = document.getElementById('resumenFondoInicial');
+      if (elFondo) elFondo.innerText = formatMoney(fondo);
+
+      const elVentas = document.getElementById('resumenTotalGeneral');
+      if (elVentas) elVentas.innerText = formatMoney(totalVentas);
+
+      const elDesgloseVentas = document.getElementById('resumenDesgloseVentas');
+      if (elDesgloseVentas) {
+        elDesgloseVentas.innerText = `Ef: ${formatMoney(totalEf)} | Tarj: ${formatMoney(totalTarj)} | Transf: ${formatMoney(totalTransf)}`;
+      }
+
+      const elTotalGastos = document.getElementById('resumenTotalGastos');
+      if (elTotalGastos) {
+        elTotalGastos.innerText = totalGastos > 0 ? `-${formatMoney(totalGastos)}` : '$0';
+      }
+
+      const elDesgloseGastos = document.getElementById('resumenDesgloseGastos');
+      if (elDesgloseGastos) {
+        const cantGastos = (appState.gastos || []).length;
+        elDesgloseGastos.innerText = `${cantGastos} egreso${cantGastos === 1 ? '' : 's'} (Ef: ${formatMoney(totalGastosEf)} | Transf: ${formatMoney(totalGastosTransf)})`;
+      }
+
+      const elEfectivoCaja = document.getElementById('resumenEfectivoCaja');
+      if (elEfectivoCaja) elEfectivoCaja.innerText = formatMoney(efectivoEnCaja);
+
+      const elBalance = document.getElementById('resumenBalanceNeto');
+      if (elBalance) {
+        elBalance.innerText = (balanceNeto < 0 ? '-' : '') + formatMoney(Math.abs(balanceNeto));
+        if (balanceNeto < 0) {
+          elBalance.className = 'text-xl font-black mt-1 text-rose-600 font-mono';
+        } else {
+          elBalance.className = 'text-xl font-black mt-1 text-black font-mono';
+        }
+      }
+
+      // Actualizar badge navbar si existe
+      const navCaja = document.getElementById('navCajaTotal');
+      if (navCaja) navCaja.innerText = formatMoney(efectivoEnCaja);
 
       // Citas listas para facturar dentro de la sección de Caja
       const citasFacturar = (appState.citas || []).filter(c => c.estado === 'Listo para Facturar');
@@ -2446,36 +2687,104 @@
         }
       }
 
-      // Mostrar/ocultar columna Acciones según rol
-      const thAcciones = document.getElementById('thAccionesVenta');
-      if (thAcciones) {
-        esAdmin ? thAcciones.classList.remove('hidden') : thAcciones.classList.add('hidden');
-      }
+      // Preparar Movimientos Unificados de Caja (Ventas + Gastos)
+      const listaMovimientos = [];
+
+      (appState.ventas || []).forEach(v => {
+        listaMovimientos.push({
+          id: v._id,
+          tipo: 'venta',
+          hora: v.hora || '--:--',
+          concepto: v.concepto || 'Ingreso por tratamiento',
+          tercero: v.cliente || 'Cliente General',
+          metodo: v.metodo || 'Efectivo',
+          responsable: v.operaria || 'Recepción',
+          valor: v.valor || 0
+        });
+      });
+
+      (appState.gastos || []).forEach(g => {
+        listaMovimientos.push({
+          id: g._id,
+          tipo: 'gasto',
+          hora: g.hora || '--:--',
+          concepto: g.concepto || 'Egreso de caja',
+          tercero: g.categoria || 'Gasto Operativo',
+          metodo: g.metodo || 'Efectivo',
+          responsable: g.responsable || 'Recepción',
+          valor: g.valor || 0
+        });
+      });
+
+      // Ordenar por hora descendente (los más recientes primero)
+      listaMovimientos.sort((a, b) => (b.hora || '').localeCompare(a.hora || ''));
+
+      // Filtrar según botón seleccionado
+      const filtrados = listaMovimientos.filter(m => {
+        if (filtroCajaActivo === 'ventas') return m.tipo === 'venta';
+        if (filtroCajaActivo === 'gastos') return m.tipo === 'gasto';
+        return true; // 'todos'
+      });
 
       const tbody = document.getElementById('tablaVentasBody');
-      if (appState.ventas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${esAdmin ? 7 : 6}" class="p-6 text-center text-brand-gray">No se han registrado pagos hoy.</td></tr>`;
+      if (!tbody) return;
+
+      if (filtrados.length === 0) {
+        const msg = filtroCajaActivo === 'ventas'
+          ? 'No se han registrado ventas hoy.'
+          : (filtroCajaActivo === 'gastos' ? 'No se han registrado gastos hoy.' : 'No hay movimientos registrados en caja hoy.');
+        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-brand-gray">${msg}</td></tr>`;
       } else {
-        tbody.innerHTML = appState.ventas.map(v => `
-          <tr class="hover:bg-neutral-50">
-            <td class="p-3 text-brand-gray font-mono">${v.hora}</td>
-            <td class="p-3 font-semibold">${v.concepto}</td>
-            <td class="p-3">${v.cliente}</td>
-            <td class="p-3"><span class="px-2 py-0.5 border border-brand-border bg-white text-xs uppercase font-bold tracking-wider rounded-xs">${v.metodo}</span></td>
-            <td class="p-3 text-brand-gray">${v.operaria}</td>
-            <td class="p-3 text-right font-bold">${formatMoney(v.valor)}</td>
-            ${esAdmin ? `
-            <td class="p-3 text-center">
-              <button onclick="eliminarVenta('${v._id}')"
-                class="text-neutral-400 hover:text-red-600 transition p-1.5 border border-transparent hover:border-red-200 rounded-sm"
-                title="Eliminar venta (Solo Administrador)">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
-            </td>` : ''}
-          </tr>
-        `).join('');
-        lucide.createIcons();
+        tbody.innerHTML = filtrados.map(m => {
+          const esVenta = m.tipo === 'venta';
+          return `
+            <tr class="hover:bg-neutral-50 transition-colors">
+              <td class="p-3 text-brand-gray font-mono text-[11px]">${m.hora}</td>
+              <td class="p-3">
+                ${esVenta ? `
+                  <span class="px-2 py-0.5 border border-emerald-300 bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase rounded-xs tracking-wider flex items-center gap-1 w-fit">
+                    <i data-lucide="trending-up" class="w-3 h-3 text-emerald-600"></i> Ingreso
+                  </span>
+                ` : `
+                  <span class="px-2 py-0.5 border border-rose-300 bg-rose-50 text-rose-800 text-[10px] font-bold uppercase rounded-xs tracking-wider flex items-center gap-1 w-fit">
+                    <i data-lucide="minus-circle" class="w-3 h-3 text-rose-600"></i> Egreso
+                  </span>
+                `}
+              </td>
+              <td class="p-3 font-semibold ${esVenta ? 'text-black' : 'text-rose-950'}">${m.concepto}</td>
+              <td class="p-3">
+                <span class="${esVenta ? 'text-neutral-900 font-medium' : 'text-brand-gray italic text-[11px]'}">${m.tercero}</span>
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 border border-brand-border bg-white text-[11px] uppercase font-bold tracking-wider rounded-xs">
+                  ${m.metodo}
+                </span>
+              </td>
+              <td class="p-3 text-brand-gray">${m.responsable}</td>
+              <td class="p-3 text-right font-mono text-xs ${esVenta ? 'font-bold text-emerald-800' : 'font-bold text-rose-600'}">
+                ${esVenta ? `+${formatMoney(m.valor)}` : `-${formatMoney(m.valor)}`}
+              </td>
+              <td class="p-3 text-center">
+                ${esVenta ? (esAdmin ? `
+                  <button onclick="eliminarVenta('${m.id}')"
+                    class="text-neutral-400 hover:text-red-600 transition p-1.5 border border-transparent hover:border-red-200 rounded-sm"
+                    title="Eliminar venta (Solo Administrador)">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                ` : '<span class="text-brand-gray/40 text-[10px]">-</span>') : (puedeEliminarGasto ? `
+                  <button onclick="eliminarGastoCaja('${m.id}')"
+                    class="text-rose-400 hover:text-red-700 transition p-1.5 border border-transparent hover:border-red-200 rounded-sm"
+                    title="Anular/Eliminar este gasto">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                ` : '<span class="text-brand-gray/40 text-[10px]">-</span>')}
+              </td>
+            </tr>
+          `;
+        }).join('');
       }
+
+      if (window.lucide) lucide.createIcons();
     }
 
     async function eliminarVenta(id) {
@@ -2549,25 +2858,43 @@
       let totalTarj = 0;
       let totalTransf = 0;
 
-      appState.ventas.forEach(v => {
+      (appState.ventas || []).forEach(v => {
         if (v.metodo === 'Efectivo') totalEf += v.valor;
         else if (v.metodo.includes('Tarjeta')) totalTarj += v.valor;
         else totalTransf += v.valor;
       });
 
-      const total = totalEf + totalTarj + totalTransf;
-      const dineroFisicoEsperado = fondo + totalEf;
+      let totalGastosEf = 0;
+      let totalGastosTransf = 0;
+      (appState.gastos || []).forEach(g => {
+        if (g.metodo === 'Efectivo') totalGastosEf += g.valor;
+        else totalGastosTransf += g.valor;
+      });
+
+      const totalVentas = totalEf + totalTarj + totalTransf;
+      const totalGastos = totalGastosEf + totalGastosTransf;
+      const dineroFisicoEsperado = fondo + totalEf - totalGastosEf;
+      const balanceNeto = totalVentas - totalGastos;
 
       const resumen = 
-        `🌸 CIERRE DE CAJA - HOME STHETIC 🌸\n` +
+        `🌸 CIERRE Y ARQUEO DE CAJA - HOME STHETIC 🌸\n` +
         `-----------------------------------------\n` +
-        `Fondo Inicial en Caja: ${formatMoney(fondo)}\n` +
-        `Ventas en Efectivo: ${formatMoney(totalEf)}\n` +
-        `Ventas Tarjetas (Datáfono): ${formatMoney(totalTarj)}\n` +
-        `Ventas Transferencias: ${formatMoney(totalTransf)}\n` +
+        `(+) Fondo Inicial en Caja:    ${formatMoney(fondo)}\n` +
+        `(+) Ventas en Efectivo:       ${formatMoney(totalEf)}\n` +
+        `(-) Gastos en Efectivo:       ${formatMoney(totalGastosEf)}\n` +
+        `=========================================\n` +
+        `💵 EFECTIVO FÍSICO A CONTAR EN CAJA: ${formatMoney(dineroFisicoEsperado)}\n` +
+        `=========================================\n\n` +
+        `📊 RESUMEN GENERAL DEL DÍA:\n` +
+        `• Total Ventas:         ${formatMoney(totalVentas)}\n` +
+        `  - Efectivo:           ${formatMoney(totalEf)}\n` +
+        `  - Tarjetas:           ${formatMoney(totalTarj)}\n` +
+        `  - Transferencias:     ${formatMoney(totalTransf)}\n` +
+        `• Total Gastos/Egresos: -${formatMoney(totalGastos)}\n` +
+        `  - Salidas Efectivo:   -${formatMoney(totalGastosEf)}\n` +
+        `  - Salidas Transf:     -${formatMoney(totalGastosTransf)}\n` +
         `-----------------------------------------\n` +
-        `TOTAL VENTAS DEL DÍA: ${formatMoney(total)}\n` +
-        `EFECTIVO TOTAL A CONTAR EN CAJA FÍSICA: ${formatMoney(dineroFisicoEsperado)}\n\n` +
+        `🎯 BALANCE NETO DEL DÍA: ${formatMoney(balanceNeto)}\n\n` +
         `¿Deseas confirmar el arqueo del día?`;
 
       if (confirm(resumen)) {

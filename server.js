@@ -75,6 +75,22 @@ const saleSchema = new mongoose.Schema({
 
 const Sale = mongoose.model('Sale', saleSchema);
 
+// 3.1 Gastos y Egresos de Caja
+const expenseSchema = new mongoose.Schema({
+  fecha: { type: String, required: true }, // YYYY-MM-DD
+  hora: { type: String, required: true },  // HH:MM
+  concepto: { type: String, required: true },
+  categoria: { 
+    type: String, 
+    default: 'Otros Gastos' 
+  },
+  metodo: { type: String, default: 'Efectivo' },
+  responsable: { type: String, default: 'Recepción' },
+  valor: { type: Number, required: true }
+}, { timestamps: true });
+
+const Expense = mongoose.model('Expense', expenseSchema);
+
 // 4. Configuración del Centro (Operarias, Servicios y Estado de Caja)
 const configSchema = new mongoose.Schema({
   key: { type: String, default: 'main_config', unique: true },
@@ -343,10 +359,11 @@ app.get('/api/bootstrap', async (req, res) => {
   try {
     const hoy = getFechaHoy();
     const config = await getOrCreateConfig();
-    const [clientes, todasLasCitas, ventasHoy, usuarios] = await Promise.all([
+    const [clientes, todasLasCitas, ventasHoy, gastosHoy, usuarios] = await Promise.all([
       Client.find().sort({ nombre: 1 }),
       Appointment.find().sort({ fecha: 1, hora: 1 }),
       Sale.find({ fecha: hoy }).sort({ createdAt: -1 }),
+      Expense.find({ fecha: hoy }).sort({ createdAt: -1 }),
       User.find().select('-password').sort({ rol: 1, nombre: 1 })
     ]);
 
@@ -357,6 +374,7 @@ app.get('/api/bootstrap', async (req, res) => {
         clientes,
         citas: todasLasCitas,
         ventas: ventasHoy,
+        gastos: gastosHoy,
         usuarios,
         fechaHoy: hoy
       }
@@ -662,7 +680,58 @@ app.delete('/api/caja/ventas/:id', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
 app.delete('/api/ventas/:id', (req, res) => res.redirect(307, `/api/caja/ventas/${req.params.id}`));
+
+// 7.2 Gastos: Registrar Gasto en Caja
+app.post('/api/caja/gastos', async (req, res) => {
+  try {
+    const { concepto, categoria, metodo, valor, responsable } = req.body;
+    if (!concepto || !concepto.trim()) {
+      return res.status(400).json({ success: false, error: 'El concepto del gasto es obligatorio.' });
+    }
+    const monto = Number(valor);
+    if (isNaN(monto) || monto <= 0) {
+      return res.status(400).json({ success: false, error: 'El valor del gasto debe ser un número mayor a 0.' });
+    }
+
+    const authUser = await getAuthUser(req);
+    const nombreResponsable = responsable || (authUser ? authUser.nombre : 'Recepción');
+
+    const gasto = await Expense.create({
+      fecha: getFechaHoy(),
+      hora: getHoraActual(),
+      concepto: concepto.trim(),
+      categoria: categoria || 'Otros Gastos',
+      metodo: metodo || 'Efectivo',
+      responsable: nombreResponsable,
+      valor: monto
+    });
+
+    console.log(`✓ Gasto registrado en caja: ${gasto.concepto} ($${gasto.valor}) [${gasto.metodo}] por ${gasto.responsable}`);
+    res.json({ success: true, gasto });
+  } catch (error) {
+    console.error('Error al registrar gasto:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 7.3 Gastos: Eliminar Gasto
+app.delete('/api/caja/gastos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const gasto = await Expense.findByIdAndDelete(id);
+    if (!gasto) {
+      return res.status(404).json({ success: false, error: 'Gasto no encontrado' });
+    }
+
+    console.log(`✓ Gasto eliminado de caja: ${gasto.concepto} ($${gasto.valor})`);
+    res.json({ success: true, message: 'Gasto eliminado exitosamente', gasto });
+  } catch (error) {
+    console.error('Error al eliminar gasto:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // 8. Operarias: Crear y Eliminar (Solo Administrador)
 app.post('/api/operarias', async (req, res) => {
@@ -895,10 +964,11 @@ if (!fs.existsSync(BACKUPS_DIR)) {
 
 // Exportar colecciones completas a objeto
 async function exportarTodaLaBaseDeDatos() {
-  const [clientes, citas, ventas, config, usuarios] = await Promise.all([
+  const [clientes, citas, ventas, gastos, config, usuarios] = await Promise.all([
     Client.find().lean(),
     Appointment.find().lean(),
     Sale.find().lean(),
+    Expense.find().lean(),
     Config.findOne({ key: 'main_config' }).lean(),
     User.find().select('-password').lean()
   ]);
@@ -919,6 +989,7 @@ async function exportarTodaLaBaseDeDatos() {
       clientes: (clientes || []).length,
       citas: (citas || []).length,
       ventas: (ventas || []).length,
+      gastos: (gastos || []).length,
       usuarios: (usuarios || []).length
     },
     data: {
@@ -926,6 +997,7 @@ async function exportarTodaLaBaseDeDatos() {
       clientes: clientes || [],
       citas: citas || [],
       ventas: ventas || [],
+      gastos: gastos || [],
       usuarios: usuarios || []
     }
   };
