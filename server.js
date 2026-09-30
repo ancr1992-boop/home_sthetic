@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const cron = require('node-cron');
 
 const app = express();
@@ -1066,6 +1067,16 @@ if (!fs.existsSync(BACKUPS_DIR)) {
   fs.mkdirSync(BACKUPS_DIR, { recursive: true });
 }
 
+// Carpeta visible en el computador del usuario (Documentos -> Backups HOME STHETIC)
+const USER_DOCS_BACKUPS_DIR = path.join(os.homedir(), 'Documents', 'Backups HOME STHETIC');
+try {
+  if (!fs.existsSync(USER_DOCS_BACKUPS_DIR)) {
+    fs.mkdirSync(USER_DOCS_BACKUPS_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.log('Nota: Carpeta Documentos:', e.message);
+}
+
 // Exportar colecciones completas a objeto
 async function exportarTodaLaBaseDeDatos() {
   const [clientes, citas, ventas, gastos, config, usuarios] = await Promise.all([
@@ -1107,7 +1118,7 @@ async function exportarTodaLaBaseDeDatos() {
   };
 }
 
-// Guardar copia en disco local del servidor
+// Guardar copia en disco local del servidor y en la carpeta Documentos del PC
 async function guardarBackupEnDisco(tipo = 'manual') {
   const backupData = await exportarTodaLaBaseDeDatos();
   const now = new Date();
@@ -1127,12 +1138,24 @@ async function guardarBackupEnDisco(tipo = 'manual') {
   const filename = `backup_homesthetic_${timestampStr}_${tipo}.json`;
   const filepath = path.join(BACKUPS_DIR, filename);
 
+  // 1. Guardar en carpeta del servidor
   fs.writeFileSync(filepath, JSON.stringify(backupData, null, 2), 'utf-8');
   const stats = fs.statSync(filepath);
 
+  // 2. Guardar también directamente en la carpeta de Documentos del usuario en su PC
+  try {
+    if (fs.existsSync(USER_DOCS_BACKUPS_DIR)) {
+      const userFilepath = path.join(USER_DOCS_BACKUPS_DIR, filename);
+      fs.writeFileSync(userFilepath, JSON.stringify(backupData, null, 2), 'utf-8');
+      console.log(`📂 [PC LOCAL] Copia guardada en Documentos: ${userFilepath}`);
+    }
+  } catch (errUser) {
+    console.error('Error al guardar en carpeta Documentos del PC:', errUser.message);
+  }
+
   console.log(`💾 [BACKUP] Copia de seguridad guardada con éxito: ${filename} (${(stats.size / 1024).toFixed(1)} KB)`);
 
-  // Mantener los últimos 30 backups para optimizar espacio
+  // Mantener los últimos 30 backups en ambas carpetas para optimizar espacio
   try {
     const files = fs.readdirSync(BACKUPS_DIR)
       .filter(f => f.startsWith('backup_homesthetic_') && f.endsWith('.json'))
@@ -1143,6 +1166,19 @@ async function guardarBackupEnDisco(tipo = 'manual') {
       files.slice(30).forEach(f => {
         try { fs.unlinkSync(path.join(BACKUPS_DIR, f.name)); } catch (e) {}
       });
+    }
+
+    if (fs.existsSync(USER_DOCS_BACKUPS_DIR)) {
+      const userFiles = fs.readdirSync(USER_DOCS_BACKUPS_DIR)
+        .filter(f => f.startsWith('backup_homesthetic_') && f.endsWith('.json'))
+        .map(f => ({ name: f, time: fs.statSync(path.join(USER_DOCS_BACKUPS_DIR, f)).mtime.getTime() }))
+        .sort((a, b) => b.time - a.time);
+
+      if (userFiles.length > 30) {
+        userFiles.slice(30).forEach(f => {
+          try { fs.unlinkSync(path.join(USER_DOCS_BACKUPS_DIR, f.name)); } catch (e) {}
+        });
+      }
     }
   } catch (err) {
     console.error('Error al depurar backups antiguos:', err);
@@ -1256,6 +1292,28 @@ app.get('/api/backup/archivo/:filename', async (req, res) => {
     res.download(target, safeName);
   } catch (err) {
     console.error('Error al descargar archivo de backup:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 18. Abrir carpeta de backups en el explorador de archivos del PC (Mac Finder / Windows Explorer)
+app.post('/api/backup/abrir-carpeta', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+    }
+    const targetDir = fs.existsSync(USER_DOCS_BACKUPS_DIR) ? USER_DOCS_BACKUPS_DIR : BACKUPS_DIR;
+    const { exec } = require('child_process');
+    const cmd = process.platform === 'darwin' ? `open "${targetDir}"` :
+                process.platform === 'win32' ? `explorer "${targetDir}"` : `xdg-open "${targetDir}"`;
+    exec(cmd, (err) => {
+      if (err) {
+        return res.json({ success: false, error: 'No se pudo abrir la carpeta en el sistema: ' + err.message, path: targetDir });
+      }
+      res.json({ success: true, path: targetDir });
+    });
+  } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
