@@ -1214,6 +1214,37 @@ function iniciarProgramadorBackups() {
   console.log('⏰ Programador de Backups activado: Todos los días a las 7:00 PM (Hora Colombia America/Bogota)');
 }
 
+// Verificar si faltó un backup (por ejemplo, si a las 7:00 PM el equipo estaba apagado)
+async function verificarYRecuperarBackupPendiente() {
+  try {
+    if (!fs.existsSync(BACKUPS_DIR)) return;
+    const files = fs.readdirSync(BACKUPS_DIR)
+      .filter(f => f.startsWith('backup_homesthetic_') && f.endsWith('.json'))
+      .map(f => ({ name: f, time: fs.statSync(path.join(BACKUPS_DIR, f)).mtime.getTime() }))
+      .sort((a, b) => b.time - a.time);
+
+    if (files.length === 0) {
+      console.log('📦 Creando primera copia de seguridad del sistema...');
+      await guardarBackupEnDisco('inicial_inicio_sistema');
+      return;
+    }
+
+    const ultimoBackup = files[0];
+    const tiempoTranscurridoHoras = (Date.now() - ultimoBackup.time) / (1000 * 60 * 60);
+
+    // Si pasaron más de 20 horas desde el último respaldo (ej: PC apagado a las 7 PM),
+    // se crea de inmediato la copia de seguridad de recuperación al iniciar el sistema
+    if (tiempoTranscurridoHoras >= 20) {
+      console.log(`⏰ [CATCHUP BACKUP] El último backup fue hace ${tiempoTranscurridoHoras.toFixed(1)}h. Se detectó equipo apagado en horario programado.`);
+      console.log('🔄 Generando copia de seguridad de recuperación al encender el sistema...');
+      const res = await guardarBackupEnDisco('recuperacion_al_encender');
+      console.log(`✓ Copia de seguridad de recuperación creada: ${res.filename}`);
+    }
+  } catch (err) {
+    console.error('Error al verificar backup pendiente:', err.message);
+  }
+}
+
 // 14. Descargar backup directo en JSON (Admin)
 app.get('/api/backup/descargar', async (req, res) => {
   try {
@@ -1360,11 +1391,8 @@ async function startServer() {
     // Activar programador automático de copias de seguridad (7:00 PM)
     iniciarProgramadorBackups();
 
-    // Generar un backup inicial si la carpeta está vacía
-    const backupsExistentes = fs.existsSync(BACKUPS_DIR) ? fs.readdirSync(BACKUPS_DIR).filter(f => f.endsWith('.json')) : [];
-    if (backupsExistentes.length === 0) {
-      await guardarBackupEnDisco('inicial_inicio_sistema');
-    }
+    // Comprobar y recuperar backup si el equipo estuvo apagado a las 7:00 PM
+    await verificarYRecuperarBackupPendiente();
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🌸 HOME STHETIC ejecutándose en: http://0.0.0.0:${PORT}`);
