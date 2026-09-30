@@ -518,6 +518,29 @@
         </div>
       </div>
 
+      <!-- Barra de Filtro en Cabina: Por Atender vs Ya Atendidas / En Caja -->
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-3 rounded-sm border border-brand-border">
+        <div class="flex items-center gap-2">
+          <span class="text-xs uppercase tracking-wider font-bold text-neutral-800">Ver:</span>
+          <div class="inline-flex bg-neutral-100 p-0.5 rounded-sm border border-brand-border text-xs">
+            <button type="button" onclick="cambiarFiltroEstadoCabina('pendientes')" id="btnCabinaPendientes" class="px-3 py-1 font-bold rounded-xs bg-black text-white flex items-center gap-1.5 transition">
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+              <span>Por Atender</span>
+              <span id="badgeCabinaPendientes" class="px-1.5 py-0.2 bg-white text-black text-[10px] rounded-full font-mono font-bold">0</span>
+            </button>
+            <button type="button" onclick="cambiarFiltroEstadoCabina('atendidas')" id="btnCabinaAtendidas" class="px-3 py-1 font-medium text-brand-gray hover:text-black rounded-xs flex items-center gap-1.5 transition">
+              <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+              <span>Ya Atendidas / En Caja</span>
+              <span id="badgeCabinaAtendidas" class="px-1.5 py-0.2 bg-neutral-200 text-neutral-800 text-[10px] rounded-full font-mono font-bold">0</span>
+            </button>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-brand-gray italic">
+          💡 Las citas enviadas a recepción se retiran de "Por Atender" para que te enfoques en tus siguientes pacientes.
+        </p>
+      </div>
+
       <!-- Contenedor de citas asignadas a esta operaria -->
       <div id="contenedorCitasOperaria" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Renderizado dinámico -->
@@ -1242,6 +1265,7 @@
     };
 
     let filtroCajaActivo = 'todos';
+    let filtroCabinaEstado = 'pendientes';
     let fechaAgendaActiva = '';
     let modoVerTodasAgenda = false;
     let citaActualSiguiente = null;
@@ -3650,6 +3674,22 @@
 
     // ================= CABINA DE ATENCIÓN DE OPERARIA =================
 
+    function cambiarFiltroEstadoCabina(modo) {
+      filtroCabinaEstado = modo;
+      const btnPendientes = document.getElementById('btnCabinaPendientes');
+      const btnAtendidas = document.getElementById('btnCabinaAtendidas');
+      if (btnPendientes && btnAtendidas) {
+        if (modo === 'pendientes') {
+          btnPendientes.className = 'px-3 py-1 font-bold rounded-xs bg-black text-white flex items-center gap-1.5 transition';
+          btnAtendidas.className = 'px-3 py-1 font-medium text-brand-gray hover:text-black rounded-xs flex items-center gap-1.5 transition';
+        } else {
+          btnPendientes.className = 'px-3 py-1 font-medium text-brand-gray hover:text-black rounded-xs flex items-center gap-1.5 transition';
+          btnAtendidas.className = 'px-3 py-1 font-bold rounded-xs bg-black text-white flex items-center gap-1.5 transition';
+        }
+      }
+      renderizarCabinaOperaria();
+    }
+
     function renderizarCabinaOperaria() {
       const cont = document.getElementById('contenedorCitasOperaria');
       if (!cont) return;
@@ -3682,6 +3722,17 @@
       // Ordenar por hora
       citasDelDia.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
 
+      // Separar citas en Pendientes (por atender) vs Atendidas / En Caja
+      const citasPendientes = citasDelDia.filter(c => c.estado === 'Pendiente');
+      const citasAtendidas = citasDelDia.filter(c => c.estado === 'Listo para Facturar' || c.estado === 'Completada');
+
+      // Actualizar contadores en los badges
+      const badgePend = document.getElementById('badgeCabinaPendientes');
+      const badgeAten = document.getElementById('badgeCabinaAtendidas');
+      if (badgePend) badgePend.textContent = citasPendientes.length;
+      if (badgeAten) badgeAten.textContent = citasAtendidas.length;
+
+      // Caso 1: No hay ninguna cita programada para esta fecha
       if (citasDelDia.length === 0) {
         // Buscar si tiene citas en otras fechas para informarle
         const otrasCitas = (appState.citas || []).filter(c => {
@@ -3740,7 +3791,58 @@
         return;
       }
 
-      cont.innerHTML = citasDelDia.map(c => {
+      // Caso 2: Viendo "Por Atender" y ya terminó todas las citas del día
+      if (filtroCabinaEstado === 'pendientes' && citasPendientes.length === 0 && citasAtendidas.length > 0) {
+        cont.innerHTML = `
+          <div class="col-span-full border border-emerald-200 bg-emerald-50/50 p-8 sm:p-12 text-center rounded-sm space-y-4">
+            <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto text-emerald-700 shadow-xs">
+              <i data-lucide="check-check" class="w-8 h-8"></i>
+            </div>
+            <div class="space-y-1">
+              <h3 class="text-base font-extrabold uppercase tracking-wide text-emerald-900">¡Excelente trabajo!</h3>
+              <p class="text-xs text-emerald-800 max-w-md mx-auto">
+                Ya atendiste y enviaste a facturar todas tus clientas programadas para hoy (${citasAtendidas.length} ${citasAtendidas.length === 1 ? 'cita procesada' : 'citas procesadas'}).
+              </p>
+            </div>
+            <div class="pt-2 flex flex-wrap justify-center gap-3">
+              <button type="button" onclick="cambiarFiltroEstadoCabina('atendidas')" class="bg-white hover:bg-neutral-100 text-black border border-brand-border px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wider inline-flex items-center gap-2 shadow-xs transition">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Ver ${citasAtendidas.length} Clientas Atendidas / En Caja
+              </button>
+              <button type="button" onclick="abrirCitaDesdeCabina()" class="bg-black hover:bg-neutral-800 text-white px-4 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider inline-flex items-center gap-1.5 transition shadow-sm">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Agendar Otra Paciente
+              </button>
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // Caso 3: Viendo "Ya Atendidas" pero aún no ha enviado ninguna a caja
+      if (filtroCabinaEstado === 'atendidas' && citasAtendidas.length === 0) {
+        cont.innerHTML = `
+          <div class="col-span-full border border-dashed border-brand-border p-8 sm:p-10 text-center rounded-sm bg-white space-y-3">
+            <div class="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-brand-gray">
+              <i data-lucide="clock" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold uppercase tracking-wider text-black">Aún no hay citas enviadas a caja hoy</h3>
+              <p class="text-xs text-brand-gray mt-1">A medida que atiendas a tus clientas y pulses "Finalizar y Enviar a Facturar en Caja", se guardarán aquí.</p>
+            </div>
+            <div class="pt-2">
+              <button type="button" onclick="cambiarFiltroEstadoCabina('pendientes')" class="bg-black text-white px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 transition">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Ir a Citas Por Atender (${citasPendientes.length})
+              </button>
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      const citasAMostrar = filtroCabinaEstado === 'atendidas' ? citasAtendidas : citasPendientes;
+
+      cont.innerHTML = citasAMostrar.map(c => {
         const esLaser = (c.servicio || '').toLowerCase().includes('laser') || (c.servicio || '').toLowerCase().includes('láser');
         const zonas = Array.isArray(c.zonas) ? c.zonas : [];
 
