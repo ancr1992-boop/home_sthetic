@@ -756,32 +756,79 @@
     </div>
   </div>
 
-  <!-- Modal: Nuevo Cliente (con opción de asignar cita de inmediato) -->
+  <!-- Modal: Nuevo Cliente (con Historia Clínica de Aptitud Láser) -->
   <div id="modalNuevoCliente" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
-    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+    <div class="bg-white max-w-2xl w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-brand-border pb-3">
-        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-          <i data-lucide="user-plus" class="w-4 h-4"></i> Registrar Nuevo Cliente
-        </h3>
+        <div>
+          <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-black">
+            <i data-lucide="user-plus" class="w-4 h-4 text-black"></i> Registrar Nuevo Cliente
+          </h3>
+          <p class="text-[11px] text-brand-gray mt-0.5">Ingreso de datos generales y valoración inicial de aptitud para depilación láser</p>
+        </div>
         <button onclick="closeModal('modalNuevoCliente')" class="text-brand-gray hover:text-black">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
       <form id="formNuevoCliente" onsubmit="guardarNuevoCliente(event, false)" class="space-y-4">
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre Completo *</label>
-          <input type="text" id="clienteNombre" required placeholder="Ej: Camila Restrepo" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+        <!-- Datos Básicos -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre Completo *</label>
+            <input type="text" id="clienteNombre" required placeholder="Ej: Camila Restrepo" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none font-semibold">
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Teléfono Celular / WhatsApp *</label>
+            <input type="tel" id="clienteTelefono" required placeholder="Ej: 3001234567" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none font-mono">
+          </div>
         </div>
 
         <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Teléfono Celular / WhatsApp *</label>
-          <input type="tel" id="clienteTelefono" required placeholder="Ej: 3001234567" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none">
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Notas Estéticas / Preferencias</label>
+          <input type="text" id="clienteNotas" placeholder="Piel sensible, prefiere hielo, primera vez en láser..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
         </div>
 
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Notas Estéticas / Alergias</label>
-          <textarea id="clienteNotas" rows="2" placeholder="Piel reactiva, sensible en zona T, prefiere depilación con hielo..." class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none"></textarea>
+        <!-- Sección Historia Clínica Láser -->
+        <div class="border border-brand-border rounded-sm bg-neutral-50/80 p-3.5 space-y-3">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-brand-border/70 pb-2">
+            <div>
+              <span class="font-bold text-xs uppercase tracking-wider text-black flex items-center gap-1.5">
+                <i data-lucide="clipboard-check" class="w-4 h-4 text-purple-600"></i>
+                Historia Clínica & Aptitud para Depilación Láser
+              </span>
+              <p class="text-[11px] text-brand-gray">Cuestionario clínico de 14 preguntas de seguridad</p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="marcarTodasPreguntasNuevoCliente('NO')" class="px-2.5 py-1 text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-300 rounded-sm transition flex items-center gap-1">
+                <i data-lucide="check" class="w-3 h-3 text-emerald-700"></i> Todas NO
+              </button>
+              <button type="button" onclick="limpiarPreguntasNuevoCliente()" class="px-2 py-1 text-[11px] font-medium text-brand-gray hover:text-black border border-brand-border rounded-sm bg-white transition">
+                Limpiar
+              </button>
+            </div>
+          </div>
+
+          <!-- Banner dinámico del estado de aptitud -->
+          <div id="bannerAptitudNC" class="p-2.5 rounded-sm text-xs font-semibold flex items-center justify-between border bg-neutral-100 text-neutral-700 border-neutral-300 transition-colors">
+            <span id="bannerAptitudTextoNC" class="flex items-center gap-1.5 font-medium">
+              <i data-lucide="help-circle" class="w-4 h-4"></i> Marca las respuestas para evaluar si la clienta es apta.
+            </span>
+            <span id="badgeAptitudEstadoNC" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white border border-neutral-300">
+              Pendiente
+            </span>
+          </div>
+
+          <!-- Contenedor con las 14 preguntas -->
+          <div class="space-y-2 max-h-64 overflow-y-auto pr-1 text-xs" id="contenedorPreguntasNC">
+            <!-- Renderizado dinámicamente -->
+          </div>
+
+          <!-- Observaciones clínicas adicionales -->
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold text-[10px] mb-1">Observaciones Médicas / Detalles Clínicos</label>
+            <input type="text" id="clienteHistoriaObservaciones" placeholder="Ej: Trae autorización de su dermatólogo, no tratar zona con tatuaje..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white text-xs">
+          </div>
         </div>
 
         <div class="pt-3 border-t border-brand-border flex flex-col sm:flex-row justify-end gap-2">
@@ -796,6 +843,64 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Ver y Editar Historia Clínica del Cliente -->
+  <div id="modalVerHistoriaClinica" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-2xl w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-start border-b border-brand-border pb-3">
+        <div>
+          <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-black">
+            <i data-lucide="clipboard-check" class="w-4 h-4 text-purple-600"></i>
+            Historia Clínica & Valoración de Aptitud Láser
+          </h3>
+          <p id="hcClienteTitulo" class="text-xs font-semibold text-black mt-1">Cliente: -</p>
+          <p id="hcMetaInfo" class="text-[11px] text-brand-gray">Registrada el: -</p>
+        </div>
+        <button onclick="closeModal('modalVerHistoriaClinica')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Banner de estado de aptitud en el modal -->
+      <div id="hcBannerAptitud" class="p-3 rounded-sm text-xs font-semibold flex items-center justify-between border">
+        <span id="hcBannerTexto" class="flex items-center gap-1.5"></span>
+        <span id="hcBannerBadge" class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"></span>
+      </div>
+
+      <div class="flex justify-between items-center bg-neutral-50 p-2.5 rounded-sm border border-brand-border/70">
+        <span class="text-[11px] text-brand-gray font-medium">Puedes actualizar las respuestas en caso de que su condición médica haya cambiado:</span>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="marcarTodasPreguntasModalHC('NO')" class="px-2.5 py-1 text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-300 rounded-sm transition">
+            ✓ Todas NO
+          </button>
+          <button type="button" onclick="limpiarPreguntasModalHC()" class="px-2 py-1 text-[11px] font-medium text-brand-gray hover:text-black border border-brand-border rounded-sm bg-white transition">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de 14 preguntas -->
+      <div class="space-y-2 max-h-72 overflow-y-auto pr-1 text-xs" id="hcListaPreguntas">
+        <!-- Renderizado dinámico -->
+      </div>
+
+      <div>
+        <label class="block uppercase tracking-wider text-brand-gray font-semibold text-[10px] mb-1">Observaciones Médicas / Notas de Cabina</label>
+        <textarea id="hcObservacionesInput" rows="2" placeholder="Notas sobre evolución, precauciones especiales, tratamientos activos..." class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white text-xs"></textarea>
+      </div>
+
+      <input type="hidden" id="hcClienteIdActivo" value="">
+
+      <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+        <button type="button" onclick="closeModal('modalVerHistoriaClinica')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">
+          Cerrar
+        </button>
+        <button type="button" onclick="guardarCambiosHistoriaClinicaModal()" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm transition shadow-sm flex items-center gap-1.5">
+          <i data-lucide="save" class="w-3.5 h-3.5"></i> Guardar Cambios en Historia Clínica
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1531,6 +1636,9 @@
       const el = document.getElementById(id);
       if (el) {
         el.classList.remove('hidden');
+        if (id === 'modalNuevoCliente') {
+          inicializarPreguntasNuevoCliente();
+        }
         lucide.createIcons();
       }
     }
@@ -1897,6 +2005,17 @@
         const cliente = appState.clientes.find(c => c._id == cita.clienteId) || { nombre: cita.clienteNombre, telefono: cita.clienteTelefono, contadorServicios: {} };
         const countSesion = obtenerContadorSesiones(cliente, cita.servicio);
 
+        const hc = cliente ? cliente.historiaClinica : null;
+        let badgeHC = '';
+        if (hc && hc.apta === 'APTA') {
+          badgeHC = `<button type="button" onclick="abrirModalHistoriaClinica('${cita.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 inline-flex items-center gap-1 hover:bg-emerald-200 transition" title="Ver Historia Clínica: Apta para Láser"><i data-lucide="shield-check" class="w-3 h-3 text-emerald-700"></i> Apta Láser</button>`;
+        } else if (hc && hc.apta === 'NO_APTA') {
+          const tot = (hc.preguntas || []).filter(p => p.respuesta === 'SI').length;
+          badgeHC = `<button type="button" onclick="abrirModalHistoriaClinica('${cita.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-900 border border-red-300 inline-flex items-center gap-1 hover:bg-red-200 transition animate-pulse" title="¡Atención! Presenta ${tot} posible(s) contraindicación(es)"><i data-lucide="alert-triangle" class="w-3 h-3 text-red-700"></i> No Apta (${tot})</button>`;
+        } else {
+          badgeHC = `<button type="button" onclick="abrirModalHistoriaClinica('${cita.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 border border-neutral-300 inline-flex items-center gap-1 hover:bg-neutral-200 transition" title="Diligenciar Historia Clínica"><i data-lucide="clipboard-check" class="w-3 h-3 text-purple-600"></i> Sin H. Clínica</button>`;
+        }
+
         const esFacturar = cita.estado === 'Listo para Facturar';
         let badgeColor = 'border-black text-black';
         let cardClasses = 'border border-brand-border rounded-sm p-5 hover:border-black transition bg-white flex flex-col justify-between space-y-4 shadow-xs';
@@ -1942,7 +2061,10 @@
               </div>
 
               <div class="mt-3">
-                <h4 class="text-base font-bold">${cita.clienteNombre}</h4>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h4 class="text-base font-bold">${cita.clienteNombre}</h4>
+                  ${badgeHC}
+                </div>
                 <p class="text-xs text-brand-gray flex items-center gap-1 mt-0.5">
                   <i data-lucide="sparkles" class="w-3.5 h-3.5 text-black"></i> ${cita.servicio}
                 </p>
@@ -2753,7 +2875,150 @@
       }
     }
 
-    // --- CLIENTES ---
+    // --- CLIENTES & HISTORIA CLÍNICA ---
+    const PREGUNTAS_HISTORIA_CLINICA = [
+      { id: 1, pregunta: "¿Está actualmente embarazada o en período de lactancia?" },
+      { id: 2, pregunta: "¿Ha tomado en los últimos 6 meses medicamentos para el acné a base de isotretinoína (Roaccutan, Piplex, etc.)?" },
+      { id: 3, pregunta: "¿Ha consumido en los últimos 15 días antibióticos (como tetraciclinas), antiinflamatorios o medicamentos fotosensibilizantes?" },
+      { id: 4, pregunta: "¿Ha estado expuesta al sol, cámara de bronceo o usado autobronceadores en los últimos 15 a 30 días?" },
+      { id: 5, pregunta: "¿Se ha depilado la zona a tratar con cera, pinzas o máquina eléctrica en las últimas 3 a 4 semanas?" },
+      { id: 6, pregunta: "¿Tiene antecedentes de cáncer de piel o se encuentra actualmente en tratamiento oncológico (quimio o radioterapia)?" },
+      { id: 7, pregunta: "¿Padece alguna enfermedad autoinmune (lupus, vitíligo, esclerodermia, psoriasis activa en la zona)?" },
+      { id: 8, pregunta: "¿Tiene tendencia a la cicatrización queloide o hipertrófica?" },
+      { id: 9, pregunta: "¿Sufre de epilepsia o convulsiones que puedan ser desencadenadas por destellos de luz?" },
+      { id: 10, pregunta: "¿Tiene tatuajes, micropigmentación o maquillaje permanente en la zona específica que desea tratar?" },
+      { id: 11, pregunta: "¿Tiene marcapasos, desfibrilador interno o implantes metálicos en la zona a depilar?" },
+      { id: 12, pregunta: "¿Presenta actualmente infecciones activas, heridas abiertas o brotes de herpes en el área a tratar?" },
+      { id: 13, pregunta: "¿Ha utilizado productos con ácidos (retinol, ácido glicólico, salicílico) o exfoliantes químicos en la zona en la última semana?" },
+      { id: 14, pregunta: "¿El vello de la zona a tratar es completamente canoso, blanco o pelirrojo muy claro?" }
+    ];
+
+    let respuestasNuevoCliente = {};
+    let respuestasModalHC = {};
+
+    function inicializarPreguntasNuevoCliente() {
+      respuestasNuevoCliente = {};
+      const obs = document.getElementById('clienteHistoriaObservaciones');
+      if (obs) obs.value = '';
+      renderizarPreguntasNuevoCliente();
+      actualizarBannerAptitudNuevoCliente();
+    }
+
+    function renderizarPreguntasNuevoCliente() {
+      const cont = document.getElementById('contenedorPreguntasNC');
+      if (!cont) return;
+
+      cont.innerHTML = PREGUNTAS_HISTORIA_CLINICA.map(item => {
+        const val = respuestasNuevoCliente[item.id] || null;
+        const esSi = val === 'SI';
+        const esNo = val === 'NO';
+
+        let borderRow = 'border-brand-border/70 bg-white';
+        if (esSi) borderRow = 'border-red-300 bg-red-50/50';
+        if (esNo) borderRow = 'border-emerald-200 bg-emerald-50/20';
+
+        const siClass = esSi
+          ? 'bg-red-600 text-white border-red-600 shadow-2xs font-extrabold'
+          : 'bg-white text-neutral-600 border-neutral-300 hover:border-red-400 hover:text-red-700';
+
+        const noClass = esNo
+          ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs font-extrabold'
+          : 'bg-white text-neutral-600 border-neutral-300 hover:border-emerald-500 hover:text-emerald-700';
+
+        return `
+          <div class="p-2.5 rounded-sm border ${borderRow} flex items-center justify-between gap-3 transition">
+            <div class="flex items-start gap-2">
+              <span class="font-bold text-neutral-500 font-mono text-[11px] mt-0.5">${item.id}.</span>
+              <span class="text-neutral-900 leading-snug font-medium text-xs">${item.pregunta}</span>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button type="button" onclick="seleccionarRespuestaNuevoCliente(${item.id}, 'SI')" class="px-2.5 py-1 rounded-xs text-[11px] uppercase border transition ${siClass}">
+                SÍ
+              </button>
+              <button type="button" onclick="seleccionarRespuestaNuevoCliente(${item.id}, 'NO')" class="px-2.5 py-1 rounded-xs text-[11px] uppercase border transition ${noClass}">
+                NO
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function seleccionarRespuestaNuevoCliente(id, valor) {
+      if (respuestasNuevoCliente[id] === valor) {
+        delete respuestasNuevoCliente[id];
+      } else {
+        respuestasNuevoCliente[id] = valor;
+      }
+      renderizarPreguntasNuevoCliente();
+      actualizarBannerAptitudNuevoCliente();
+    }
+
+    function marcarTodasPreguntasNuevoCliente(valor) {
+      PREGUNTAS_HISTORIA_CLINICA.forEach(p => {
+        respuestasNuevoCliente[p.id] = valor;
+      });
+      renderizarPreguntasNuevoCliente();
+      actualizarBannerAptitudNuevoCliente();
+    }
+
+    function limpiarPreguntasNuevoCliente() {
+      respuestasNuevoCliente = {};
+      renderizarPreguntasNuevoCliente();
+      actualizarBannerAptitudNuevoCliente();
+    }
+
+    function evaluarAptitud(respuestasObj) {
+      const keys = Object.keys(respuestasObj);
+      if (keys.length === 0) return { apta: 'PENDIENTE', totalSi: 0, totalNo: 0, totalPendientes: 14 };
+
+      let totalSi = 0;
+      let totalNo = 0;
+      PREGUNTAS_HISTORIA_CLINICA.forEach(p => {
+        if (respuestasObj[p.id] === 'SI') totalSi++;
+        else if (respuestasObj[p.id] === 'NO') totalNo++;
+      });
+
+      const totalPendientes = 14 - (totalSi + totalNo);
+
+      if (totalSi > 0) {
+        return { apta: 'NO_APTA', totalSi, totalNo, totalPendientes };
+      } else if (totalPendientes === 0) {
+        return { apta: 'APTA', totalSi: 0, totalNo: 14, totalPendientes: 0 };
+      } else {
+        return { apta: 'PENDIENTE', totalSi: 0, totalNo, totalPendientes };
+      }
+    }
+
+    function actualizarBannerAptitudNuevoCliente() {
+      const banner = document.getElementById('bannerAptitudNC');
+      const texto = document.getElementById('bannerAptitudTextoNC');
+      const badge = document.getElementById('badgeAptitudEstadoNC');
+      if (!banner || !texto || !badge) return;
+
+      const evalResultado = evaluarAptitud(respuestasNuevoCliente);
+
+      if (evalResultado.apta === 'NO_APTA') {
+        banner.className = 'p-2.5 rounded-sm text-xs font-semibold flex items-center justify-between border bg-red-100 text-red-950 border-red-300';
+        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i> <strong>ALERTA MÉDICA:</strong> Presenta ${evalResultado.totalSi} posible(s) contraindicación(es).</span>`;
+        badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-600 text-white shadow-2xs';
+        badge.innerText = 'NO APTA / VALORACIÓN';
+      } else if (evalResultado.apta === 'APTA') {
+        banner.className = 'p-2.5 rounded-sm text-xs font-semibold flex items-center justify-between border bg-emerald-100 text-emerald-950 border-emerald-300';
+        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-700"></i> <strong>APTA:</strong> Sin contraindicaciones detectadas en las 14 preguntas.</span>`;
+        badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs';
+        badge.innerText = 'APTA PARA LÁSER';
+      } else {
+        banner.className = 'p-2.5 rounded-sm text-xs font-semibold flex items-center justify-between border bg-neutral-100 text-neutral-700 border-neutral-300';
+        const pendTxt = evalResultado.totalNo > 0 ? `(${evalResultado.totalNo}/14 respondidas)` : 'Marca las respuestas';
+        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="help-circle" class="w-4 h-4 text-neutral-500"></i> Cuestionario de seguridad ${pendTxt}</span>`;
+        badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white border border-neutral-300 text-neutral-600';
+        badge.innerText = 'PENDIENTE';
+      }
+      lucide.createIcons();
+    }
+
     function renderizarClientes() {
       const busqueda = (document.getElementById('buscarClienteInput').value || '').toLowerCase();
       const tbody = document.getElementById('tablaClientesBody');
@@ -2799,10 +3064,37 @@
           `;
         }
 
+        // Badge de Historia Clínica
+        const hc = c.historiaClinica;
+        let badgeHC = '';
+        if (hc && hc.apta === 'APTA') {
+          badgeHC = `
+            <button type="button" onclick="abrirModalHistoriaClinica('${c._id}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 transition" title="Ver Historia Clínica: APTA PARA LÁSER">
+              <i data-lucide="shield-check" class="w-3 h-3 text-emerald-700"></i> Apta Láser
+            </button>
+          `;
+        } else if (hc && hc.apta === 'NO_APTA') {
+          const tot = (hc.preguntas || []).filter(p => p.respuesta === 'SI').length;
+          badgeHC = `
+            <button type="button" onclick="abrirModalHistoriaClinica('${c._id}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-900 border border-red-300 hover:bg-red-200 transition animate-pulse" title="Ver Historia Clínica: ${tot} posibles contraindicaciones">
+              <i data-lucide="alert-triangle" class="w-3 h-3 text-red-700"></i> No Apta (${tot})
+            </button>
+          `;
+        } else {
+          badgeHC = `
+            <button type="button" onclick="abrirModalHistoriaClinica('${c._id}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-300 hover:bg-neutral-200 transition" title="Diligenciar Historia Clínica">
+              <i data-lucide="clipboard-check" class="w-3 h-3 text-purple-600"></i> Sin H. Clínica
+            </button>
+          `;
+        }
+
         return `
           <tr class="hover:bg-neutral-50 transition">
             <td class="p-4 font-semibold text-brand-black">
-              ${c.nombre}
+              <div class="flex items-center gap-2 flex-wrap">
+                <span>${c.nombre}</span>
+                ${badgeHC}
+              </div>
               ${c.notas ? `<p class="text-xs text-brand-gray font-normal mt-0.5">${c.notas}</p>` : ''}
             </td>
             <td class="p-4 text-brand-gray">
@@ -2817,9 +3109,14 @@
               ${proximaHtml}
             </td>
             <td class="p-4 text-right">
-              <button onclick="agendarDirectoCliente('${c._id}')" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 rounded-sm text-xs uppercase tracking-wider font-semibold flex items-center gap-1 ml-auto shadow-xs">
-                <i data-lucide="calendar-plus" class="w-3 h-3"></i> + Cita
-              </button>
+              <div class="flex items-center justify-end gap-1.5">
+                <button type="button" onclick="abrirModalHistoriaClinica('${c._id}')" class="bg-white hover:bg-neutral-100 text-purple-950 border border-purple-200 hover:border-purple-300 px-2.5 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs transition" title="Ver o actualizar Historia Clínica">
+                  <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-purple-600"></i> H. Clínica
+                </button>
+                <button onclick="agendarDirectoCliente('${c._id}')" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 rounded-sm text-xs uppercase tracking-wider font-semibold flex items-center gap-1 shadow-xs transition">
+                  <i data-lucide="calendar-plus" class="w-3 h-3"></i> + Cita
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -2833,10 +3130,12 @@
       const inputNombre = document.getElementById('clienteNombre');
       const inputTelefono = document.getElementById('clienteTelefono');
       const inputNotas = document.getElementById('clienteNotas');
+      const inputObsHC = document.getElementById('clienteHistoriaObservaciones');
 
       const nombre = inputNombre.value.trim();
       const telefono = inputTelefono.value.trim();
       const notas = inputNotas.value.trim();
+      const observacionesHC = inputObsHC ? inputObsHC.value.trim() : '';
 
       if (!nombre) {
         alert('Por favor ingresa el nombre del cliente.');
@@ -2849,11 +3148,27 @@
         return;
       }
 
+      // Estructurar historia clínica si se respondieron preguntas o se ingresaron observaciones
+      let historiaClinica = null;
+      const tieneRespuestas = Object.keys(respuestasNuevoCliente).length > 0;
+      if (tieneRespuestas || observacionesHC) {
+        const evalResultado = evaluarAptitud(respuestasNuevoCliente);
+        historiaClinica = {
+          preguntas: PREGUNTAS_HISTORIA_CLINICA.map(p => ({
+            id: p.id,
+            pregunta: p.pregunta,
+            respuesta: respuestasNuevoCliente[p.id] || 'NO_RESPONDE'
+          })),
+          apta: evalResultado.apta,
+          observaciones: observacionesHC
+        };
+      }
+
       try {
         const res = await fetch('/api/clientes', {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ nombre, telefono, notas })
+          body: JSON.stringify({ nombre, telefono, notas, historiaClinica })
         });
         const data = await res.json();
         if (data.success && data.cliente) {
@@ -2861,6 +3176,8 @@
           inputNombre.value = '';
           inputTelefono.value = '';
           inputNotas.value = '';
+          if (inputObsHC) inputObsHC.value = '';
+          respuestasNuevoCliente = {};
           
           await cargarDatosServidor();
 
@@ -2868,13 +3185,170 @@
             cambiarSeccion('agenda');
             abrirCitaParaCliente(data.cliente._id, 'Depilación Láser');
           } else {
-            alert(`✓ Cliente "${nombre}" guardado en MongoDB Atlas.`);
+            const estadoAptitud = data.cliente.historiaClinica ? ` [Aptitud Láser: ${data.cliente.historiaClinica.apta}]` : '';
+            alert(`✓ Cliente "${nombre}" guardado en MongoDB Atlas${estadoAptitud}.`);
           }
         } else {
           alert('Error al guardar cliente: ' + (data.error || 'Ocurrió un error'));
         }
       } catch (err) {
         alert('Error de conexión al guardar cliente: ' + err.message);
+      }
+    }
+
+    // Modal de Ver y Editar Historia Clínica para Clientes Existentes
+    function abrirModalHistoriaClinica(clienteId) {
+      const cliente = appState.clientes.find(c => c._id == clienteId);
+      if (!cliente) return;
+
+      document.getElementById('hcClienteIdActivo').value = cliente._id;
+      document.getElementById('hcClienteTitulo').textContent = `Clienta: ${cliente.nombre} • Tel: ${cliente.telefono}`;
+
+      const hc = cliente.historiaClinica || {};
+      const fechaReg = hc.fechaRegistro ? `Registrada el ${hc.fechaRegistro}` : 'Sin fecha registrada';
+      const porReg = hc.registradoPor ? ` por ${hc.registradoPor}` : '';
+      document.getElementById('hcMetaInfo').textContent = `${fechaReg}${porReg}`;
+      document.getElementById('hcObservacionesInput').value = hc.observaciones || '';
+
+      respuestasModalHC = {};
+      if (Array.isArray(hc.preguntas)) {
+        hc.preguntas.forEach(p => {
+          respuestasModalHC[p.id] = p.respuesta;
+        });
+      }
+
+      renderizarPreguntasModalHC();
+      actualizarBannerAptitudModalHC();
+      openModal('modalVerHistoriaClinica');
+    }
+
+    function renderizarPreguntasModalHC() {
+      const cont = document.getElementById('hcListaPreguntas');
+      if (!cont) return;
+
+      cont.innerHTML = PREGUNTAS_HISTORIA_CLINICA.map(item => {
+        const val = respuestasModalHC[item.id] || null;
+        const esSi = val === 'SI';
+        const esNo = val === 'NO';
+
+        let borderRow = 'border-brand-border/70 bg-white';
+        if (esSi) borderRow = 'border-red-300 bg-red-50/50';
+        if (esNo) borderRow = 'border-emerald-200 bg-emerald-50/20';
+
+        const siClass = esSi
+          ? 'bg-red-600 text-white border-red-600 shadow-2xs font-extrabold'
+          : 'bg-white text-neutral-600 border-neutral-300 hover:border-red-400 hover:text-red-700';
+
+        const noClass = esNo
+          ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs font-extrabold'
+          : 'bg-white text-neutral-600 border-neutral-300 hover:border-emerald-500 hover:text-emerald-700';
+
+        return `
+          <div class="p-2.5 rounded-sm border ${borderRow} flex items-center justify-between gap-3 transition">
+            <div class="flex items-start gap-2">
+              <span class="font-bold text-neutral-500 font-mono text-[11px] mt-0.5">${item.id}.</span>
+              <span class="text-neutral-900 leading-snug font-medium text-xs">${item.pregunta}</span>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button type="button" onclick="seleccionarRespuestaModalHC(${item.id}, 'SI')" class="px-2.5 py-1 rounded-xs text-[11px] uppercase border transition ${siClass}">
+                SÍ
+              </button>
+              <button type="button" onclick="seleccionarRespuestaModalHC(${item.id}, 'NO')" class="px-2.5 py-1 rounded-xs text-[11px] uppercase border transition ${noClass}">
+                NO
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function seleccionarRespuestaModalHC(id, valor) {
+      if (respuestasModalHC[id] === valor) {
+        delete respuestasModalHC[id];
+      } else {
+        respuestasModalHC[id] = valor;
+      }
+      renderizarPreguntasModalHC();
+      actualizarBannerAptitudModalHC();
+    }
+
+    function marcarTodasPreguntasModalHC(valor) {
+      PREGUNTAS_HISTORIA_CLINICA.forEach(p => {
+        respuestasModalHC[p.id] = valor;
+      });
+      renderizarPreguntasModalHC();
+      actualizarBannerAptitudModalHC();
+    }
+
+    function limpiarPreguntasModalHC() {
+      respuestasModalHC = {};
+      renderizarPreguntasModalHC();
+      actualizarBannerAptitudModalHC();
+    }
+
+    function actualizarBannerAptitudModalHC() {
+      const banner = document.getElementById('hcBannerAptitud');
+      const texto = document.getElementById('hcBannerTexto');
+      const badge = document.getElementById('hcBannerBadge');
+      if (!banner || !texto || !badge) return;
+
+      const evalResultado = evaluarAptitud(respuestasModalHC);
+
+      if (evalResultado.apta === 'NO_APTA') {
+        banner.className = 'p-3 rounded-sm text-xs font-semibold flex items-center justify-between border bg-red-100 text-red-950 border-red-300';
+        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i> <strong>ALERTA MÉDICA:</strong> Presenta ${evalResultado.totalSi} posible(s) contraindicación(es).</span>`;
+        badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-600 text-white shadow-2xs';
+        badge.innerText = 'NO APTA / VALORACIÓN';
+      } else if (evalResultado.apta === 'APTA') {
+        banner.className = 'p-3 rounded-sm text-xs font-semibold flex items-center justify-between border bg-emerald-100 text-emerald-950 border-emerald-300';
+        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-700"></i> <strong>APTA:</strong> Sin contraindicaciones detectadas en las 14 preguntas.</span>`;
+        badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs';
+        badge.innerText = 'APTA PARA LÁSER';
+      } else {
+        banner.className = 'p-3 rounded-sm text-xs font-semibold flex items-center justify-between border bg-neutral-100 text-neutral-700 border-neutral-300';
+        const pendTxt = evalResultado.totalNo > 0 ? `(${evalResultado.totalNo}/14 respondidas)` : 'Marca las respuestas';
+        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="help-circle" class="w-4 h-4 text-neutral-500"></i> Cuestionario de seguridad ${pendTxt}</span>`;
+        badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white border border-neutral-300 text-neutral-600';
+        badge.innerText = 'PENDIENTE';
+      }
+      lucide.createIcons();
+    }
+
+    async function guardarCambiosHistoriaClinicaModal() {
+      const clienteId = document.getElementById('hcClienteIdActivo').value;
+      if (!clienteId) return;
+
+      const evalResultado = evaluarAptitud(respuestasModalHC);
+      const observaciones = (document.getElementById('hcObservacionesInput').value || '').trim();
+
+      const preguntasArray = PREGUNTAS_HISTORIA_CLINICA.map(p => ({
+        id: p.id,
+        pregunta: p.pregunta,
+        respuesta: respuestasModalHC[p.id] || 'NO_RESPONDE'
+      }));
+
+      try {
+        const res = await fetch(`/api/clientes/${clienteId}/historia-clinica`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            preguntas: preguntasArray,
+            apta: evalResultado.apta,
+            observaciones
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalVerHistoriaClinica');
+          await cargarDatosServidor();
+          alert('✓ Historia clínica guardada correctamente en MongoDB Atlas.');
+        } else {
+          alert('Error al guardar historia clínica: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
@@ -3961,6 +4435,30 @@
         const esLaser = (c.servicio || '').toLowerCase().includes('laser') || (c.servicio || '').toLowerCase().includes('láser');
         const zonas = Array.isArray(c.zonas) ? c.zonas : [];
 
+        const clientObj = appState.clientes.find(cl => cl._id == c.clienteId);
+        const hc = clientObj ? clientObj.historiaClinica : null;
+        let hcBadgeCabina = '';
+        if (hc && hc.apta === 'APTA') {
+          hcBadgeCabina = `
+            <button type="button" onclick="abrirModalHistoriaClinica('${c.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 inline-flex items-center gap-1 hover:bg-emerald-200 transition" title="Ver Historia Clínica: Apta para Láser">
+              <i data-lucide="shield-check" class="w-3 h-3 text-emerald-700"></i> Apta Láser
+            </button>
+          `;
+        } else if (hc && hc.apta === 'NO_APTA') {
+          const totAlertas = (hc.preguntas || []).filter(p => p.respuesta === 'SI').length;
+          hcBadgeCabina = `
+            <button type="button" onclick="abrirModalHistoriaClinica('${c.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-900 border border-red-300 inline-flex items-center gap-1 hover:bg-red-200 transition animate-pulse" title="¡Atención! Presenta ${totAlertas} posible(s) contraindicación(es)">
+              <i data-lucide="alert-triangle" class="w-3 h-3 text-red-700"></i> No Apta (${totAlertas})
+            </button>
+          `;
+        } else {
+          hcBadgeCabina = `
+            <button type="button" onclick="abrirModalHistoriaClinica('${c.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 border border-neutral-300 inline-flex items-center gap-1 hover:bg-neutral-200 transition" title="Diligenciar Historia Clínica">
+              <i data-lucide="clipboard-check" class="w-3 h-3 text-purple-600"></i> Sin H. Clínica
+            </button>
+          `;
+        }
+
         let badgeEstado = '';
         if (c.estado === 'Pendiente') {
           badgeEstado = `<span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-neutral-100 text-neutral-800 border border-neutral-300">En Cabina</span>`;
@@ -3978,7 +4476,10 @@
               <!-- Header Cita -->
               <div class="flex justify-between items-start gap-2 border-b border-brand-border pb-3">
                 <div>
-                  <h3 class="font-extrabold text-base tracking-tight text-black">${c.clienteNombre}</h3>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="font-extrabold text-base tracking-tight text-black">${c.clienteNombre}</h3>
+                    ${hcBadgeCabina}
+                  </div>
                   <div class="flex items-center gap-3 text-xs text-brand-gray mt-1">
                     <span class="flex items-center gap-1"><i data-lucide="phone" class="w-3.5 h-3.5 text-brand-gray"></i> ${c.clienteTelefono || 'Sin teléfono'}</span>
                     ${c.clienteTelefono ? `

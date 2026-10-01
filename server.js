@@ -30,7 +30,7 @@ app.get('/', (req, res) => {
 
 // ================= SCHEMAS & MODELS =================
 
-// 1. Cliente con contador de servicios
+// 1. Cliente con contador de servicios e historia clínica
 const clientSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
   telefono: { type: String, required: true },
@@ -39,6 +39,17 @@ const clientSchema = new mongoose.Schema({
     type: Map,
     of: Number,
     default: {}
+  },
+  historiaClinica: {
+    preguntas: [{
+      id: Number,
+      pregunta: String,
+      respuesta: { type: String, enum: ['SI', 'NO', 'NO_RESPONDE'], default: 'NO' }
+    }],
+    apta: { type: String, enum: ['APTA', 'NO_APTA', 'REQUIERE_VALORACION', 'PENDIENTE'], default: 'PENDIENTE' },
+    observaciones: { type: String, default: '' },
+    fechaRegistro: { type: String, default: '' },
+    registradoPor: { type: String, default: '' }
   }
 }, { timestamps: true });
 
@@ -392,26 +403,71 @@ app.get('/api/bootstrap', async (req, res) => {
   }
 });
 
-// 2. Crear Cliente
+// 2. Crear Cliente (con Historia Clínica opcional/inicial)
 app.post('/api/clientes', async (req, res) => {
   try {
-    const { nombre, telefono, notas } = req.body;
+    const { nombre, telefono, notas, historiaClinica } = req.body;
     if (!nombre || !nombre.trim()) {
       return res.status(400).json({ success: false, error: 'El nombre del cliente es obligatorio' });
     }
     if (!telefono || !telefono.trim()) {
       return res.status(400).json({ success: false, error: 'El teléfono celular es obligatorio' });
     }
+
+    const authUser = await getAuthUser(req);
+    const nombreUsuario = authUser ? authUser.nombre : 'Recepción';
+
+    let datosHistoria = null;
+    if (historiaClinica && Array.isArray(historiaClinica.preguntas) && historiaClinica.preguntas.length > 0) {
+      datosHistoria = {
+        preguntas: historiaClinica.preguntas,
+        apta: historiaClinica.apta || 'PENDIENTE',
+        observaciones: (historiaClinica.observaciones || '').trim(),
+        fechaRegistro: historiaClinica.fechaRegistro || new Date().toISOString().split('T')[0],
+        registradoPor: historiaClinica.registradoPor || nombreUsuario
+      };
+    }
+
     const nuevo = await Client.create({
       nombre: nombre.trim(),
       telefono: telefono.trim(),
       notas: (notas || '').trim(),
-      contadorServicios: {}
+      contadorServicios: {},
+      historiaClinica: datosHistoria
     });
-    console.log(`✓ Nuevo cliente creado: ${nuevo.nombre} (${nuevo.telefono})`);
+    console.log(`✓ Nuevo cliente creado: ${nuevo.nombre} (${nuevo.telefono}) [Aptitud Láser: ${nuevo.historiaClinica ? nuevo.historiaClinica.apta : 'Pendiente'}]`);
     res.json({ success: true, cliente: nuevo });
   } catch (error) {
     console.error('Error al crear cliente:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 2.1 Actualizar Historia Clínica de un Cliente
+app.put('/api/clientes/:id/historia-clinica', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { preguntas, apta, observaciones } = req.body;
+
+    const cliente = await Client.findById(id);
+    if (!cliente) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
+
+    const authUser = await getAuthUser(req);
+    const nombreUsuario = authUser ? authUser.nombre : 'Recepción';
+
+    cliente.historiaClinica = {
+      preguntas: Array.isArray(preguntas) ? preguntas : [],
+      apta: apta || 'PENDIENTE',
+      observaciones: (observaciones || '').trim(),
+      fechaRegistro: new Date().toISOString().split('T')[0],
+      registradoPor: nombreUsuario
+    };
+
+    await cliente.save();
+    console.log(`✓ Historia clínica guardada para ${cliente.nombre}: ${cliente.historiaClinica.apta} por ${nombreUsuario}`);
+    res.json({ success: true, cliente });
+  } catch (error) {
+    console.error('Error al guardar historia clínica:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
