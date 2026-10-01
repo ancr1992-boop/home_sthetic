@@ -46,10 +46,17 @@ const clientSchema = new mongoose.Schema({
       pregunta: String,
       respuesta: { type: String, enum: ['SI', 'NO', 'NO_RESPONDE'], default: 'NO' }
     }],
-    apta: { type: String, enum: ['APTA', 'NO_APTA', 'REQUIERE_VALORACION', 'PENDIENTE'], default: 'PENDIENTE' },
+    apta: { type: String, enum: ['APTA', 'NO_APTA', 'REQUIERE_VALORACION', 'PENDIENTE', 'AUTORIZADA_MEDICO', 'NO_AUTORIZADA_MEDICO'], default: 'PENDIENTE' },
     observaciones: { type: String, default: '' },
     fechaRegistro: { type: String, default: '' },
-    registradoPor: { type: String, default: '' }
+    registradoPor: { type: String, default: '' },
+    autorizacionMedica: {
+      estado: { type: String, enum: ['PENDIENTE', 'AUTORIZADA', 'NO_AUTORIZADA', 'REQUIERE_OBSERVACION'], default: 'PENDIENTE' },
+      concepto: { type: String, default: '' },
+      medicoNombre: { type: String, default: '' },
+      fechaDictamen: { type: String, default: '' },
+      horaDictamen: { type: String, default: '' }
+    }
   }
 }, { timestamps: true });
 
@@ -135,7 +142,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   nombre: { type: String, required: true },
-  rol: { type: String, enum: ['admin', 'recepcionista', 'operaria'], required: true },
+  rol: { type: String, enum: ['admin', 'recepcionista', 'operaria', 'medico'], required: true },
   operariaNombre: { type: String, default: '' },
   activo: { type: Boolean, default: true }
 }, { timestamps: true });
@@ -255,6 +262,17 @@ async function initDatabaseDefaults() {
       rol: 'recepcionista'
     });
     console.log('✓ Usuario Recepcionista creado: recepcion / recepcion123');
+  }
+
+  const medicoExists = await User.findOne({ rol: 'medico' });
+  if (!medicoExists) {
+    await User.create({
+      username: 'doctor',
+      password: '123',
+      nombre: 'Dr. Alejandro Peña (Director Médico)',
+      rol: 'medico'
+    });
+    console.log('✓ Usuario Médico creado: doctor / 123');
   }
 
   // Asegurar usuarios para las operarias registradas
@@ -468,6 +486,82 @@ app.put('/api/clientes/:id/historia-clinica', async (req, res) => {
     res.json({ success: true, cliente });
   } catch (error) {
     console.error('Error al guardar historia clínica:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 2.2 Registrar Dictamen / Autorización Médica (Médico o Administrador)
+app.put('/api/clientes/:id/autorizacion-medica', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || (authUser.rol !== 'medico' && authUser.rol !== 'admin')) {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado: Solo el perfil Médico o Administrador puede emitir autorizaciones clínicas.'
+      });
+    }
+
+    const { id } = req.params;
+    const { estado, concepto } = req.body; // 'AUTORIZADA', 'NO_AUTORIZADA', 'REQUIERE_OBSERVACION'
+
+    const cliente = await Client.findById(id);
+    if (!cliente) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
+
+    if (!cliente.historiaClinica) {
+      cliente.historiaClinica = {
+        preguntas: [],
+        apta: 'PENDIENTE',
+        observaciones: '',
+        fechaRegistro: getFechaHoy(),
+        registradoPor: authUser.nombre
+      };
+    }
+
+    const fechaHoyStr = getFechaHoy();
+    const horaActualStr = getHoraActual();
+
+    cliente.historiaClinica.autorizacionMedica = {
+      estado: estado || 'AUTORIZADA',
+      concepto: (concepto || '').trim(),
+      medicoNombre: authUser.nombre || 'Director Médico',
+      fechaDictamen: fechaHoyStr,
+      horaDictamen: horaActualStr
+    };
+
+    if (estado === 'AUTORIZADA') {
+      cliente.historiaClinica.apta = 'AUTORIZADA_MEDICO';
+    } else if (estado === 'NO_AUTORIZADA') {
+      cliente.historiaClinica.apta = 'NO_AUTORIZADA_MEDICO';
+    } else {
+      cliente.historiaClinica.apta = 'REQUIERE_VALORACION';
+    }
+
+    await cliente.save();
+    console.log(`✓ Dictamen médico registrado por ${authUser.nombre} para ${cliente.nombre}: ${cliente.historiaClinica.apta}`);
+    res.json({ success: true, cliente });
+  } catch (error) {
+    console.error('Error al registrar autorización médica:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 2.3 Eliminar Cliente (Solo Administrador)
+app.delete('/api/clientes/:id', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado: Solo el perfil Administrador puede eliminar clientes.'
+      });
+    }
+    const { id } = req.params;
+    const deleted = await Client.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
+    console.log(`✓ Cliente eliminado por administrador: ${deleted.nombre}`);
+    res.json({ success: true, message: 'Cliente eliminado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar cliente:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

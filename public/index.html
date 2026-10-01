@@ -116,6 +116,9 @@
       <button onclick="cambiarSeccion('operaria')" id="tab-operaria" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap hidden">
         <i data-lucide="sparkles" class="w-4 h-4 text-pink-600"></i> Mi Cabina / Clientes
       </button>
+      <button onclick="cambiarSeccion('medico')" id="tab-medico" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap hidden">
+        <i data-lucide="stethoscope" class="w-4 h-4 text-emerald-600"></i> Panel Médico
+      </button>
     </div>
   </header>
 
@@ -552,6 +555,91 @@
       </div>
     </section>
 
+    <!-- ================= SECCIÓN 7: CONTROL MÉDICO & HISTORIAS CLÍNICAS ================= -->
+    <section id="sec-medico" class="hidden space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-border pb-4">
+        <div>
+          <h2 class="text-lg font-bold uppercase tracking-wider flex items-center gap-2 text-black">
+            <i data-lucide="stethoscope" class="w-5 h-5 text-emerald-600"></i>
+            Control Médico & Dictámenes de Aptitud
+          </h2>
+          <p class="text-xs text-brand-gray mt-0.5">
+            Supervisión clínica de historias clínicas, análisis de contraindicaciones y emisión de avales médicos para depilación láser.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-sm text-xs font-bold">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Supervisión Médica
+          </span>
+        </div>
+      </div>
+
+      <!-- Métricas Resumen Médico -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white border-2 border-red-300 p-4 rounded-sm shadow-xs">
+          <div class="flex items-center justify-between text-xs text-red-700 font-bold uppercase tracking-wider mb-1">
+            <span>Con Alertas / No Aptas</span>
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i>
+          </div>
+          <span id="metricaMedicoNoAptas" class="text-2xl font-black text-red-600">0</span>
+          <span class="block text-[11px] text-red-500 font-medium mt-0.5">Pendientes de dictamen</span>
+        </div>
+
+        <div class="bg-white border-2 border-blue-300 p-4 rounded-sm shadow-xs">
+          <div class="flex items-center justify-between text-xs text-blue-700 font-bold uppercase tracking-wider mb-1">
+            <span>Avaladas por Médico</span>
+            <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
+          </div>
+          <span id="metricaMedicoAutorizadas" class="text-2xl font-black text-blue-700">0</span>
+          <span class="block text-[11px] text-blue-500 font-medium mt-0.5">Aptas con dictamen favorable</span>
+        </div>
+
+        <div class="bg-white border border-brand-border p-4 rounded-sm shadow-xs">
+          <div class="flex items-center justify-between text-xs text-brand-gray font-bold uppercase tracking-wider mb-1">
+            <span>Aptas Directas</span>
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+          </div>
+          <span id="metricaMedicoAptasDirectas" class="text-2xl font-black text-emerald-600">0</span>
+          <span class="block text-[11px] text-brand-gray mt-0.5">Sin contraindicaciones</span>
+        </div>
+
+        <div class="bg-white border border-brand-border p-4 rounded-sm shadow-xs">
+          <div class="flex items-center justify-between text-xs text-brand-gray font-bold uppercase tracking-wider mb-1">
+            <span>Total Historias</span>
+            <i data-lucide="users" class="w-4 h-4 text-purple-600"></i>
+          </div>
+          <span id="metricaMedicoTotal" class="text-2xl font-black text-black">0</span>
+          <span class="block text-[11px] text-brand-gray mt-0.5">Pacientes en sistema</span>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros y Búsqueda -->
+      <div class="bg-white border border-brand-border p-4 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="setFiltroMedico('alertas')" id="btnFiltroMedAlertas" class="px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition bg-red-600 text-white shadow-xs">
+            ⚠️ Requieren Revisión (<span id="contFiltroMedAlertas">0</span>)
+          </button>
+          <button type="button" onclick="setFiltroMedico('autorizadas')" id="btnFiltroMedAutorizadas" class="px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition bg-neutral-100 text-neutral-700 hover:bg-neutral-200">
+            🛡️ Avaladas por Médico (<span id="contFiltroMedAutorizadas">0</span>)
+          </button>
+          <button type="button" onclick="setFiltroMedico('todas')" id="btnFiltroMedTodas" class="px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition bg-neutral-100 text-neutral-700 hover:bg-neutral-200">
+            Todas las Pacientes (<span id="contFiltroMedTodas">0</span>)
+          </button>
+        </div>
+
+        <div class="relative w-full md:w-72">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-3 text-brand-gray"></i>
+          <input type="text" id="buscarPacienteMedicoInput" oninput="renderizarPanelMedico()" placeholder="Buscar por nombre o teléfono..." class="w-full pl-9 pr-3 py-2 border border-brand-border rounded-sm text-xs focus:border-black outline-none bg-neutral-50 focus:bg-white font-medium">
+        </div>
+      </div>
+
+      <!-- Contenedor de Pacientes para Evaluación Médica -->
+      <div id="contenedorPacientesMedico" class="space-y-4">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
   </main>
 
   <!-- ================= MODALES ================= -->
@@ -869,6 +957,11 @@
         <span id="hcBannerBadge" class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"></span>
       </div>
 
+      <!-- Dictamen / Aval Médico Registrado (si existe) -->
+      <div id="hcAutorizacionMedicaBox" class="hidden p-3.5 rounded-sm text-xs border space-y-1.5">
+        <!-- Contenido dinámico con concepto, fecha y médico -->
+      </div>
+
       <div class="flex justify-between items-center bg-neutral-50 p-2.5 rounded-sm border border-brand-border/70">
         <span class="text-[11px] text-brand-gray font-medium">Puedes actualizar las respuestas en caso de que su condición médica haya cambiado:</span>
         <div class="flex items-center gap-1.5">
@@ -893,14 +986,102 @@
 
       <input type="hidden" id="hcClienteIdActivo" value="">
 
-      <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
-        <button type="button" onclick="closeModal('modalVerHistoriaClinica')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">
-          Cerrar
-        </button>
-        <button type="button" onclick="guardarCambiosHistoriaClinicaModal()" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm transition shadow-sm flex items-center gap-1.5">
-          <i data-lucide="save" class="w-3.5 h-3.5"></i> Guardar Cambios en Historia Clínica
+      <div class="pt-3 border-t border-brand-border flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <button type="button" id="btnEmitirDictamenDesdeHC" onclick="abrirDictamenDesdeModalHC()" class="hidden bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition items-center gap-1.5 shadow-xs">
+            <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i> Dictamen Médico
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeModal('modalVerHistoriaClinica')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">
+            Cerrar
+          </button>
+          <button type="button" onclick="guardarCambiosHistoriaClinicaModal()" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm transition shadow-sm flex items-center gap-1.5">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i> Guardar Cambios en Historia Clínica
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Emitir Dictamen / Aval Médico -->
+  <div id="modalDictamenMedico" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-xl w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-start border-b border-brand-border pb-3">
+        <div>
+          <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-black">
+            <i data-lucide="stethoscope" class="w-4 h-4 text-emerald-600"></i>
+            Dictamen Médico & Autorización Clínica
+          </h3>
+          <p id="dictamenClienteTitulo" class="text-xs font-semibold text-black mt-0.5">Paciente: -</p>
+        </div>
+        <button onclick="closeModal('modalDictamenMedico')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
+
+      <!-- Resumen de Alertas / Razones por las que no es apta -->
+      <div id="dictamenAlertasBox" class="bg-red-50 border border-red-200 p-3.5 rounded-sm space-y-2">
+        <div class="flex items-center gap-2 text-red-900 font-bold text-xs">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i>
+          <span id="dictamenAlertasTitulo">Motivos de Alerta / Contraindicaciones Registradas:</span>
+        </div>
+        <div id="dictamenListaRazones" class="space-y-1.5 text-xs text-red-950 pl-2">
+          <!-- Renderizado de preguntas con SÍ -->
+        </div>
+      </div>
+
+      <!-- Observaciones previas de recepción o cabina -->
+      <div id="dictamenObservacionesPreviasBox" class="bg-neutral-50 border border-brand-border/70 p-2.5 rounded-sm hidden text-xs">
+        <span class="font-bold text-brand-gray uppercase text-[10px] block">Notas de Recepción / Registro:</span>
+        <p id="dictamenObservacionesPreviasTxt" class="text-neutral-800 italic mt-0.5">-</p>
+      </div>
+
+      <form onsubmit="guardarDictamenMedicoSubmit(event)" class="space-y-4">
+        <input type="hidden" id="dictamenClienteId" value="">
+
+        <!-- Decisión Médica -->
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-2">Decisión Médica de Aptitud *</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label class="flex items-start gap-2.5 p-3 border-2 rounded-sm cursor-pointer transition hover:bg-neutral-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/50">
+              <input type="radio" name="dictamenEstado" value="AUTORIZADA" checked class="mt-0.5 text-blue-600">
+              <div>
+                <span class="font-bold text-blue-950 block text-xs">🟢 AUTORIZADA (Apta)</span>
+                <span class="text-[11px] text-neutral-600">No reviste gravedad o es seguro con precauciones clínicas.</span>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-2.5 p-3 border-2 rounded-sm cursor-pointer transition hover:bg-neutral-50 has-[:checked]:border-red-600 has-[:checked]:bg-red-50/50">
+              <input type="radio" name="dictamenEstado" value="NO_AUTORIZADA" class="mt-0.5 text-red-600">
+              <div>
+                <span class="font-bold text-red-950 block text-xs">🔴 NO AUTORIZADA</span>
+                <span class="text-[11px] text-neutral-600">Contraindicación médica absoluta para láser.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Concepto Clínico / Justificación -->
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">
+            Concepto Médico / Justificación Clínica *
+          </label>
+          <p class="text-[11px] text-brand-gray mb-1.5">
+            Explica por qué la paciente es apta o no, especificaciones de zonas seguras, o recomendaciones clínicas.
+          </p>
+          <textarea id="dictamenConceptoInput" rows="3" required placeholder="Ej: Se evalúa caso de la paciente Diana Marín. Se constata que el antibiótico culminó su ciclo hace 10 días y no genera fotosensibilidad activa; se autoriza tratamiento cuidando la zona..." class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white text-xs"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalDictamenMedico')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">
+            Cancelar
+          </button>
+          <button type="submit" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm transition shadow-sm flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> Guardar Dictamen Médico
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1290,6 +1471,7 @@
           <select id="nuUsuarioRol" onchange="onCambioRolNuevoUsuario()" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-medium">
             <option value="recepcionista">Recepcionista — Gestión & Caja</option>
             <option value="operaria">Operaria — Solo Cabina</option>
+            <option value="medico">Médico / Doctor — Control de Historias Clínicas & Aval</option>
             <option value="admin">Administrador — Control Total</option>
           </select>
         </div>
@@ -1410,7 +1592,7 @@
       const navRole = document.getElementById('navUserRole');
       if (navName) navName.textContent = user.nombre;
       if (navRole) {
-        const labels = { admin: '🛡 Administrador', recepcionista: '🖥 Recepcionista', operaria: '✨ Especialista' };
+        const labels = { admin: '🛡 Administrador', recepcionista: '🖥 Recepcionista', operaria: '✨ Especialista', medico: '🩺 Médico / Director' };
         navRole.textContent = labels[rol] || rol;
       }
 
@@ -1426,9 +1608,7 @@
 
       if (rol === 'operaria') {
         // ── OPERARIA: ocultar casi todo, mostrar solo "Mi Cabina" ──
-
-        // Ocultar pestañas que no corresponden
-        ['tab-agenda','tab-clientes','tab-caja','tab-equipo','tab-usuarios'].forEach(id => {
+        ['tab-agenda','tab-clientes','tab-caja','tab-equipo','tab-usuarios','tab-medico'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.add('hidden');
         });
@@ -1458,12 +1638,32 @@
         return;
       }
 
+      if (rol === 'medico') {
+        // ── MÉDICO: Panel Médico, Clientes & Historias Clínicas, Agenda ──
+        ['tab-caja','tab-equipo','tab-usuarios','tab-operaria'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('hidden');
+        });
+
+        ['tab-medico','tab-clientes','tab-agenda'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('hidden');
+        });
+
+        const btnAnular = document.getElementById('btnAnularCitaModal');
+        if (btnAnular) btnAnular.style.display = 'none';
+
+        cambiarSeccion('medico');
+        return;
+      }
+
       if (rol === 'recepcionista') {
         // ── RECEPCIONISTA: todo excepto eliminar ventas y modificar precios ──
-
-        // Mostrar pestañas principales, pero no Usuarios
         const tabUsuarios = document.getElementById('tab-usuarios');
         if (tabUsuarios) tabUsuarios.classList.add('hidden');
+
+        const tabMed = document.getElementById('tab-medico');
+        if (tabMed) tabMed.classList.add('hidden');
 
         // Ocultar botón de eliminar ventas (columna de acciones en tabla ventas)
         const thAcciones = document.getElementById('thAccionesVenta');
@@ -1472,10 +1672,6 @@
         // Recepcionista no puede eliminar citas
         const btnAnular = document.getElementById('btnAnularCitaModal');
         if (btnAnular) btnAnular.style.display = 'none';
-
-        // La sección "Operarias & Servicios" es visible, pero el botón
-        // "+ Agregar Tratamiento" (que crea precios) se oculta
-        // Se maneja después del render de la sección (ver renderizarEquipo)
 
         // Asegurarse que la cabina (tab operaria) esté oculta
         const tabCabina = document.getElementById('tab-operaria');
@@ -1495,6 +1691,12 @@
 
         const tabCabina = document.getElementById('tab-operaria');
         if (tabCabina) tabCabina.classList.add('hidden');
+
+        const tabMed = document.getElementById('tab-medico');
+        if (tabMed) tabMed.classList.remove('hidden');
+
+        const tabUsuarios = document.getElementById('tab-usuarios');
+        if (tabUsuarios) tabUsuarios.classList.remove('hidden');
 
         cambiarSeccion('agenda');
         return;
@@ -1592,6 +1794,7 @@
           renderizarUsuarios();
           cargarHistorialBackups();
           renderizarCabinaOperaria();
+          renderizarPanelMedico();
           renderizarBannerCitasFacturar();
         } else {
           console.error('Error desde el servidor:', json.error);
@@ -1603,7 +1806,7 @@
     }
 
     function cambiarSeccion(seccion) {
-      const secciones = ['agenda', 'clientes', 'caja', 'equipo', 'usuarios', 'operaria'];
+      const secciones = ['agenda', 'clientes', 'caja', 'equipo', 'usuarios', 'operaria', 'medico'];
       secciones.forEach(sec => {
         const el = document.getElementById(`sec-${sec}`);
         if (el) el.classList.add('hidden');
@@ -1626,6 +1829,8 @@
       } else if (seccion === 'usuarios') {
         renderizarUsuarios();
         cargarHistorialBackups();
+      } else if (seccion === 'medico') {
+        renderizarPanelMedico();
       } else {
         renderizarBannerCitasFacturar();
       }
@@ -2006,15 +2211,7 @@
         const countSesion = obtenerContadorSesiones(cliente, cita.servicio);
 
         const hc = cliente ? cliente.historiaClinica : null;
-        let badgeHC = '';
-        if (hc && hc.apta === 'APTA') {
-          badgeHC = `<button type="button" onclick="abrirModalHistoriaClinica('${cita.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 inline-flex items-center gap-1 hover:bg-emerald-200 transition" title="Ver Historia Clínica: Apta para Láser"><i data-lucide="shield-check" class="w-3 h-3 text-emerald-700"></i> Apta Láser</button>`;
-        } else if (hc && hc.apta === 'NO_APTA') {
-          const tot = (hc.preguntas || []).filter(p => p.respuesta === 'SI').length;
-          badgeHC = `<button type="button" onclick="abrirModalHistoriaClinica('${cita.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-900 border border-red-300 inline-flex items-center gap-1 hover:bg-red-200 transition animate-pulse" title="¡Atención! Presenta ${tot} posible(s) contraindicación(es)"><i data-lucide="alert-triangle" class="w-3 h-3 text-red-700"></i> No Apta (${tot})</button>`;
-        } else {
-          badgeHC = `<button type="button" onclick="abrirModalHistoriaClinica('${cita.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 border border-neutral-300 inline-flex items-center gap-1 hover:bg-neutral-200 transition" title="Diligenciar Historia Clínica"><i data-lucide="clipboard-check" class="w-3 h-3 text-purple-600"></i> Sin H. Clínica</button>`;
-        }
+        const badgeHC = obtenerBadgeHistoriaClinica(cita.clienteId, hc);
 
         const esFacturar = cita.estado === 'Listo para Facturar';
         let badgeColor = 'border-black text-black';
@@ -3019,6 +3216,51 @@
       lucide.createIcons();
     }
 
+    function obtenerBadgeHistoriaClinica(clienteId, hc) {
+      if (!hc || !hc.apta || hc.apta === 'PENDIENTE') {
+        return `
+          <button type="button" onclick="abrirModalHistoriaClinica('${clienteId}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 border border-neutral-300 hover:bg-neutral-200 transition" title="Diligenciar Historia Clínica">
+            <i data-lucide="clipboard-check" class="w-3 h-3 text-purple-600"></i> Sin H. Clínica
+          </button>
+        `;
+      }
+      if (hc.apta === 'AUTORIZADA_MEDICO') {
+        const doc = (hc.autorizacionMedica && hc.autorizacionMedica.medicoNombre) || 'Médico';
+        return `
+          <button type="button" onclick="abrirModalHistoriaClinica('${clienteId}')" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-950 border border-blue-300 hover:bg-blue-200 transition shadow-2xs" title="Avalada por el Doctor (${doc})">
+            <i data-lucide="shield-check" class="w-3 h-3 text-blue-700"></i> 🛡 Avalada por Dr.
+          </button>
+        `;
+      }
+      if (hc.apta === 'NO_AUTORIZADA_MEDICO') {
+        return `
+          <button type="button" onclick="abrirModalHistoriaClinica('${clienteId}')" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-white border border-neutral-900 hover:bg-black transition shadow-2xs" title="No autorizada por dictamen médico">
+            <i data-lucide="x-circle" class="w-3 h-3 text-red-400"></i> No Autorizada Dr.
+          </button>
+        `;
+      }
+      if (hc.apta === 'APTA') {
+        return `
+          <button type="button" onclick="abrirModalHistoriaClinica('${clienteId}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 transition shadow-2xs" title="Ver Historia Clínica: APTA PARA LÁSER">
+            <i data-lucide="shield-check" class="w-3 h-3 text-emerald-700"></i> Apta Láser
+          </button>
+        `;
+      }
+      if (hc.apta === 'NO_APTA') {
+        const tot = (hc.preguntas || []).filter(p => p.respuesta === 'SI').length;
+        return `
+          <button type="button" onclick="abrirModalHistoriaClinica('${clienteId}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-900 border border-red-300 hover:bg-red-200 transition shadow-2xs animate-pulse" title="¡Atención! Presenta ${tot} posible(s) contraindicación(es)">
+            <i data-lucide="alert-triangle" class="w-3 h-3 text-red-700"></i> No Apta (${tot})
+          </button>
+        `;
+      }
+      return `
+        <button type="button" onclick="abrirModalHistoriaClinica('${clienteId}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 border border-neutral-300 hover:bg-neutral-200 transition" title="Historia Clínica Pendiente">
+          <i data-lucide="help-circle" class="w-3 h-3 text-neutral-500"></i> Pendiente
+        </button>
+      `;
+    }
+
     function renderizarClientes() {
       const busqueda = (document.getElementById('buscarClienteInput').value || '').toLowerCase();
       const tbody = document.getElementById('tablaClientesBody');
@@ -3032,6 +3274,9 @@
         tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-brand-gray">No se encontraron clientes.</td></tr>`;
         return;
       }
+
+      const sesion = obtenerSesion();
+      const esMedicoOAdmin = sesion && (sesion.rol === 'medico' || sesion.rol === 'admin');
 
       tbody.innerHTML = filtrados.map(c => {
         let contadoresHtml = '';
@@ -3065,28 +3310,7 @@
         }
 
         // Badge de Historia Clínica
-        const hc = c.historiaClinica;
-        let badgeHC = '';
-        if (hc && hc.apta === 'APTA') {
-          badgeHC = `
-            <button type="button" onclick="abrirModalHistoriaClinica('${c._id}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 transition" title="Ver Historia Clínica: APTA PARA LÁSER">
-              <i data-lucide="shield-check" class="w-3 h-3 text-emerald-700"></i> Apta Láser
-            </button>
-          `;
-        } else if (hc && hc.apta === 'NO_APTA') {
-          const tot = (hc.preguntas || []).filter(p => p.respuesta === 'SI').length;
-          badgeHC = `
-            <button type="button" onclick="abrirModalHistoriaClinica('${c._id}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-900 border border-red-300 hover:bg-red-200 transition animate-pulse" title="Ver Historia Clínica: ${tot} posibles contraindicaciones">
-              <i data-lucide="alert-triangle" class="w-3 h-3 text-red-700"></i> No Apta (${tot})
-            </button>
-          `;
-        } else {
-          badgeHC = `
-            <button type="button" onclick="abrirModalHistoriaClinica('${c._id}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-300 hover:bg-neutral-200 transition" title="Diligenciar Historia Clínica">
-              <i data-lucide="clipboard-check" class="w-3 h-3 text-purple-600"></i> Sin H. Clínica
-            </button>
-          `;
-        }
+        const badgeHC = obtenerBadgeHistoriaClinica(c._id, c.historiaClinica);
 
         return `
           <tr class="hover:bg-neutral-50 transition">
@@ -3109,7 +3333,12 @@
               ${proximaHtml}
             </td>
             <td class="p-4 text-right">
-              <div class="flex items-center justify-end gap-1.5">
+              <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                ${esMedicoOAdmin ? `
+                  <button type="button" onclick="abrirModalDictamenMedico('${c._id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 px-2.5 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs transition" title="Emitir o editar Dictamen Médico">
+                    <i data-lucide="stethoscope" class="w-3.5 h-3.5 text-emerald-600"></i> Dictamen
+                  </button>
+                ` : ''}
                 <button type="button" onclick="abrirModalHistoriaClinica('${c._id}')" class="bg-white hover:bg-neutral-100 text-purple-950 border border-purple-200 hover:border-purple-300 px-2.5 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs transition" title="Ver o actualizar Historia Clínica">
                   <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-purple-600"></i> H. Clínica
                 </button>
@@ -3210,6 +3439,44 @@
       document.getElementById('hcMetaInfo').textContent = `${fechaReg}${porReg}`;
       document.getElementById('hcObservacionesInput').value = hc.observaciones || '';
 
+      // Mostrar u ocultar botón de dictamen médico según rol
+      const sesion = obtenerSesion();
+      const puedeDictaminar = sesion && (sesion.rol === 'medico' || sesion.rol === 'admin');
+      const btnDictamen = document.getElementById('btnEmitirDictamenDesdeHC');
+      if (btnDictamen) {
+        if (puedeDictaminar) {
+          btnDictamen.classList.remove('hidden');
+          btnDictamen.classList.add('inline-flex');
+        } else {
+          btnDictamen.classList.add('hidden');
+          btnDictamen.classList.remove('inline-flex');
+        }
+      }
+
+      // Mostrar u ocultar caja de dictamen médico existente
+      const boxDictamen = document.getElementById('hcAutorizacionMedicaBox');
+      if (boxDictamen) {
+        if (hc.autorizacionMedica && hc.autorizacionMedica.estado && hc.autorizacionMedica.estado !== 'PENDIENTE') {
+          const am = hc.autorizacionMedica;
+          const esAut = am.estado === 'AUTORIZADA';
+          const bgBox = esAut ? 'bg-blue-50 border-blue-300 text-blue-950' : 'bg-neutral-100 border-neutral-300 text-neutral-900';
+          const ico = esAut ? 'shield-check' : 'x-circle';
+          const titulo = esAut ? '🟢 AVALADA POR DOCTOR' : '🔴 NO AUTORIZADA POR DOCTOR';
+          boxDictamen.className = `p-3.5 rounded-sm text-xs border space-y-1.5 ${bgBox}`;
+          boxDictamen.innerHTML = `
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <span class="font-bold flex items-center gap-1.5"><i data-lucide="${ico}" class="w-4 h-4 text-blue-700"></i> ${titulo}</span>
+              <span class="text-[10px] text-neutral-500 font-medium">${am.fechaDictamen || ''} ${am.horaDictamen ? '• ' + am.horaDictamen : ''}</span>
+            </div>
+            <p class="font-semibold text-xs leading-relaxed">"${am.concepto}"</p>
+            <span class="block text-[10px] text-neutral-600 border-t border-brand-border/40 pt-1">Dictamen emitido por: <strong>${am.medicoNombre || 'Director Médico'}</strong></span>
+          `;
+          boxDictamen.classList.remove('hidden');
+        } else {
+          boxDictamen.classList.add('hidden');
+        }
+      }
+
       respuestasModalHC = {};
       if (Array.isArray(hc.preguntas)) {
         hc.preguntas.forEach(p => {
@@ -3295,9 +3562,25 @@
 
       const evalResultado = evaluarAptitud(respuestasModalHC);
 
-      if (evalResultado.apta === 'NO_APTA') {
+      // Comprobar si el cliente actual tiene aval médico
+      const clienteId = document.getElementById('hcClienteIdActivo')?.value;
+      const cliente = appState.clientes.find(c => c._id == clienteId);
+      const tieneAvalMedico = cliente && cliente.historiaClinica && cliente.historiaClinica.apta === 'AUTORIZADA_MEDICO';
+      const tieneRechazoMedico = cliente && cliente.historiaClinica && cliente.historiaClinica.apta === 'NO_AUTORIZADA_MEDICO';
+
+      if (tieneAvalMedico) {
+        banner.className = 'p-3 rounded-sm text-xs font-semibold flex items-center justify-between border bg-blue-100 text-blue-950 border-blue-300';
+        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-blue-700"></i> <strong>AVAL MÉDICO ACTIVO:</strong> Autorizada por ${cliente.historiaClinica.autorizacionMedica?.medicoNombre || 'Médico'}.</span>`;
+        badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-700 text-white shadow-2xs';
+        badge.innerText = 'AVALADA POR DR.';
+      } else if (tieneRechazoMedico) {
+        banner.className = 'p-3 rounded-sm text-xs font-semibold flex items-center justify-between border bg-neutral-900 text-white border-black';
+        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="x-circle" class="w-4 h-4 text-red-400"></i> <strong>DICTAMEN NEGATIVO:</strong> No autorizada por ${cliente.historiaClinica.autorizacionMedica?.medicoNombre || 'Médico'}.</span>`;
+        badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-600 text-white shadow-2xs';
+        badge.innerText = 'NO AUTORIZADA';
+      } else if (evalResultado.apta === 'NO_APTA') {
         banner.className = 'p-3 rounded-sm text-xs font-semibold flex items-center justify-between border bg-red-100 text-red-950 border-red-300';
-        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i> <strong>ALERTA MÉDICA:</strong> Presenta ${evalResultado.totalSi} posible(s) contraindicación(es).</span>`;
+        texto.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i> <strong>ALERTA MÉDICA:</strong> Presenta ${evalResultado.totalSi} posible(s) contraindicación(es). Requiere valoración médica.</span>`;
         badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-600 text-white shadow-2xs';
         badge.innerText = 'NO APTA / VALORACIÓN';
       } else if (evalResultado.apta === 'APTA') {
@@ -3343,12 +3626,321 @@
         if (data.success) {
           closeModal('modalVerHistoriaClinica');
           await cargarDatosServidor();
+          renderizarPanelMedico();
           alert('✓ Historia clínica guardada correctamente en MongoDB Atlas.');
         } else {
           alert('Error al guardar historia clínica: ' + (data.error || 'Ocurrió un error'));
         }
       } catch (err) {
         alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    // ─── CONTROL MÉDICO & DICTÁMENES CLÍNICOS ───────────────────────────────
+
+    let filtroMedicoActivo = 'alertas'; // 'alertas', 'autorizadas', 'todas'
+
+    function setFiltroMedico(filtro) {
+      filtroMedicoActivo = filtro;
+      ['btnFiltroMedAlertas', 'btnFiltroMedAutorizadas', 'btnFiltroMedTodas'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.className = 'px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition bg-neutral-100 text-neutral-700 hover:bg-neutral-200';
+        }
+      });
+      if (filtro === 'alertas') {
+        const btn = document.getElementById('btnFiltroMedAlertas');
+        if (btn) btn.className = 'px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition bg-red-600 text-white shadow-xs';
+      } else if (filtro === 'autorizadas') {
+        const btn = document.getElementById('btnFiltroMedAutorizadas');
+        if (btn) btn.className = 'px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition bg-blue-600 text-white shadow-xs';
+      } else {
+        const btn = document.getElementById('btnFiltroMedTodas');
+        if (btn) btn.className = 'px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition bg-black text-white shadow-xs';
+      }
+      renderizarPanelMedico();
+    }
+
+    function renderizarPanelMedico() {
+      const cont = document.getElementById('contenedorPacientesMedico');
+      if (!cont) return;
+
+      const busqueda = normalizarTexto(document.getElementById('buscarPacienteMedicoInput')?.value || '');
+
+      const clientes = appState.clientes || [];
+
+      // Métricas médicas
+      let totalAlertas = 0;
+      let totalAutorizadas = 0;
+      let totalAptasDirectas = 0;
+      let totalConHC = 0;
+
+      clientes.forEach(c => {
+        const hc = c.historiaClinica;
+        if (!hc) return;
+        totalConHC++;
+        if (hc.apta === 'NO_APTA') totalAlertas++;
+        else if (hc.apta === 'AUTORIZADA_MEDICO') totalAutorizadas++;
+        else if (hc.apta === 'APTA') totalAptasDirectas++;
+      });
+
+      const elNoAptas = document.getElementById('metricaMedicoNoAptas');
+      const elAut = document.getElementById('metricaMedicoAutorizadas');
+      const elDirectas = document.getElementById('metricaMedicoAptasDirectas');
+      const elTot = document.getElementById('metricaMedicoTotal');
+
+      if (elNoAptas) elNoAptas.textContent = totalAlertas;
+      if (elAut) elAut.textContent = totalAutorizadas;
+      if (elDirectas) elDirectas.textContent = totalAptasDirectas;
+      if (elTot) elTot.textContent = clientes.length;
+
+      const cAlertas = document.getElementById('contFiltroMedAlertas');
+      const cAut = document.getElementById('contFiltroMedAutorizadas');
+      const cTodas = document.getElementById('contFiltroMedTodas');
+      if (cAlertas) cAlertas.textContent = totalAlertas;
+      if (cAut) cAut.textContent = totalAutorizadas;
+      if (cTodas) cTodas.textContent = clientes.length;
+
+      // Filtrado
+      let filtrados = clientes.filter(c => {
+        const matchText = normalizarTexto(c.nombre).includes(busqueda) || (c.telefono || '').includes(busqueda);
+        if (!matchText) return false;
+
+        const hc = c.historiaClinica;
+        if (filtroMedicoActivo === 'alertas') {
+          return hc && (hc.apta === 'NO_APTA' || (Array.isArray(hc.preguntas) && hc.preguntas.some(p => p.respuesta === 'SI') && hc.apta !== 'AUTORIZADA_MEDICO'));
+        }
+        if (filtroMedicoActivo === 'autorizadas') {
+          return hc && hc.apta === 'AUTORIZADA_MEDICO';
+        }
+        return true;
+      });
+
+      if (filtrados.length === 0) {
+        cont.innerHTML = `
+          <div class="bg-white border border-brand-border rounded-sm p-12 text-center text-brand-gray space-y-3">
+            <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto text-neutral-300"></i>
+            <p class="text-sm font-semibold text-black">No hay pacientes en esta categoría médica.</p>
+            <p class="text-xs text-brand-gray">Todos los casos están al día o no coinciden con los criterios de búsqueda.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      cont.innerHTML = filtrados.map(c => {
+        const hc = c.historiaClinica || {};
+        const preguntas = Array.isArray(hc.preguntas) ? hc.preguntas : [];
+        const preguntasSi = preguntas.filter(p => p.respuesta === 'SI');
+        const esAutorizada = hc.apta === 'AUTORIZADA_MEDICO';
+        const esNoAutorizada = hc.apta === 'NO_AUTORIZADA_MEDICO';
+        const esNoApta = hc.apta === 'NO_APTA' || (!esAutorizada && !esNoAutorizada && preguntasSi.length > 0);
+        const esApta = hc.apta === 'APTA';
+
+        // Construir lista amigable de razones (Diana Marín: No apta por X razón)
+        let razonesHtml = '';
+        if (preguntasSi.length > 0) {
+          razonesHtml = `
+            <div class="bg-red-50/90 border border-red-200 rounded-sm p-3.5 space-y-2">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-red-900 uppercase tracking-wide">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 flex-shrink-0"></i>
+                <span>${c.nombre}: Marcada como NO APTA por ${preguntasSi.length} razón(es):</span>
+              </div>
+              <ul class="space-y-1.5 text-xs text-red-950 pl-2">
+                ${preguntasSi.map(p => `
+                  <li class="flex items-start gap-2">
+                    <span class="inline-flex items-center justify-center bg-red-600 text-white font-mono font-bold text-[10px] w-4 h-4 rounded-full flex-shrink-0 mt-0.5">${p.id}</span>
+                    <span class="font-medium">${p.pregunta}</span>
+                  </li>
+                `).join('')}
+              </ul>
+              ${hc.observaciones ? `
+                <div class="pt-2 border-t border-red-200/80 text-[11px] text-red-900">
+                  <strong>Observaciones de registro:</strong> "${hc.observaciones}"
+                </div>
+              ` : ''}
+            </div>
+          `;
+        } else if (hc.observaciones) {
+          razonesHtml = `
+            <div class="bg-neutral-50 border border-brand-border p-3 rounded-sm text-xs text-neutral-800">
+              <span class="font-bold text-brand-gray uppercase text-[10px] block">Notas / Observaciones:</span>
+              <p class="italic mt-0.5">"${hc.observaciones}"</p>
+            </div>
+          `;
+        }
+
+        // Dictamen médico registrado si existe
+        let dictamenHtml = '';
+        if (hc.autorizacionMedica && hc.autorizacionMedica.estado && hc.autorizacionMedica.estado !== 'PENDIENTE') {
+          const am = hc.autorizacionMedica;
+          const bgBox = am.estado === 'AUTORIZADA' ? 'bg-blue-50/80 border-blue-200 text-blue-950' : 'bg-neutral-100 border-neutral-300 text-neutral-900';
+          const icon = am.estado === 'AUTORIZADA' ? '<i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>' : '<i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>';
+          const estadoTxt = am.estado === 'AUTORIZADA' ? '🟢 AVALADA POR DOCTOR' : '🔴 NO AUTORIZADA POR DOCTOR';
+
+          dictamenHtml = `
+            <div class="p-3.5 rounded-sm border ${bgBox} space-y-1.5">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
+                  ${icon}
+                  <span>${estadoTxt}</span>
+                </div>
+                <span class="text-[11px] text-neutral-500 font-medium">
+                  Fecha: ${am.fechaDictamen || ''} ${am.horaDictamen ? '• ' + am.horaDictamen : ''}
+                </span>
+              </div>
+              <p class="text-xs font-semibold leading-relaxed">
+                Concepto Médico: "${am.concepto}"
+              </p>
+              <div class="text-[10px] text-neutral-600 font-medium pt-1 border-t border-brand-border/40">
+                Dictamen emitido por: <strong>${am.medicoNombre || 'Médico Evaluador'}</strong>
+              </div>
+            </div>
+          `;
+        }
+
+        // Badge de estado en card
+        let badgeHeader = '';
+        let cardBorder = 'border-brand-border';
+        if (esAutorizada) {
+          cardBorder = 'border-blue-300 ring-1 ring-blue-200';
+          badgeHeader = `<span class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-900 border border-blue-300 rounded-full text-xs font-bold uppercase tracking-wider"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-700"></i> Avalada por Médico</span>`;
+        } else if (esNoApta) {
+          cardBorder = 'border-red-400 ring-2 ring-red-300';
+          badgeHeader = `<span class="inline-flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-full text-xs font-black uppercase tracking-wider shadow-xs animate-pulse"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Requiere Dictamen (${preguntasSi.length} alertas)</span>`;
+        } else if (esNoAutorizada) {
+          cardBorder = 'border-neutral-700';
+          badgeHeader = `<span class="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-full text-xs font-bold uppercase tracking-wider"><i data-lucide="x-circle" class="w-3.5 h-3.5 text-red-400"></i> No Autorizada</span>`;
+        } else if (esApta) {
+          cardBorder = 'border-emerald-200';
+          badgeHeader = `<span class="inline-flex items-center gap-1 px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full text-xs font-bold uppercase tracking-wider"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-700"></i> Apta Directa</span>`;
+        } else {
+          badgeHeader = `<span class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-neutral-700 border border-neutral-300 rounded-full text-xs font-medium uppercase tracking-wider">Sin Cuestionario</span>`;
+        }
+
+        return `
+          <div class="bg-white border-2 ${cardBorder} rounded-sm p-5 space-y-4 shadow-sm transition hover:shadow-md">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-border/60 pb-3">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-base font-bold text-black uppercase tracking-wider">${c.nombre}</h3>
+                  ${badgeHeader}
+                </div>
+                <div class="flex items-center gap-4 text-xs text-brand-gray mt-1">
+                  <a href="https://wa.me/57${(c.telefono || '').replace(/\\D/g, '')}" target="_blank" class="hover:text-black flex items-center gap-1 font-medium">
+                    <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i> ${c.telefono}
+                  </a>
+                  ${c.notas ? `<span>• Notas: ${c.notas}</span>` : ''}
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="abrirModalHistoriaClinica('${c._id}')" class="px-3 py-1.5 border border-brand-border hover:border-black rounded-sm text-xs font-semibold text-neutral-700 hover:text-black flex items-center gap-1.5 transition">
+                  <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-purple-600"></i> Cuestionario Completo
+                </button>
+                <button type="button" onclick="abrirModalDictamenMedico('${c._id}')" class="px-4 py-1.5 bg-black hover:bg-neutral-800 text-white rounded-sm text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition">
+                  <i data-lucide="stethoscope" class="w-3.5 h-3.5 text-emerald-400"></i> ${esAutorizada ? 'Editar Dictamen' : 'Emitir Dictamen'}
+                </button>
+              </div>
+            </div>
+
+            ${razonesHtml}
+            ${dictamenHtml}
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function abrirModalDictamenMedico(clienteId) {
+      const cliente = appState.clientes.find(c => c._id == clienteId);
+      if (!cliente) return;
+
+      document.getElementById('dictamenClienteId').value = cliente._id;
+      document.getElementById('dictamenClienteTitulo').textContent = `Paciente: ${cliente.nombre} • Tel: ${cliente.telefono}`;
+
+      const hc = cliente.historiaClinica || {};
+      const preguntas = Array.isArray(hc.preguntas) ? hc.preguntas : [];
+      const preguntasSi = preguntas.filter(p => p.respuesta === 'SI');
+
+      const contRazones = document.getElementById('dictamenListaRazones');
+      const boxAlertas = document.getElementById('dictamenAlertasBox');
+      const tituloAlertas = document.getElementById('dictamenAlertasTitulo');
+
+      if (preguntasSi.length > 0) {
+        boxAlertas.className = 'bg-red-50 border border-red-200 p-3.5 rounded-sm space-y-2';
+        tituloAlertas.textContent = `Motivos de Alerta (${cliente.nombre}: No apta por ${preguntasSi.length} razón/es):`;
+        contRazones.innerHTML = preguntasSi.map(p => `
+          <div class="flex items-start gap-2">
+            <span class="inline-flex items-center justify-center bg-red-600 text-white font-mono font-bold text-[10px] w-4 h-4 rounded-full flex-shrink-0 mt-0.5">${p.id}</span>
+            <span class="font-medium text-xs leading-snug">${p.pregunta}</span>
+          </div>
+        `).join('');
+      } else {
+        boxAlertas.className = 'bg-emerald-50 border border-emerald-200 p-3.5 rounded-sm space-y-1';
+        tituloAlertas.textContent = 'Sin contraindicaciones registradas en el cuestionario:';
+        contRazones.innerHTML = `<p class="text-xs text-emerald-900 font-medium">La paciente respondió NO a todas las preguntas de seguridad.</p>`;
+      }
+
+      const obsBox = document.getElementById('dictamenObservacionesPreviasBox');
+      const obsTxt = document.getElementById('dictamenObservacionesPreviasTxt');
+      if (hc.observaciones) {
+        obsBox.classList.remove('hidden');
+        obsTxt.textContent = `"${hc.observaciones}"`;
+      } else {
+        obsBox.classList.add('hidden');
+      }
+
+      // Pre-cargar valores si ya tenía dictamen médico previo
+      const am = hc.autorizacionMedica || {};
+      const radioEstado = document.querySelector(`input[name="dictamenEstado"][value="${am.estado || 'AUTORIZADA'}"]`);
+      if (radioEstado) radioEstado.checked = true;
+      document.getElementById('dictamenConceptoInput').value = am.concepto || '';
+
+      openModal('modalDictamenMedico');
+    }
+
+    function abrirDictamenDesdeModalHC() {
+      const clienteId = document.getElementById('hcClienteIdActivo').value;
+      if (!clienteId) return;
+      closeModal('modalVerHistoriaClinica');
+      abrirModalDictamenMedico(clienteId);
+    }
+
+    async function guardarDictamenMedicoSubmit(e) {
+      if (e) e.preventDefault();
+      const clienteId = document.getElementById('dictamenClienteId').value;
+      if (!clienteId) return;
+
+      const estado = document.querySelector('input[name="dictamenEstado"]:checked')?.value || 'AUTORIZADA';
+      const concepto = (document.getElementById('dictamenConceptoInput').value || '').trim();
+
+      if (!concepto) {
+        alert('Por favor redacta el concepto médico o justificación clínica.');
+        document.getElementById('dictamenConceptoInput').focus();
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/clientes/${clienteId}/autorizacion-medica`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ estado, concepto })
+        });
+        const data = await res.json();
+        if (data.success && data.cliente) {
+          closeModal('modalDictamenMedico');
+          await cargarDatosServidor();
+          renderizarPanelMedico();
+          renderizarClientes();
+          renderizarAgenda();
+          alert(`✓ Dictamen médico registrado con éxito para "${data.cliente.nombre}".\nEstado actualizado a: ${data.cliente.historiaClinica.apta}`);
+        } else {
+          alert('Error al guardar dictamen: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión al guardar dictamen médico: ' + err.message);
       }
     }
 
@@ -4437,27 +5029,7 @@
 
         const clientObj = appState.clientes.find(cl => cl._id == c.clienteId);
         const hc = clientObj ? clientObj.historiaClinica : null;
-        let hcBadgeCabina = '';
-        if (hc && hc.apta === 'APTA') {
-          hcBadgeCabina = `
-            <button type="button" onclick="abrirModalHistoriaClinica('${c.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 inline-flex items-center gap-1 hover:bg-emerald-200 transition" title="Ver Historia Clínica: Apta para Láser">
-              <i data-lucide="shield-check" class="w-3 h-3 text-emerald-700"></i> Apta Láser
-            </button>
-          `;
-        } else if (hc && hc.apta === 'NO_APTA') {
-          const totAlertas = (hc.preguntas || []).filter(p => p.respuesta === 'SI').length;
-          hcBadgeCabina = `
-            <button type="button" onclick="abrirModalHistoriaClinica('${c.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-900 border border-red-300 inline-flex items-center gap-1 hover:bg-red-200 transition animate-pulse" title="¡Atención! Presenta ${totAlertas} posible(s) contraindicación(es)">
-              <i data-lucide="alert-triangle" class="w-3 h-3 text-red-700"></i> No Apta (${totAlertas})
-            </button>
-          `;
-        } else {
-          hcBadgeCabina = `
-            <button type="button" onclick="abrirModalHistoriaClinica('${c.clienteId}')" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 border border-neutral-300 inline-flex items-center gap-1 hover:bg-neutral-200 transition" title="Diligenciar Historia Clínica">
-              <i data-lucide="clipboard-check" class="w-3 h-3 text-purple-600"></i> Sin H. Clínica
-            </button>
-          `;
-        }
+        const hcBadgeCabina = obtenerBadgeHistoriaClinica(c.clienteId, hc);
 
         let badgeEstado = '';
         if (c.estado === 'Pendiente') {
