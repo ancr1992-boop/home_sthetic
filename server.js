@@ -480,23 +480,24 @@ app.put('/api/citas/:id/reprogramar', async (req, res) => {
   }
 });
 
-// 4.0 Eliminar Cita (Solo si no está completada)
+// 4.0 Eliminar Cita (ESTRICTAMENTE SOLO ADMINISTRADOR)
 app.delete('/api/citas/:id', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado: Solo el Administrador tiene autorización para eliminar citas de la agenda.'
+      });
+    }
+
     const { id } = req.params;
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
 
-    if (cita.estado === 'Completada') {
-      return res.status(400).json({
-        success: false,
-        error: 'No se puede eliminar una cita ya completada y cobrada. Anula la venta en caja primero si es necesario.'
-      });
-    }
-
     await Appointment.findByIdAndDelete(id);
-    console.log(`✓ Cita eliminada: ${cita.clienteNombre} (${cita.fecha} ${cita.hora})`);
-    res.json({ success: true, message: 'Cita eliminada correctamente' });
+    console.log(`✓ Cita eliminada por Administrador (${authUser.nombre}): ${cita.clienteNombre} (${cita.fecha} ${cita.hora}) [Estado: ${cita.estado}]`);
+    res.json({ success: true, message: 'Cita eliminada correctamente de la agenda' });
   } catch (error) {
     console.error('Error al eliminar cita:', error);
     res.status(500).json({ success: false, error: error.message });

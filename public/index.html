@@ -942,8 +942,8 @@
       </div>
 
       <div class="pt-3 border-t border-brand-border flex items-center justify-between gap-2">
-        <button type="button" onclick="cancelarYEliminarCitaModal()" class="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1 transition" title="Anular y retirar cita de la agenda">
-          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Anular Cita
+        <button type="button" id="btnAnularCitaModal" onclick="cancelarYEliminarCitaModal()" class="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1 transition" title="Eliminar cita permanentemente (Solo Administrador)">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Eliminar Cita
         </button>
         <div class="flex gap-2">
           <button type="button" onclick="closeModal('modalReprogramar')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cerrar</button>
@@ -1364,6 +1364,10 @@
         const thAcciones = document.getElementById('thAccionesVenta');
         if (thAcciones) thAcciones.classList.add('hidden');
 
+        // Recepcionista no puede eliminar citas
+        const btnAnular = document.getElementById('btnAnularCitaModal');
+        if (btnAnular) btnAnular.style.display = 'none';
+
         // La sección "Operarias & Servicios" es visible, pero el botón
         // "+ Agregar Tratamiento" (que crea precios) se oculta
         // Se maneja después del render de la sección (ver renderizarEquipo)
@@ -1380,6 +1384,9 @@
         // ── ADMIN: todo visible ──
         const thAcciones = document.getElementById('thAccionesVenta');
         if (thAcciones) thAcciones.classList.remove('hidden');
+
+        const btnAnular = document.getElementById('btnAnularCitaModal');
+        if (btnAnular) btnAnular.style.display = 'inline-flex';
 
         const tabCabina = document.getElementById('tab-operaria');
         if (tabCabina) tabCabina.classList.add('hidden');
@@ -1883,6 +1890,9 @@
         return;
       }
 
+      const sesionActual = obtenerSesion();
+      const esAdmin = sesionActual && sesionActual.rol === 'admin';
+
       cont.innerHTML = citasFiltradas.map(cita => {
         const cliente = appState.clientes.find(c => c._id == cita.clienteId) || { nombre: cita.clienteNombre, telefono: cita.clienteTelefono, contadorServicios: {} };
         const countSesion = obtenerContadorSesiones(cliente, cita.servicio);
@@ -1923,6 +1933,11 @@
                   <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 border ${badgeColor} rounded-full">
                     ${cita.estado}
                   </span>
+                  ${esAdmin ? `
+                    <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="p-1 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xs transition" title="Eliminar cita (Solo Administrador)">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  ` : ''}
                 </div>
               </div>
 
@@ -2013,6 +2028,11 @@
                   <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition" title="Reprogramar Cita">
                     <i data-lucide="clock" class="w-3.5 h-3.5"></i>
                   </button>
+                  ${esAdmin ? `
+                    <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="px-2.5 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-2 text-xs rounded-sm transition flex items-center justify-center" title="Eliminar Cita de la Agenda (Solo Administrador)">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  ` : ''}
                 </div>
               ` : cita.estado !== 'Completada' ? `
                 <div class="flex gap-2">
@@ -2022,15 +2042,27 @@
                   <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition" title="Reprogramar Cita">
                     <i data-lucide="clock" class="w-3.5 h-3.5"></i>
                   </button>
+                  ${esAdmin ? `
+                    <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="px-2.5 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-2 text-xs rounded-sm transition flex items-center justify-center" title="Eliminar Cita de la Agenda (Solo Administrador)">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  ` : ''}
                 </div>
               ` : `
                 <div class="w-full space-y-2">
                   <div class="w-full text-center py-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 font-medium flex items-center justify-center gap-1.5 rounded-sm">
                     <i data-lucide="check-check" class="w-4 h-4 text-emerald-600"></i> Servicio Pagado en Caja
                   </div>
-                  <button onclick="iniciarSiguienteSesion('${cita._id}')" class="w-full bg-black hover:bg-neutral-800 text-white py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 transition shadow-xs">
-                    <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i> Asignar Siguiente Sesión
-                  </button>
+                  <div class="flex gap-2">
+                    <button onclick="iniciarSiguienteSesion('${cita._id}')" class="flex-1 bg-black hover:bg-neutral-800 text-white py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 transition shadow-xs">
+                      <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i> Asignar Siguiente Sesión
+                    </button>
+                    ${esAdmin ? `
+                      <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="px-3 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-2 text-xs rounded-sm transition flex items-center justify-center" title="Eliminar Cita de la Agenda (Solo Administrador)">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    ` : ''}
+                  </div>
                 </div>
               `}
             </div>
@@ -2607,6 +2639,18 @@
       document.getElementById('reprogramarFecha').value = cita.fecha;
       document.getElementById('reprogramarHora').value = cita.hora;
       document.getElementById('reprogramarOperaria').value = cita.operaria;
+
+      // El botón de eliminar cita dentro del modal solo se muestra a Administrador
+      const sesion = obtenerSesion();
+      const btnAnular = document.getElementById('btnAnularCitaModal');
+      if (btnAnular) {
+        if (sesion && sesion.rol === 'admin') {
+          btnAnular.style.display = 'inline-flex';
+        } else {
+          btnAnular.style.display = 'none';
+        }
+      }
+
       openModal('modalReprogramar');
     }
 
@@ -2635,10 +2679,26 @@
       }
     }
 
+    // Eliminar cita desde el modal de reprogramación (Solo Administrador)
     async function cancelarYEliminarCitaModal() {
+      const sesion = obtenerSesion();
+      if (!sesion || sesion.rol !== 'admin') {
+        alert('Acceso denegado: Solo el perfil Administrador tiene autorización para eliminar citas de la agenda.');
+        return;
+      }
+
       const citaId = document.getElementById('reprogramarCitaId').value;
       if (!citaId) return;
-      if (!confirm('¿Estás seguro de que deseas anular y retirar esta cita de la agenda?')) return;
+
+      const cita = appState.citas.find(c => c._id == citaId);
+      const desc = cita ? `${cita.clienteNombre} (${cita.servicio} - ${cita.fecha} a las ${cita.hora})` : 'esta cita';
+
+      let msg = `¿Estás seguro de que deseas eliminar permanentemente de la agenda a ${desc}?`;
+      if (cita && cita.estado === 'Completada') {
+        msg += '\n\n⚠️ NOTA: Esta cita ya fue cobrada en caja. Al eliminarla se retirará de la agenda y el registro en caja se mantendrá intacto.';
+      }
+
+      if (!confirm(msg)) return;
 
       try {
         const res = await fetch(`/api/citas/${citaId}`, {
@@ -2649,12 +2709,47 @@
         if (data.success) {
           closeModal('modalReprogramar');
           await cargarDatosServidor();
-          alert('✓ Cita anulada correctamente.');
+          alert('✓ Cita eliminada correctamente de la agenda.');
         } else {
-          alert('Error al anular cita: ' + (data.error || 'Ocurrió un error'));
+          alert('Error al eliminar cita: ' + (data.error || 'Ocurrió un error'));
         }
       } catch (err) {
         alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    // Eliminar cita directa con 1 clic desde la tarjeta de la agenda (Solo Administrador)
+    async function eliminarCitaDirecta(citaId) {
+      const sesion = obtenerSesion();
+      if (!sesion || sesion.rol !== 'admin') {
+        alert('Acceso denegado: Solo el perfil Administrador tiene autorización para eliminar citas de la agenda.');
+        return;
+      }
+
+      const cita = appState.citas.find(c => c._id == citaId);
+      if (!cita) return;
+
+      let msg = `¿Estás seguro de que deseas eliminar permanentemente esta cita de la agenda?\n\n• Cliente: ${cita.clienteNombre}\n• Servicio: ${cita.servicio}\n• Fecha y Hora: ${cita.fecha} a las ${cita.hora}\n• Estado actual: ${cita.estado}`;
+      if (cita.estado === 'Completada') {
+        msg += '\n\n⚠️ NOTA: Esta cita ya fue cobrada en caja. Al eliminarla se retirará de la agenda y el registro financiero de la venta en caja se mantendrá intacto.';
+      }
+
+      if (!confirm(msg)) return;
+
+      try {
+        const res = await fetch(`/api/citas/${citaId}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert('✓ Cita eliminada exitosamente de la agenda.');
+        } else {
+          alert('No se pudo eliminar la cita: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión al eliminar cita: ' + err.message);
       }
     }
 
