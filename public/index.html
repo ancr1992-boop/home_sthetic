@@ -567,11 +567,36 @@
             Supervisión clínica de historias clínicas, análisis de contraindicaciones y emisión de avales médicos para depilación láser.
           </p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <button type="button" id="btnActivarNotifSonidoMedico" onclick="activarNotificacionesYSonidoMedico()" class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-950 rounded-sm text-xs font-bold transition shadow-xs cursor-pointer">
+            <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-purple-600"></i>
+            <span id="txtBtnNotifSonido">Activar Alertas con Sonido</span>
+          </button>
           <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-sm text-xs font-bold">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Supervisión Médica
           </span>
+        </div>
+      </div>
+
+      <!-- Banner de Alerta Inmediata: Nueva Paciente en Espera de Valoración -->
+      <div id="bannerAlertaNuevaPacienteMedico" class="hidden border-2 border-red-500 bg-gradient-to-r from-red-500/10 via-red-50 to-red-500/10 rounded-sm p-4 sm:p-5 shadow-lg shadow-red-500/10 transition-all animate-pulse">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white shadow-md flex-shrink-0">
+              <i data-lucide="bell-ring" class="w-5 h-5 animate-bounce"></i>
+            </span>
+            <div>
+              <h4 class="text-sm font-black text-red-950 uppercase tracking-wider flex items-center gap-1.5">
+                <span>¡Nueva Paciente Requiere Valoración Médica!</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] bg-red-600 text-white font-bold">ALERTA</span>
+              </h4>
+              <p id="txtAlertaNuevaPacienteMedico" class="text-xs text-red-900 mt-0.5 font-medium">-</p>
+            </div>
+          </div>
+          <button type="button" onclick="irAUltimaAlertaMedica()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wider shadow-sm transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+            <i data-lucide="stethoscope" class="w-4 h-4"></i> Atender Paciente Ahora
+          </button>
         </div>
       </div>
 
@@ -3944,6 +3969,98 @@
       }
     }
 
+    // ── NOTIFICACIONES AUDITIVAS Y DE ESCRITORIO PARA EL DOCTOR ──
+
+    function reproducirSonidoAlertaMedica() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        // Timbre médico profesional de 3 notas ascendentes (Do5 - Mi5 - Sol5)
+        const notas = [523.25, 659.25, 783.99];
+        notas.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          const startTime = audioCtx.currentTime + idx * 0.14;
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0.25, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.35);
+        });
+      } catch (e) {
+        console.warn('AudioContext bloqueado o no soportado:', e);
+      }
+    }
+
+    async function activarNotificacionesYSonidoMedico() {
+      // 1. Reproducir tono de prueba para inicializar audio en el navegador
+      reproducirSonidoAlertaMedica();
+
+      // 2. Pedir permiso de notificaciones de escritorio al navegador
+      let permiso = 'denied';
+      if ('Notification' in window) {
+        permiso = await Notification.requestPermission();
+      }
+
+      const txt = document.getElementById('txtBtnNotifSonido');
+      if (txt) {
+        if (permiso === 'granted') {
+          txt.textContent = 'Alertas & Sonido Activos ✓';
+          try {
+            new Notification('HOME STHETIC - Control Médico', {
+              body: '¡Alertas activadas con éxito! Te avisaremos cuando una paciente requiera valoración.',
+              icon: '/favicon.ico'
+            });
+          } catch(e) {}
+        } else {
+          txt.textContent = 'Sonido Activo ✓';
+        }
+      }
+      localStorage.setItem('hs_notif_medica_activa', 'true');
+    }
+
+    function mostrarNotificacionMedica(paciente) {
+      reproducirSonidoAlertaMedica();
+
+      // Notificación de escritorio si está permitida (incluso con la ventana minimizada)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const notif = new Notification('⚠️ HOME STHETIC: Paciente con Alerta Médica', {
+            body: `${paciente.nombre} fue registrada como NO APTA para depilación láser y requiere tu aval médico.`,
+            tag: 'alerta-medica-' + paciente._id,
+            requireInteraction: true
+          });
+          notif.onclick = () => {
+            window.focus();
+            cambiarSeccion('medico');
+            abrirModalDictamenMedico(paciente._id);
+          };
+        } catch (e) {}
+      }
+
+      // Banner visible en la vista médica
+      const banner = document.getElementById('bannerAlertaNuevaPacienteMedico');
+      const txt = document.getElementById('txtAlertaNuevaPacienteMedico');
+      if (banner && txt) {
+        txt.textContent = `${paciente.nombre} presenta posibles contraindicaciones registradas en su historia clínica.`;
+        banner.classList.remove('hidden');
+        window.ultimaPacienteAlertaId = paciente._id;
+      }
+    }
+
+    function irAUltimaAlertaMedica() {
+      if (window.ultimaPacienteAlertaId) {
+        abrirModalDictamenMedico(window.ultimaPacienteAlertaId);
+        const banner = document.getElementById('bannerAlertaNuevaPacienteMedico');
+        if (banner) banner.classList.add('hidden');
+      }
+    }
+
     function abrirCitaParaCliente(clienteId, servicioPreferido = 'Depilación Láser') {
       openModal('modalNuevaCita');
       if (clienteId) {
@@ -5422,11 +5539,16 @@
         lucide.createIcons();
       });
 
-      // ── Polling en vivo para Recepción y Admin (cada 8 segundos) ───────────
+      // ── Polling en vivo para Recepción, Admin y Médico (cada 6 segundos) ───────────
       let ultimosFacturarCount = -1;
+      let ultimosIdsAlertasMedicas = null;
+
       setInterval(async () => {
         const sesionActual = obtenerSesion();
-        if (sesionActual && (sesionActual.rol === 'recepcionista' || sesionActual.rol === 'admin')) {
+        if (!sesionActual) return;
+
+        // 1. Recepción y Admin: Citas por facturar enviadas desde Cabina
+        if (sesionActual.rol === 'recepcionista' || sesionActual.rol === 'admin') {
           try {
             const res = await fetch('/api/bootstrap', { headers: authHeaders() });
             const json = await res.json();
@@ -5445,7 +5567,37 @@
             }
           } catch (e) {}
         }
-      }, 8000);
+
+        // 2. Médico y Admin: Alertas Clínicas de Pacientes Nuevas o Actualizadas
+        if (sesionActual.rol === 'medico' || sesionActual.rol === 'admin') {
+          try {
+            const res = await fetch('/api/bootstrap', { headers: authHeaders() });
+            const json = await res.json();
+            if (json.success) {
+              const clientes = json.data.clientes || [];
+              const pacientesConAlerta = clientes.filter(c => {
+                const hc = c.historiaClinica;
+                return hc && (hc.apta === 'NO_APTA' || (Array.isArray(hc.preguntas) && hc.preguntas.some(p => p.respuesta === 'SI') && hc.apta !== 'AUTORIZADA_MEDICO'));
+              });
+
+              const idsActuales = pacientesConAlerta.map(p => p._id);
+
+              if (ultimosIdsAlertasMedicas !== null) {
+                // Detectar si hay IDs de alerta que antes no estaban
+                const nuevasAlertas = pacientesConAlerta.filter(p => !ultimosIdsAlertasMedicas.includes(p._id));
+                if (nuevasAlertas.length > 0) {
+                  // Emitir sonido médico y notificación de escritorio
+                  mostrarNotificacionMedica(nuevasAlertas[0]);
+                }
+              }
+
+              ultimosIdsAlertasMedicas = idsActuales;
+              appState = json.data;
+              renderizarPanelMedico();
+            }
+          } catch (e) {}
+        }
+      }, 6000);
     });
   </script>
 </body>
