@@ -1043,9 +1043,11 @@
       <input type="hidden" id="hcClienteIdActivo" value="">
 
       <div class="pt-3 border-t border-brand-border flex items-center justify-between gap-2 flex-wrap">
-        <div>
+        <div class="flex items-center gap-2 flex-wrap">
           <button type="button" id="btnEmitirDictamenDesdeHC" onclick="abrirDictamenDesdeModalHC()" class="hidden bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-wider transition items-center gap-1.5 shadow-xs">
             <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i> Dictamen Médico
+          </button>
+          <button type="button" id="btnTogglePublicidadModalHC" onclick="togglePublicidadDesdeModalHC()" class="hidden px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-wider border transition items-center gap-1.5 shadow-2xs">
           </button>
         </div>
         <div class="flex items-center gap-2">
@@ -3251,6 +3253,14 @@
 
     function inicializarPreguntasNuevoCliente() {
       respuestasNuevoCliente = {};
+      const nom = document.getElementById('clienteNombre');
+      if (nom) nom.value = '';
+      const tel = document.getElementById('clienteTelefono');
+      if (tel) tel.value = '';
+      const notas = document.getElementById('clienteNotas');
+      if (notas) notas.value = '';
+      const pub = document.getElementById('clienteEsPublicidad');
+      if (pub) pub.checked = false;
       const obs = document.getElementById('clienteHistoriaObservaciones');
       if (obs) obs.value = '';
       renderizarPreguntasNuevoCliente();
@@ -3496,10 +3506,12 @@
             </td>
             <td class="p-4 text-right">
               <div class="flex items-center justify-end gap-1.5 flex-wrap">
-                <button type="button" onclick="togglePublicidadCliente('${c._id}')" class="bg-white hover:bg-neutral-100 ${c.esPublicidad ? 'text-amber-900 border-amber-300 bg-amber-50/50' : 'text-neutral-700 border-brand-border'} border px-2.5 py-1.5 rounded-sm text-xs font-semibold flex items-center gap-1 shadow-2xs transition" title="${c.esPublicidad ? 'Cambiar a cliente regular (pasa a pagar tarifa normal)' : 'Marcar como cliente de Publicidad ($0)'}">
-                  <i data-lucide="${c.esPublicidad ? 'user-check' : 'megaphone'}" class="w-3.5 h-3.5 ${c.esPublicidad ? 'text-neutral-600' : 'text-amber-600'}"></i>
-                  <span>${c.esPublicidad ? 'Pasa a Pago' : 'Publicidad'}</span>
-                </button>
+                ${c.esPublicidad ? `
+                  <button type="button" onclick="togglePublicidadCliente('${c._id}')" class="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1.5 rounded-sm text-xs font-semibold flex items-center gap-1 shadow-2xs transition" title="Clienta de publicidad: Clic para pasar a tarifa regular con cobro">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-amber-700"></i>
+                    <span>Pasa a Pago</span>
+                  </button>
+                ` : ''}
                 ${esMedicoOAdmin ? `
                   <button type="button" onclick="abrirModalDictamenMedico('${c._id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 px-2.5 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs transition" title="Emitir o editar Dictamen Médico">
                     <i data-lucide="stethoscope" class="w-3.5 h-3.5 text-emerald-600"></i> Dictamen
@@ -3576,6 +3588,13 @@
       } catch (err) {
         alert('Error de conexión: ' + err.message);
       }
+    }
+
+    async function togglePublicidadDesdeModalHC() {
+      const clienteId = document.getElementById('hcClienteIdActivo').value;
+      if (!clienteId) return;
+      closeModal('modalVerHistoriaClinica');
+      await togglePublicidadCliente(clienteId);
     }
 
     async function guardarNuevoCliente(e, agendarInmediato = false) {
@@ -3678,6 +3697,20 @@
         } else {
           btnDictamen.classList.add('hidden');
           btnDictamen.classList.remove('inline-flex');
+        }
+      }
+
+      // Configurar botón de publicidad dentro del modal de Historia Clínica
+      const btnTogglePub = document.getElementById('btnTogglePublicidadModalHC');
+      if (btnTogglePub) {
+        btnTogglePub.classList.remove('hidden');
+        btnTogglePub.classList.add('inline-flex');
+        if (cliente.esPublicidad) {
+          btnTogglePub.className = 'inline-flex px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-wider bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 transition items-center gap-1.5 shadow-2xs';
+          btnTogglePub.innerHTML = '<i data-lucide="user-check" class="w-3.5 h-3.5 text-amber-700"></i> Pasar a Tarifa Regular';
+        } else {
+          btnTogglePub.className = 'inline-flex px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-wider bg-white hover:bg-neutral-100 text-neutral-800 border border-brand-border transition items-center gap-1.5 shadow-2xs';
+          btnTogglePub.innerHTML = '<i data-lucide="megaphone" class="w-3.5 h-3.5 text-amber-600"></i> Marcar por Publicidad ($0)';
         }
       }
 
