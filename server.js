@@ -35,6 +35,8 @@ const clientSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
   telefono: { type: String, required: true },
   notas: { type: String, default: '' },
+  esPublicidad: { type: Boolean, default: false },
+  origenCliente: { type: String, default: 'Orgánico' },
   contadorServicios: {
     type: Map,
     of: Number,
@@ -93,7 +95,7 @@ const saleSchema = new mongoose.Schema({
   hora: { type: String, required: true }, // HH:MM
   cliente: { type: String, required: true },
   concepto: { type: String, required: true },
-  metodo: { type: String, enum: ['Efectivo', 'Tarjeta Débito', 'Tarjeta Crédito', 'Transferencia', 'Crédito Addi', 'Addi'], required: true },
+  metodo: { type: String, enum: ['Efectivo', 'Tarjeta Débito', 'Tarjeta Crédito', 'Transferencia', 'Crédito Addi', 'Addi', 'Cortesía / Publicidad', 'Cortesía'], required: true },
   operaria: { type: String, default: 'General' },
   valor: { type: Number, required: true }
 }, { timestamps: true });
@@ -327,10 +329,10 @@ app.get('/api/bootstrap', async (req, res) => {
   }
 });
 
-// 2. Crear Cliente (con Historia Clínica opcional/inicial)
+// 2. Crear Cliente (con Historia Clínica opcional/inicial y soporte para Publicidad/Cortesía $0)
 app.post('/api/clientes', async (req, res) => {
   try {
-    const { nombre, telefono, notas, historiaClinica } = req.body;
+    const { nombre, telefono, notas, esPublicidad, origenCliente, historiaClinica } = req.body;
     if (!nombre || !nombre.trim()) {
       return res.status(400).json({ success: false, error: 'El nombre del cliente es obligatorio' });
     }
@@ -352,17 +354,39 @@ app.post('/api/clientes', async (req, res) => {
       };
     }
 
+    const esPub = Boolean(esPublicidad);
     const nuevo = await Client.create({
       nombre: nombre.trim(),
       telefono: telefono.trim(),
       notas: (notas || '').trim(),
+      esPublicidad: esPub,
+      origenCliente: esPub ? 'Publicidad / Cortesía' : (origenCliente || 'Orgánico'),
       contadorServicios: {},
       historiaClinica: datosHistoria
     });
-    console.log(`✓ Nuevo cliente creado: ${nuevo.nombre} (${nuevo.telefono}) [Aptitud Láser: ${nuevo.historiaClinica ? nuevo.historiaClinica.apta : 'Pendiente'}]`);
+    console.log(`✓ Nuevo cliente creado: ${nuevo.nombre} (${nuevo.telefono}) [Tipo: ${nuevo.esPublicidad ? 'Publicidad ($0)' : 'Orgánico'}] [Aptitud Láser: ${nuevo.historiaClinica ? nuevo.historiaClinica.apta : 'Pendiente'}]`);
     res.json({ success: true, cliente: nuevo });
   } catch (error) {
     console.error('Error al crear cliente:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 2.0 Alternar / Cambiar Estado de Publicidad de un Cliente
+app.put('/api/clientes/:id/toggle-publicidad', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cliente = await Client.findById(id);
+    if (!cliente) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
+
+    cliente.esPublicidad = !cliente.esPublicidad;
+    cliente.origenCliente = cliente.esPublicidad ? 'Publicidad / Cortesía' : 'Orgánico';
+    await cliente.save();
+
+    console.log(`✓ Estado de publicidad actualizado para ${cliente.nombre}: ${cliente.esPublicidad ? 'PUBLICIDAD ($0)' : 'ORGÁNICO'}`);
+    res.json({ success: true, cliente });
+  } catch (error) {
+    console.error('Error al alternar estado de publicidad:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -485,9 +509,12 @@ app.post('/api/citas', async (req, res) => {
       nombreServicio = 'Depilación Láser';
     }
 
-    // Si tiene zonas seleccionadas (Depilación Láser), el valor es 50.000 COP por zona
+    // Si el cliente es de publicidad / cortesía, el valor es $0 (no paga nada)
     let finalValor = Number(valor);
-    if (zonas && Array.isArray(zonas) && zonas.length > 0) {
+    if (cliente.esPublicidad) {
+      finalValor = 0;
+    } else if (zonas && Array.isArray(zonas) && zonas.length > 0) {
+      // Si tiene zonas seleccionadas (Depilación Láser), el valor es 50.000 COP por zona
       finalValor = zonas.length * 50000;
     }
 
@@ -568,15 +595,22 @@ app.put('/api/citas/:id/enviar-a-facturar', async (req, res) => {
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
 
+    const cliente = await Client.findById(cita.clienteId);
+    const esPublicidad = Boolean(cliente && cliente.esPublicidad);
+
     if (zonas && Array.isArray(zonas)) {
       cita.zonas = zonas;
-      const sNorm = (cita.servicio || '').toLowerCase();
-      const sumaAdicionales = (cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0);
-      if (sNorm.includes('laser') || sNorm.includes('láser')) {
-        cita.valor = (zonas.length * 50000) + sumaAdicionales;
-      } else if (zonas.length > 0) {
-        cita.servicio = 'Depilación Láser';
-        cita.valor = (zonas.length * 50000) + sumaAdicionales;
+      if (esPublicidad) {
+        cita.valor = 0;
+      } else {
+        const sNorm = (cita.servicio || '').toLowerCase();
+        const sumaAdicionales = (cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0);
+        if (sNorm.includes('laser') || sNorm.includes('láser')) {
+          cita.valor = (zonas.length * 50000) + sumaAdicionales;
+        } else if (zonas.length > 0) {
+          cita.servicio = 'Depilación Láser';
+          cita.valor = (zonas.length * 50000) + sumaAdicionales;
+        }
       }
     }
     if (notasOperaria !== undefined) {
@@ -585,7 +619,7 @@ app.put('/api/citas/:id/enviar-a-facturar', async (req, res) => {
     cita.estado = 'Listo para Facturar';
     await cita.save();
 
-    console.log(`✓ Cita enviada a facturar en caja: ${cita.clienteNombre} (${cita.zonas.length} zonas) - $${cita.valor}`);
+    console.log(`✓ Cita enviada a facturar en caja: ${cita.clienteNombre} (${cita.zonas.length} zonas) - $${cita.valor} [${esPublicidad ? 'Publicidad $0' : 'Regular'}]`);
     res.json({ success: true, cita });
   } catch (error) {
     console.error('Error al enviar a facturar:', error);
@@ -601,15 +635,22 @@ app.put('/api/citas/:id/actualizar-zonas', async (req, res) => {
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
 
+    const cliente = await Client.findById(cita.clienteId);
+    const esPublicidad = Boolean(cliente && cliente.esPublicidad);
+
     if (zonas && Array.isArray(zonas)) {
       cita.zonas = zonas;
-      const sNorm = (cita.servicio || '').toLowerCase();
-      const sumaAdicionales = (cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0);
-      if (sNorm.includes('laser') || sNorm.includes('láser')) {
-        cita.valor = (zonas.length * 50000) + sumaAdicionales;
-      } else if (zonas.length > 0) {
-        cita.servicio = 'Depilación Láser';
-        cita.valor = (zonas.length * 50000) + sumaAdicionales;
+      if (esPublicidad) {
+        cita.valor = 0;
+      } else {
+        const sNorm = (cita.servicio || '').toLowerCase();
+        const sumaAdicionales = (cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0);
+        if (sNorm.includes('laser') || sNorm.includes('láser')) {
+          cita.valor = (zonas.length * 50000) + sumaAdicionales;
+        } else if (zonas.length > 0) {
+          cita.servicio = 'Depilación Láser';
+          cita.valor = (zonas.length * 50000) + sumaAdicionales;
+        }
       }
     }
     await cita.save();
@@ -637,6 +678,10 @@ app.post('/api/citas/:id/adicional', async (req, res) => {
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
 
+    const cliente = await Client.findById(cita.clienteId);
+    const esPublicidad = Boolean(cliente && cliente.esPublicidad);
+    const montoFinal = esPublicidad ? 0 : monto;
+
     if (modalidad === 'nueva_cita') {
       const nueva = await Appointment.create({
         clienteId: cita.clienteId,
@@ -645,15 +690,15 @@ app.post('/api/citas/:id/adicional', async (req, res) => {
         servicio: nombre.trim(),
         zonas: [],
         tratamientosAdicionales: [],
-        valor: monto,
+        valor: montoFinal,
         operaria: operaria || cita.operaria || 'General',
         fecha: cita.fecha,
         hora: cita.hora,
         duracion: 30,
         estado: 'Pendiente',
-        notas: `Tratamiento adicional agendado junto a cita de ${cita.servicio}`
+        notas: `Tratamiento adicional agendado junto a cita de ${cita.servicio}${esPublicidad ? ' [Cortesía Publicidad]' : ''}`
       });
-      console.log(`✓ Cita adicional creada para ${cita.clienteNombre}: ${nombre} ($${monto})`);
+      console.log(`✓ Cita adicional creada para ${cita.clienteNombre}: ${nombre} ($${montoFinal})`);
       return res.json({ success: true, modo: 'nueva_cita', cita: nueva });
     }
 
@@ -661,14 +706,18 @@ app.post('/api/citas/:id/adicional', async (req, res) => {
     cita.tratamientosAdicionales = cita.tratamientosAdicionales || [];
     cita.tratamientosAdicionales.push({
       nombre: nombre.trim(),
-      precio: monto,
+      precio: montoFinal,
       operaria: operaria || cita.operaria || 'General',
       fecha: getFechaHoy()
     });
-    cita.valor = (cita.valor || 0) + monto;
+    if (!esPublicidad) {
+      cita.valor = (cita.valor || 0) + monto;
+    } else {
+      cita.valor = 0;
+    }
     await cita.save();
 
-    console.log(`✓ Tratamiento adicional sumado a cita de ${cita.clienteNombre}: ${nombre} (+$${monto}). Nuevo total: $${cita.valor}`);
+    console.log(`✓ Tratamiento adicional sumado a cita de ${cita.clienteNombre}: ${nombre} (+$${montoFinal}). Nuevo total: $${cita.valor}`);
     res.json({ success: true, modo: 'misma_cita', cita });
   } catch (error) {
     console.error('Error al agregar tratamiento adicional:', error);
@@ -683,13 +732,20 @@ app.delete('/api/citas/:id/adicional/:adicionalId', async (req, res) => {
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
 
+    const cliente = await Client.findById(cita.clienteId);
+    const esPublicidad = Boolean(cliente && cliente.esPublicidad);
+
     const item = (cita.tratamientosAdicionales || []).id(adicionalId);
     if (!item) {
       return res.status(404).json({ success: false, error: 'Tratamiento adicional no encontrado' });
     }
 
     const valorARestar = item.precio || 0;
-    cita.valor = Math.max(0, (cita.valor || 0) - valorARestar);
+    if (!esPublicidad) {
+      cita.valor = Math.max(0, (cita.valor || 0) - valorARestar);
+    } else {
+      cita.valor = 0;
+    }
     cita.tratamientosAdicionales.pull(adicionalId);
     await cita.save();
 
@@ -716,6 +772,8 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
 
     // Incrementar CONTADOR de servicios del cliente en MongoDB
     const cliente = await Client.findById(cita.clienteId);
+    const esPublicidad = Boolean(cliente && cliente.esPublicidad) || Number(cita.valor) === 0;
+
     if (cliente) {
       if (cita.zonas && cita.zonas.length > 0) {
         // Incrementar cada zona seleccionada (ej: "Láser: Bikini")
@@ -756,14 +814,17 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
       concepto += ` + Adicional: ${extraTxt}`;
     }
 
+    const valorCobro = esPublicidad ? 0 : (Number(valor) !== undefined && !isNaN(Number(valor)) ? Number(valor) : cita.valor);
+    const metodoCobro = esPublicidad ? 'Cortesía / Publicidad' : (metodo || 'Efectivo');
+
     const venta = await Sale.create({
       fecha: getFechaHoy(),
       hora: horaStr,
       cliente: cita.clienteNombre,
-      concepto: concepto,
-      metodo: metodo || 'Efectivo',
+      concepto: esPublicidad ? `${concepto} [Cortesía / Publicidad]` : concepto,
+      metodo: metodoCobro,
       operaria: cita.operaria,
-      valor: Number(valor) || cita.valor
+      valor: valorCobro
     });
 
     res.json({

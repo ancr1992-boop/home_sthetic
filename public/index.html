@@ -685,7 +685,12 @@
       <div class="bg-neutral-50 p-3 rounded-sm border border-brand-border flex justify-between items-center">
         <div>
           <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block">Clienta:</span>
-          <span id="sigClienteNombre" class="text-sm font-bold text-black">-</span>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span id="sigClienteNombre" class="text-sm font-bold text-black">-</span>
+            <span id="sigBadgePublicidad" class="hidden px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+              <i data-lucide="megaphone" class="w-3 h-3 text-amber-600 inline"></i> Publicidad ($0)
+            </span>
+          </div>
           <span id="sigClienteTelefonoDisplay" class="text-xs text-brand-gray flex items-center gap-1 mt-0.5">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i> <span id="sigClienteTelefonoVal">-</span>
           </span>
@@ -694,6 +699,12 @@
           <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block">Tratamiento:</span>
           <span id="sigServicioNombre" class="text-xs font-semibold text-black">Depilación Láser</span>
         </div>
+      </div>
+
+      <!-- Banner Informativo Publicidad en Siguiente Sesión -->
+      <div id="sigClientePublicidadBanner" class="hidden p-2.5 bg-amber-50 border border-amber-300 rounded-sm text-amber-950 text-xs font-semibold flex items-center gap-2">
+        <i data-lucide="megaphone" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+        <span>Clienta de Publicidad / Pauta: Tarifa automática $0 COP para su próxima sesión (contador activo).</span>
       </div>
 
       <form onsubmit="guardarSiguienteSesion(event)" class="space-y-4">
@@ -796,7 +807,11 @@
               <i data-lucide="user-plus" class="w-3 h-3"></i> + Nuevo Cliente
             </button>
           </div>
-          <select id="citaCliente" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white"></select>
+          <select id="citaCliente" onchange="onCambioClienteCita()" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-medium"></select>
+          <div id="citaClientePublicidadBanner" class="hidden mt-2 p-2.5 bg-amber-50 border border-amber-300 rounded-sm text-amber-950 text-xs font-semibold flex items-center gap-2">
+            <i data-lucide="megaphone" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+            <span>Clienta de Publicidad / Pauta: Tarifa automática $0 COP. El sistema sumará normalmente las sesiones a su contador por zona.</span>
+          </div>
         </div>
 
         <div>
@@ -900,6 +915,22 @@
         <div>
           <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Notas Estéticas / Preferencias</label>
           <input type="text" id="clienteNotas" placeholder="Piel sensible, prefiere hielo, primera vez en láser..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+        </div>
+
+        <!-- Tipo de Cliente: Publicidad / Cortesía ($0) -->
+        <div class="p-3 border border-amber-300 bg-amber-50/70 rounded-sm space-y-1.5">
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" id="clienteEsPublicidad" class="w-4 h-4 accent-amber-600 mt-0.5 rounded-xs cursor-pointer">
+            <div class="space-y-0.5">
+              <span class="text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="megaphone" class="w-3.5 h-3.5 text-amber-600"></i>
+                Cliente por Publicidad / Pauta / Cortesía (Tarifa $0)
+              </span>
+              <p class="text-[11px] text-amber-900 leading-tight">
+                Al marcar esta opción, todas sus citas y zonas se agendarán automáticamente a <strong>$0 COP</strong>, pero el sistema registrará con total normalidad el <strong>conteo de sesiones por zona</strong> (Bikini, Axilas, Piernas, etc.) y su historial clínico.
+              </p>
+            </div>
+          </label>
         </div>
 
         <!-- Sección Historia Clínica Láser -->
@@ -1200,6 +1231,11 @@
       <form onsubmit="procesarCobro(event)" class="space-y-4 text-xs">
         <input type="hidden" id="cobroCitaId">
         
+        <div id="cobroPublicidadBanner" class="hidden p-2.5 bg-amber-50 border border-amber-300 rounded-sm text-amber-950 text-xs font-semibold flex items-center gap-2">
+          <i data-lucide="megaphone" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+          <span>Clienta de Publicidad / Pauta: Tarifa $0 COP. Al confirmar se incrementará el contador de sesiones normalmente y se registrará como Cortesía.</span>
+        </div>
+
         <div>
           <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Valor a Cobrar ($ COP) *</label>
           <input type="number" id="cobroMonto" required class="w-full border border-brand-border p-2.5 text-base font-bold rounded-sm focus:border-black outline-none bg-white">
@@ -1213,6 +1249,7 @@
             <option value="Tarjeta Crédito">Tarjeta Crédito</option>
             <option value="Transferencia">Transferencia (Nequi / Daviplata / Bancolombia)</option>
             <option value="Crédito Addi">Crédito Addi</option>
+            <option value="Cortesía / Publicidad">Cortesía / Publicidad ($0)</option>
           </select>
         </div>
 
@@ -2006,7 +2043,7 @@
           selectCliente.innerHTML = `<option value="">-- No hay clientes registrados aún --</option>`;
         } else {
           selectCliente.innerHTML = appState.clientes.map(c => 
-            `<option value="${c._id}">${c.nombre} (${c.telefono})</option>`
+            `<option value="${c._id}">${c.nombre} (${c.telefono})${c.esPublicidad ? ' — 📢 Publicidad ($0)' : ''}</option>`
           ).join('');
         }
       }
@@ -2065,6 +2102,22 @@
         `).join('');
       }
 
+      onCambioClienteCita();
+    }
+
+    function onCambioClienteCita() {
+      const select = document.getElementById('citaCliente');
+      const banner = document.getElementById('citaClientePublicidadBanner');
+      if (!select) return;
+      const cliente = appState.clientes.find(c => c._id == select.value);
+      const esPub = Boolean(cliente && cliente.esPublicidad);
+      if (banner) {
+        if (esPub) {
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
       onCambioServicio();
     }
 
@@ -2081,6 +2134,10 @@
       const val = select.value.toLowerCase();
       const bloque = document.getElementById('bloqueZonasLaser');
 
+      const selectCliente = document.getElementById('citaCliente');
+      const cliente = selectCliente ? appState.clientes.find(c => c._id == selectCliente.value) : null;
+      const esPub = Boolean(cliente && cliente.esPublicidad);
+
       const esLaser = val.includes('laser') || val.includes('láser');
 
       if (esLaser) {
@@ -2092,7 +2149,9 @@
         const opt = select.options[select.selectedIndex];
         const precioBase = Number(opt.getAttribute('data-precio') || 0);
         const display = document.getElementById('citaPrecioDisplay');
-        if (display) display.innerText = formatMoney(precioBase);
+        if (display) {
+          display.innerText = esPub ? '$0 (Cortesía Publicidad)' : formatMoney(precioBase);
+        }
       }
     }
 
@@ -2119,14 +2178,23 @@
         }
       });
 
+      const selectCliente = document.getElementById('citaCliente');
+      const cliente = selectCliente ? appState.clientes.find(c => c._id == selectCliente.value) : null;
+      const esPub = Boolean(cliente && cliente.esPublicidad);
+
       const total = cant * 50000;
       const lblCant = document.getElementById('lblCantZonas');
       const lblTotal = document.getElementById('lblTotalLaser');
       const display = document.getElementById('citaPrecioDisplay');
 
       if (lblCant) lblCant.innerText = cant;
-      if (lblTotal) lblTotal.innerText = formatMoney(total);
-      if (display) display.innerText = formatMoney(total);
+      if (esPub) {
+        if (lblTotal) lblTotal.innerText = '$0 (Publicidad)';
+        if (display) display.innerText = '$0 (Cortesía Publicidad)';
+      } else {
+        if (lblTotal) lblTotal.innerText = formatMoney(total);
+        if (display) display.innerText = formatMoney(total);
+      }
     }
 
     function limpiarZonasLaser(actualizar = true) {
@@ -2287,6 +2355,11 @@
               <div class="mt-3">
                 <div class="flex items-center gap-2 flex-wrap">
                   <h4 class="text-base font-bold">${cita.clienteNombre}</h4>
+                  ${cliente && cliente.esPublicidad ? `
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="Cliente por Publicidad / Pauta ($0)">
+                      <i data-lucide="megaphone" class="w-3 h-3 text-amber-600"></i> Publicidad ($0)
+                    </span>
+                  ` : ''}
                   ${badgeHC}
                 </div>
                 <p class="text-xs text-brand-gray flex items-center gap-1 mt-0.5">
@@ -2299,15 +2372,23 @@
 
               ${cita.zonas && cita.zonas.length > 0 ? `
                 <div class="mt-2.5 pt-2 border-t border-brand-border/60">
-                  <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block mb-1">Zonas seleccionadas (${cita.zonas.length}):</span>
+                  <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block mb-1">Zonas a realizar (${cita.zonas.length}):</span>
                   <div class="flex flex-wrap gap-1">
-                    ${cita.zonas.map(z => `<span class="bg-black text-white text-[10px] font-semibold px-2 py-0.5 rounded-xs">${z}</span>`).join('')}
+                    ${cita.zonas.map(z => {
+                      const countZ = (cliente.contadorServicios && (cliente.contadorServicios[`Láser: ${z}`] !== undefined ? cliente.contadorServicios[`Láser: ${z}`] : (cliente.contadorServicios[z] || 0))) || 0;
+                      return `
+                        <span class="bg-black text-white text-[10px] font-semibold px-2 py-0.5 rounded-xs inline-flex items-center gap-1">
+                          <span>${z}</span>
+                          <span class="text-amber-300 font-mono text-[9px] font-bold">(${countZ} ${countZ === 1 ? 'sesión' : 'sesiones'})</span>
+                        </span>
+                      `;
+                    }).join('')}
                   </div>
-                  <span class="text-xs text-brand-gray mt-1.5 block">Subtotal Láser: <strong class="text-black font-bold font-mono">${formatMoney(cita.zonas.length * 50000)}</strong> ($50.000 c/u)</span>
+                  <span class="text-xs text-brand-gray mt-1.5 block">Subtotal Láser: <strong class="text-black font-bold font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : `${formatMoney(cita.zonas.length * 50000)} ($50.000 c/u)`}</strong></span>
                 </div>
               ` : `
                 <div class="mt-2.5 pt-2 border-t border-brand-border/60">
-                  <span class="text-xs text-brand-gray block">Subtotal Tratamiento: <strong class="text-black font-bold font-mono">${formatMoney(cita.valor - ((cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0)))}</strong></span>
+                  <span class="text-xs text-brand-gray block">Subtotal Tratamiento: <strong class="text-black font-bold font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : formatMoney(cita.valor - ((cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0)))}</strong></span>
                 </div>
               `}
 
@@ -2342,7 +2423,7 @@
 
               <div class="mt-2.5 pt-2 border-t border-brand-border/60 flex justify-between items-center bg-neutral-50 px-2.5 py-1.5 rounded-xs">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-brand-black">Total a Facturar:</span>
-                <span class="text-sm font-black text-black font-mono">${formatMoney(cita.valor)}</span>
+                <span class="text-sm font-black text-black font-mono">${(cliente && cliente.esPublicidad) || cita.valor === 0 ? '$0 (Cortesía Publicidad)' : formatMoney(cita.valor)}</span>
               </div>
 
               ${cita.notasOperaria ? `
@@ -2369,7 +2450,7 @@
               ${esFacturar ? `
                 <div class="flex gap-2">
                   <button onclick="iniciarCobroCita('${cita._id}')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-black py-2.5 text-xs font-black uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 shadow-md transition animate-pulse">
-                    <i data-lucide="receipt" class="w-4 h-4"></i> ¡Cobrar en Caja Ahora! (${formatMoney(cita.valor)})
+                    <i data-lucide="receipt" class="w-4 h-4"></i> ¡Cobrar en Caja Ahora! (${(cliente && cliente.esPublicidad) || cita.valor === 0 ? '$0 Cortesía' : formatMoney(cita.valor)})
                   </button>
                   <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition" title="Reprogramar Cita">
                     <i data-lucide="clock" class="w-3.5 h-3.5"></i>
@@ -2383,7 +2464,7 @@
               ` : cita.estado !== 'Completada' ? `
                 <div class="flex gap-2">
                   <button onclick="iniciarCobroCita('${cita._id}')" class="flex-1 bg-black hover:bg-neutral-800 text-white py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition">
-                    <i data-lucide="check" class="w-3.5 h-3.5"></i> Cobrar / Completar
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i> Cobrar / Completar (${(cliente && cliente.esPublicidad) || cita.valor === 0 ? '$0' : formatMoney(cita.valor)})
                   </button>
                   <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition" title="Reprogramar Cita">
                     <i data-lucide="clock" class="w-3.5 h-3.5"></i>
@@ -2426,12 +2507,24 @@
 
       citaActualSiguiente = cita;
       const cliente = appState.clientes.find(c => c._id == cita.clienteId) || { nombre: cita.clienteNombre, telefono: cita.clienteTelefono };
+      const esPub = Boolean(cliente && cliente.esPublicidad);
 
       document.getElementById('sigClienteId').value = cita.clienteId;
       document.getElementById('sigClienteNombre').innerText = cita.clienteNombre;
       document.getElementById('sigClienteTelefonoVal').innerText = cliente.telefono || cita.clienteTelefono || 'Sin teléfono';
       document.getElementById('sigClienteTelefonoRaw').value = cliente.telefono || cita.clienteTelefono || '';
       document.getElementById('sigServicioNombre').innerText = cita.servicio;
+
+      const bannerPub = document.getElementById('sigClientePublicidadBanner');
+      const badgePub = document.getElementById('sigBadgePublicidad');
+      if (bannerPub) {
+        if (esPub) bannerPub.classList.remove('hidden');
+        else bannerPub.classList.add('hidden');
+      }
+      if (badgePub) {
+        if (esPub) badgePub.classList.remove('hidden');
+        else badgePub.classList.add('hidden');
+      }
 
       // Sugerir fecha a 4 semanas (28 días) de la cita actual o de hoy
       const [y, m, d] = (cita.fecha || appState.fechaHoy).split('-').map(Number);
@@ -2515,16 +2608,22 @@
         }
       });
 
-      const total = cant * 50000;
+      const clienteId = document.getElementById('sigClienteId').value;
+      const clienteObj = appState.clientes.find(c => c._id == clienteId);
+      const esPub = Boolean(clienteObj && clienteObj.esPublicidad);
+
+      const total = esPub ? 0 : (cant * 50000);
       document.getElementById('sigLblCantZonas').innerText = cant;
-      document.getElementById('sigLblTotal').innerText = formatMoney(total);
+      document.getElementById('sigLblTotal').innerText = esPub ? '$0 (Publicidad)' : formatMoney(total);
       actualizarPreviewWhatsApp();
     }
 
     function construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor }) {
       const fechaLegible = formatearFechaLegible(fecha);
       const zonasTexto = (zonas && zonas.length > 0) ? `\n📍 *Zonas:* ${zonas.join(', ')} (${zonas.length} zonas)` : '';
-      const valorTexto = valor ? `\n💰 *Valor:* ${formatMoney(valor)} COP` : '';
+      const valorTexto = (valor !== undefined && valor !== null) 
+        ? (valor === 0 ? `\n💰 *Valor:* Cortesía / Publicidad ($0 COP)` : `\n💰 *Valor:* ${formatMoney(valor)} COP`)
+        : '';
       const especialistaTexto = operaria ? `\n👩‍⚕️ *Especialista:* ${operaria}` : '';
 
       let recomendaciones = '';
@@ -2556,7 +2655,11 @@
       const operaria = document.getElementById('sigOperaria').value;
       const servicio = document.getElementById('sigServicioNombre').innerText;
       const zonas = Array.from(document.querySelectorAll('.chk-sig-zona:checked')).map(chk => chk.value);
-      const valor = zonas.length * 50000;
+
+      const clienteId = document.getElementById('sigClienteId').value;
+      const clienteObj = appState.clientes.find(c => c._id == clienteId);
+      const esPub = Boolean(clienteObj && clienteObj.esPublicidad);
+      const valor = esPub ? 0 : (zonas.length * 50000);
 
       const mensaje = construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor });
       const preview = document.getElementById('previewMensajeWhatsApp');
@@ -2579,7 +2682,10 @@
         alert('⚠️ Por favor selecciona al menos una zona para la siguiente sesión.');
         return;
       }
-      const valor = zonas.length * 50000;
+
+      const clienteObj = appState.clientes.find(c => c._id == clienteId);
+      const esPub = Boolean(clienteObj && clienteObj.esPublicidad);
+      const valor = esPub ? 0 : (zonas.length * 50000);
 
       const payload = {
         clienteId,
@@ -2718,6 +2824,10 @@
         alert('Por favor selecciona un cliente para la cita.');
         return;
       }
+      const clienteObj = appState.clientes.find(c => c._id == clienteSelect.value);
+      if (clienteObj && clienteObj.esPublicidad) {
+        precioFinal = 0;
+      }
 
       const operariaSelect = document.getElementById('citaOperaria');
       if (!operariaSelect.value) {
@@ -2756,7 +2866,8 @@
           limpiarZonasLaser(false);
           document.getElementById('citaNotas').value = '';
           await cargarDatosServidor();
-          alert(`✓ Cita agendada con éxito para ${data.cita.clienteNombre} (${formatMoney(data.cita.valor)}).`);
+          const valorTxt = data.cita.valor === 0 ? '$0 (Cortesía Publicidad)' : formatMoney(data.cita.valor);
+          alert(`✓ Cita agendada con éxito para ${data.cita.clienteNombre} (${valorTxt}).`);
         } else {
           alert('Error al guardar cita: ' + (data.error || 'Ocurrió un error'));
         }
@@ -2779,13 +2890,31 @@
       document.getElementById('cobroClienteNombre').innerText = cita.clienteNombre;
       document.getElementById('cobroServicioNombre').innerText = cita.servicio;
       document.getElementById('cobroOperariaNombre').innerText = cita.operaria;
-      document.getElementById('cobroMonto').value = cita.valor;
+
+      const clienteObj = appState.clientes.find(c => c._id == cita.clienteId);
+      const esPublicidad = Boolean(clienteObj && clienteObj.esPublicidad) || Number(cita.valor) === 0;
+
+      const bannerPub = document.getElementById('cobroPublicidadBanner');
+      if (bannerPub) {
+        if (esPublicidad) bannerPub.classList.remove('hidden');
+        else bannerPub.classList.add('hidden');
+      }
+
+      if (esPublicidad) {
+        document.getElementById('cobroMonto').value = 0;
+        document.getElementById('cobroMetodo').value = 'Cortesía / Publicidad';
+      } else {
+        document.getElementById('cobroMonto').value = cita.valor;
+        if (document.getElementById('cobroMetodo').value === 'Cortesía / Publicidad') {
+          document.getElementById('cobroMetodo').value = 'Efectivo';
+        }
+      }
 
       const contZonas = document.getElementById('cobroZonasContainer');
       const txtZonas = document.getElementById('cobroZonasTexto');
       if (cita.zonas && cita.zonas.length > 0) {
         contZonas.classList.remove('hidden');
-        txtZonas.innerText = `${cita.zonas.join(', ')} (${cita.zonas.length} zonas @ $50.000 c/u)`;
+        txtZonas.innerText = `${cita.zonas.join(', ')} (${cita.zonas.length} zonas${esPublicidad ? ' - Cortesía $0' : ' @ $50.000 c/u'})`;
       } else {
         contZonas.classList.add('hidden');
       }
@@ -3344,6 +3473,11 @@
             <td class="p-4 font-semibold text-brand-black">
               <div class="flex items-center gap-2 flex-wrap">
                 <span>${c.nombre}</span>
+                ${c.esPublicidad ? `
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="Cliente de Publicidad / Pauta - Citas a $0 y sesiones contadas">
+                    <i data-lucide="megaphone" class="w-3 h-3 text-amber-600"></i> Publicidad ($0)
+                  </span>
+                ` : ''}
                 ${badgeHC}
               </div>
               ${c.notas ? `<p class="text-xs text-brand-gray font-normal mt-0.5">${c.notas}</p>` : ''}
@@ -3361,6 +3495,10 @@
             </td>
             <td class="p-4 text-right">
               <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                <button type="button" onclick="togglePublicidadCliente('${c._id}')" class="bg-white hover:bg-neutral-100 ${c.esPublicidad ? 'text-amber-900 border-amber-300 bg-amber-50/50' : 'text-neutral-700 border-brand-border'} border px-2.5 py-1.5 rounded-sm text-xs font-semibold flex items-center gap-1 shadow-2xs transition" title="${c.esPublicidad ? 'Cambiar a cliente regular (pasa a pagar tarifa normal)' : 'Marcar como cliente de Publicidad ($0)'}">
+                  <i data-lucide="${c.esPublicidad ? 'user-check' : 'megaphone'}" class="w-3.5 h-3.5 ${c.esPublicidad ? 'text-neutral-600' : 'text-amber-600'}"></i>
+                  <span>${c.esPublicidad ? 'Pasa a Pago' : 'Publicidad'}</span>
+                </button>
                 ${esMedicoOAdmin ? `
                   <button type="button" onclick="abrirModalDictamenMedico('${c._id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 px-2.5 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs transition" title="Emitir o editar Dictamen Médico">
                     <i data-lucide="stethoscope" class="w-3.5 h-3.5 text-emerald-600"></i> Dictamen
@@ -3381,16 +3519,45 @@
       lucide.createIcons();
     }
 
+    async function togglePublicidadCliente(clienteId) {
+      const cliente = appState.clientes.find(c => c._id == clienteId);
+      if (!cliente) return;
+      const nuevoEstado = !cliente.esPublicidad;
+      const msg = nuevoEstado 
+        ? `¿Deseas marcar a "${cliente.nombre}" como Cliente por Publicidad / Pauta? Sus citas tendrán tarifa $0 pero sus sesiones por zona se contarán normalmente.`
+        : `¿Deseas cambiar a "${cliente.nombre}" a Cliente Regular (tarifa normal con cobro)?`;
+      
+      if (!confirm(msg)) return;
+
+      try {
+        const res = await fetch(`/api/clientes/${clienteId}/toggle-publicidad`, {
+          method: 'PUT',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert(`✓ "${cliente.nombre}" ahora es cliente ${data.cliente.esPublicidad ? 'de Publicidad / Cortesía ($0)' : 'Regular (con pago)'}.`);
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo actualizar'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
     async function guardarNuevoCliente(e, agendarInmediato = false) {
       if (e) e.preventDefault();
       const inputNombre = document.getElementById('clienteNombre');
       const inputTelefono = document.getElementById('clienteTelefono');
       const inputNotas = document.getElementById('clienteNotas');
+      const inputEsPub = document.getElementById('clienteEsPublicidad');
       const inputObsHC = document.getElementById('clienteHistoriaObservaciones');
 
       const nombre = inputNombre.value.trim();
       const telefono = inputTelefono.value.trim();
       const notas = inputNotas.value.trim();
+      const esPublicidad = inputEsPub ? inputEsPub.checked : false;
       const observacionesHC = inputObsHC ? inputObsHC.value.trim() : '';
 
       if (!nombre) {
@@ -3424,7 +3591,7 @@
         const res = await fetch('/api/clientes', {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ nombre, telefono, notas, historiaClinica })
+          body: JSON.stringify({ nombre, telefono, notas, esPublicidad, historiaClinica })
         });
         const data = await res.json();
         if (data.success && data.cliente) {
@@ -3432,6 +3599,7 @@
           inputNombre.value = '';
           inputTelefono.value = '';
           inputNotas.value = '';
+          if (inputEsPub) inputEsPub.checked = false;
           if (inputObsHC) inputObsHC.value = '';
           respuestasNuevoCliente = {};
           
@@ -3441,8 +3609,9 @@
             cambiarSeccion('agenda');
             abrirCitaParaCliente(data.cliente._id, 'Depilación Láser');
           } else {
+            const tipoPubTxt = data.cliente.esPublicidad ? ' [📢 Publicidad ($0)]' : '';
             const estadoAptitud = data.cliente.historiaClinica ? ` [Aptitud Láser: ${data.cliente.historiaClinica.apta}]` : '';
-            alert(`✓ Cliente "${nombre}" guardado en MongoDB Atlas${estadoAptitud}.`);
+            alert(`✓ Cliente "${nombre}" guardado en MongoDB Atlas${tipoPubTxt}${estadoAptitud}.`);
           }
         } else {
           alert('Error al guardar cliente: ' + (data.error || 'Ocurrió un error'));
@@ -5194,6 +5363,11 @@
                 <div>
                   <div class="flex items-center gap-2 flex-wrap">
                     <h3 class="font-extrabold text-base tracking-tight text-black">${c.clienteNombre}</h3>
+                    ${clientObj && clientObj.esPublicidad ? `
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="Cliente por Publicidad / Pauta ($0)">
+                        <i data-lucide="megaphone" class="w-3 h-3 text-amber-600"></i> Publicidad ($0)
+                      </span>
+                    ` : ''}
                     ${hcBadgeCabina}
                   </div>
                   <div class="flex items-center gap-3 text-xs text-brand-gray mt-1">
@@ -5218,7 +5392,7 @@
                   <span class="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
                     <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-gray"></i> ${c.servicio}
                   </span>
-                  <span class="text-xs font-black text-black font-mono">${formatMoney(c.valor)}</span>
+                  <span class="text-xs font-black text-black font-mono">${(clientObj && clientObj.esPublicidad) || c.valor === 0 ? '$0 (Cortesía Publicidad)' : formatMoney(c.valor)}</span>
                 </div>
 
                 ${esLaser ? `
@@ -5236,16 +5410,20 @@
 
                     ${zonas.length > 0 ? `
                       <div class="flex flex-wrap gap-1.5">
-                        ${zonas.map(z => `
-                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-black text-xs font-semibold rounded-sm border border-brand-border shadow-xs">
-                            <span>${z}</span>
-                            ${c.estado !== 'Completada' ? `
-                              <button type="button" onclick="quitarZonaRapida('${c._id}', '${z}')" class="text-neutral-400 hover:text-red-600 transition p-0.5 rounded-full hover:bg-neutral-100" title="Quitar zona ${z}">
-                                <i data-lucide="x" class="w-3 h-3"></i>
-                              </button>
-                            ` : ''}
-                          </span>
-                        `).join('')}
+                        ${zonas.map(z => {
+                          const countZ = (clientObj && clientObj.contadorServicios && (clientObj.contadorServicios[`Láser: ${z}`] !== undefined ? clientObj.contadorServicios[`Láser: ${z}`] : (clientObj.contadorServicios[z] || 0))) || 0;
+                          return `
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-black text-xs font-semibold rounded-sm border border-brand-border shadow-xs">
+                              <span>${z}</span>
+                              <span class="text-amber-800 font-mono text-[10px] font-bold bg-amber-50 px-1 py-0.2 rounded-xs border border-amber-200">(${countZ} ${countZ === 1 ? 'sesión' : 'sesiones'})</span>
+                              ${c.estado !== 'Completada' ? `
+                                <button type="button" onclick="quitarZonaRapida('${c._id}', '${z}')" class="text-neutral-400 hover:text-red-600 transition p-0.5 rounded-full hover:bg-neutral-100" title="Quitar zona ${z}">
+                                  <i data-lucide="x" class="w-3 h-3"></i>
+                                </button>
+                              ` : ''}
+                            </span>
+                          `;
+                        }).join('')}
                       </div>
                     ` : `
                       <div class="flex items-center justify-between p-2.5 bg-amber-50 border border-amber-200 rounded-sm text-xs">
