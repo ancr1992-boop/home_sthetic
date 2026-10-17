@@ -2939,11 +2939,39 @@
       actualizarPreviewWhatsApp();
     }
 
-    function construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor }) {
+    function obtenerTextoContadorParaZonas(clienteObj, zonas) {
+      if (!clienteObj || !clienteObj.contadorServicios || !zonas || zonas.length === 0) return '';
+      const contador = clienteObj.contadorServicios;
+      const partes = [];
+      zonas.forEach(z => {
+        let cant = 0;
+        if (contador instanceof Map) {
+          cant = contador.get(z) || 0;
+        } else if (typeof contador === 'object') {
+          cant = contador[z] || 0;
+        }
+        partes.push(`${z} (#${cant + 1})`);
+      });
+      return partes.join(', ');
+    }
+
+    function construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor, paqueteInfo, contadorInfo }) {
       const fechaLegible = formatearFechaLegible(fecha);
       const zonasTexto = (zonas && zonas.length > 0) ? `\n📍 *Zonas:* ${zonas.join(', ')} (${zonas.length} zonas)` : '';
+      
+      let paqueteTexto = '';
+      if (paqueteInfo && paqueteInfo.activo && paqueteInfo.sesionesTotales > 0) {
+        const restantes = paqueteInfo.sesionesRestantes;
+        const totales = paqueteInfo.sesionesTotales;
+        const realizadas = paqueteInfo.sesionesRealizadas || (totales - restantes);
+        const proximaNum = realizadas + 1;
+        paqueteTexto = `\n📦 *Paquete Prepago:* Te restan *${restantes} de ${totales} sesiones* pagadas (Esta cita es tu sesión #${proximaNum})`;
+      } else if (contadorInfo) {
+        paqueteTexto = `\n🔢 *Progreso de sesiones:* ${contadorInfo}`;
+      }
+
       const valorTexto = (valor !== undefined && valor !== null) 
-        ? (valor === 0 ? `\n💰 *Valor:* Cortesía / Paquete Prepago ($0 COP)` : `\n💰 *Valor:* ${formatMoney(valor)} COP`)
+        ? (valor === 0 ? `\n💰 *Valor:* Cubierto por Paquete Prepago ($0 COP)` : `\n💰 *Valor:* ${formatMoney(valor)} COP`)
         : '';
       const especialistaTexto = operaria ? `\n👩‍⚕️ *Especialista:* ${operaria}` : '';
 
@@ -2963,6 +2991,7 @@
         especialistaTexto +
         `\n✨ *Tratamiento:* ${servicio}` +
         zonasTexto +
+        paqueteTexto +
         valorTexto +
         recomendaciones +
         `\n\nSi necesitas reprogramar, por favor avísanos con anticipación. ¡Te esperamos para seguir cuidando de ti! 🌸✨`
@@ -2993,7 +3022,17 @@
         valor = zonas.length * 50000;
       }
 
-      const mensaje = construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor });
+      const mensaje = construirMensajeWhatsApp({
+        nombre,
+        fecha,
+        hora,
+        servicio,
+        zonas,
+        operaria,
+        valor,
+        paqueteInfo: clienteObj?.paqueteActivo,
+        contadorInfo: obtenerTextoContadorParaZonas(clienteObj, zonas)
+      });
       const preview = document.getElementById('previewMensajeWhatsApp');
       if (preview) preview.innerText = mensaje;
     }
@@ -3061,7 +3100,17 @@
           await cargarDatosServidor();
 
           if (enviarPorWhatsApp && telefono) {
-            const mensaje = construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor });
+            const mensaje = construirMensajeWhatsApp({
+              nombre,
+              fecha,
+              hora,
+              servicio,
+              zonas,
+              operaria,
+              valor,
+              paqueteInfo: clienteObj?.paqueteActivo,
+              contadorInfo: obtenerTextoContadorParaZonas(clienteObj, zonas)
+            });
             abrirWhatsAppConMensaje(telefono, mensaje);
           }
 
@@ -3136,7 +3185,9 @@
         servicio: cita.servicio,
         zonas: cita.zonas,
         operaria: cita.operaria,
-        valor: cita.valor
+        valor: cita.valor,
+        paqueteInfo: cliente?.paqueteActivo,
+        contadorInfo: obtenerTextoContadorParaZonas(cliente, cita.zonas)
       });
 
       abrirWhatsAppConMensaje(telefono, mensaje);
