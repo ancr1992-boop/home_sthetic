@@ -707,6 +707,18 @@
         <span>Clienta de Publicidad / Pauta: Tarifa automática $0 COP para su próxima sesión (contador activo).</span>
       </div>
 
+      <!-- Banner Informativo Paquete Prepago en Siguiente Sesión -->
+      <div id="sigClientePaqueteBanner" class="hidden p-3 bg-purple-50 border border-purple-300 rounded-sm text-purple-950 text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs">
+        <div class="flex items-center gap-2">
+          <i data-lucide="package" class="w-4 h-4 text-purple-700 flex-shrink-0"></i>
+          <div>
+            <span class="block text-xs font-bold text-purple-950">📦 Paquete Prepago Activo</span>
+            <span class="block text-[11px] text-purple-800 font-normal" id="sigClientePaqueteDetalle">Se preseleccionaron las zonas de su paquete ($0 COP). Si deseas puedes agregar otras zonas y solo se cobrarán las adicionales.</span>
+          </div>
+        </div>
+        <span id="sigClientePaqueteBadge" class="text-[10px] font-bold bg-purple-700 text-white px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">Restan 5</span>
+      </div>
+
       <form onsubmit="guardarSiguienteSesion(event)" class="space-y-4">
         <input type="hidden" id="sigClienteId">
         <input type="hidden" id="sigClienteTelefonoRaw">
@@ -812,6 +824,17 @@
             <i data-lucide="megaphone" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
             <span>Clienta de Publicidad / Pauta: Tarifa automática $0 COP. El sistema sumará normalmente las sesiones a su contador por zona.</span>
           </div>
+          <!-- Banner de Paquete Prepago Activo en Nueva Cita -->
+          <div id="citaClientePaqueteBanner" class="hidden mt-2 p-3 bg-purple-50 border border-purple-300 rounded-sm text-purple-950 text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <i data-lucide="package" class="w-4 h-4 text-purple-700 flex-shrink-0"></i>
+              <div>
+                <span class="block text-xs font-bold text-purple-950" id="citaClientePaqueteNombre">Paquete Prepago Activo</span>
+                <span class="block text-[11px] text-purple-800 font-normal" id="citaClientePaqueteDetalle">Se preseleccionaron las zonas de su paquete ($0 COP).</span>
+              </div>
+            </div>
+            <span id="citaClientePaqueteBadge" class="text-[10px] font-bold bg-purple-700 text-white px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">Restan 6</span>
+          </div>
         </div>
 
         <div>
@@ -833,10 +856,48 @@
             </div>
           </div>
 
-          <p class="text-[11px] text-brand-gray">Toca las zonas que se realizará la clienta. Cada zona suma automáticamente <strong>$50.000 COP</strong>:</p>
+          <p class="text-[11px] text-brand-gray">Toca las zonas que se realizará la clienta. Cada zona suma automáticamente <strong>$50.000 COP</strong> (o <strong>$0 COP</strong> si está en paquete prepago):</p>
 
           <div class="grid grid-cols-2 gap-2 pt-1 max-h-52 overflow-y-auto pr-1" id="gridZonasLaser">
             <!-- 14 Zonas generadas dinámicamente con interacción táctil -->
+          </div>
+
+          <!-- Opción: Adquirir Paquete Prepago al Agendar -->
+          <div id="bloqueCompraPaqueteCita" class="p-3 border border-purple-200 bg-purple-50/70 rounded-sm space-y-2 mt-2">
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" id="chkAdquirirPaqueteCita" onchange="onToggleAdquirirPaqueteCita()" class="w-4 h-4 accent-purple-600 mt-0.5 rounded-xs cursor-pointer">
+              <div class="space-y-0.5 flex-1">
+                <span class="text-xs font-bold text-purple-950 uppercase tracking-wider flex items-center gap-1.5">
+                  <i data-lucide="package" class="w-3.5 h-3.5 text-purple-600"></i>
+                  ¿Adquiere Paquete de Sesiones Prepago hoy?
+                </span>
+                <p class="text-[11px] text-purple-900 leading-tight">
+                  Las zonas marcadas quedarán cubiertas por varias sesiones. Hoy se cobra el paquete en caja y las próximas citas saldrán a <strong>$0 COP</strong>.
+                </p>
+              </div>
+            </label>
+
+            <div id="camposCompraPaqueteCita" class="hidden pt-2 border-t border-purple-200 space-y-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-semibold text-purple-950">Número de sesiones pagadas:</span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="ajustarSesionesPaqueteCita(-1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">-</button>
+                  <input type="number" id="numSesionesPaqueteCita" value="6" min="2" max="20" class="w-12 text-center border border-purple-300 p-1 rounded-sm font-bold text-xs" onchange="actualizarCalculoZonas()">
+                  <button type="button" onclick="ajustarSesionesPaqueteCita(1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">+</button>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] text-purple-800 font-medium">Accesos rápidos:</span>
+                <button type="button" onclick="setSesionesPaqueteCita(3)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">3 sesiones</button>
+                <button type="button" onclick="setSesionesPaqueteCita(6)" class="px-2 py-0.5 bg-purple-700 text-white border border-purple-700 text-[10px] font-bold rounded-xs shadow-2xs">6 sesiones</button>
+                <button type="button" onclick="setSesionesPaqueteCita(8)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">8 sesiones</button>
+                <button type="button" onclick="setSesionesPaqueteCita(10)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">10 sesiones</button>
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase font-bold text-purple-900 mb-0.5">Valor Total a Cobrar por el Paquete ($ COP) *</label>
+                <input type="number" id="valorTotalPaqueteCita" placeholder="Ej: 250000" class="w-full border border-purple-300 p-2 rounded-sm bg-white font-bold text-xs focus:border-purple-600 outline-none" oninput="actualizarCalculoZonas()">
+              </div>
+            </div>
           </div>
 
           <div class="pt-2 border-t border-brand-border flex justify-between items-center bg-white p-2.5 rounded-sm border">
@@ -1238,6 +1299,51 @@
           <span>Clienta de Publicidad / Pauta: Tarifa $0 COP. Al confirmar se incrementará el contador de sesiones normalmente y se registrará como Cortesía.</span>
         </div>
 
+        <!-- Banner Informativo Sesión de Paquete en Caja -->
+        <div id="cobroPaqueteBanner" class="hidden p-3 bg-purple-50 border border-purple-300 rounded-sm text-purple-950 text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs">
+          <div class="flex items-center gap-2">
+            <i data-lucide="package" class="w-4 h-4 text-purple-700 flex-shrink-0"></i>
+            <div>
+              <span class="block text-xs font-bold text-purple-950" id="cobroPaqueteTitulo">📦 Sesión de Paquete Prepago</span>
+              <span class="block text-[11px] text-purple-800 font-normal" id="cobroPaqueteDetalle">Tarifa $0 COP. Esta sesión descuenta 1 del paquete y suma normalmente a su contador sin cobrar en caja.</span>
+            </div>
+          </div>
+          <span id="cobroPaqueteBadge" class="text-[10px] font-bold bg-purple-700 text-white px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">Restan 5</span>
+        </div>
+
+        <!-- Opción: Activar Paquete al Facturar en Caja -->
+        <div id="bloqueActivarPaqueteCobro" class="p-3 border border-purple-200 bg-purple-50/70 rounded-sm space-y-2">
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" id="chkActivarPaqueteCobro" onchange="onToggleActivarPaqueteCobro()" class="w-4 h-4 accent-purple-600 mt-0.5 rounded-xs cursor-pointer">
+            <div class="space-y-0.5 flex-1">
+              <span class="text-xs font-bold text-purple-950 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="package" class="w-3.5 h-3.5 text-purple-600"></i>
+                ¿La clienta está pagando un Paquete Prepago hoy?
+              </span>
+              <p class="text-[11px] text-purple-900 leading-tight">
+                Registra el pago total del paquete en caja hoy. Se consumirá la 1ra sesión y las siguientes citas saldrán a <strong>$0 COP</strong>.
+              </p>
+            </div>
+          </label>
+
+          <div id="camposActivarPaqueteCobro" class="hidden pt-2 border-t border-purple-200 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-purple-950">Total de sesiones compradas:</span>
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="ajustarSesionesCobro(-1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">-</button>
+                <input type="number" id="numSesionesCobro" value="6" min="2" max="20" class="w-12 text-center border border-purple-300 p-1 rounded-sm font-bold text-xs">
+                <button type="button" onclick="ajustarSesionesCobro(1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">+</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" onclick="setSesionesCobro(3)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs">3 sesiones</button>
+              <button type="button" onclick="setSesionesCobro(6)" class="px-2 py-0.5 bg-purple-700 text-white border border-purple-700 text-[10px] font-bold rounded-xs shadow-2xs">6 sesiones</button>
+              <button type="button" onclick="setSesionesCobro(8)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs">8 sesiones</button>
+              <button type="button" onclick="setSesionesCobro(10)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs">10 sesiones</button>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Valor a Cobrar ($ COP) *</label>
           <input type="number" id="cobroMonto" required class="w-full border border-brand-border p-2.5 text-base font-bold rounded-sm focus:border-black outline-none bg-white">
@@ -1251,6 +1357,7 @@
             <option value="Tarjeta Crédito">Tarjeta Crédito</option>
             <option value="Transferencia">Transferencia (Nequi / Daviplata / Bancolombia)</option>
             <option value="Crédito Addi">Crédito Addi</option>
+            <option value="Sesión de Paquete Prepago ($0)">Sesión de Paquete Prepago ($0)</option>
             <option value="Cortesía / Publicidad">Cortesía / Publicidad ($0)</option>
           </select>
         </div>
@@ -1611,6 +1718,88 @@
     </div>
   </div>
 
+  <!-- Modal: Gestionar Paquete Prepago del Cliente -->
+  <div id="modalPaqueteCliente" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-lg w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-black">
+          <i data-lucide="package" class="w-4 h-4 text-purple-600"></i> Paquete de Sesiones Prepago
+        </h3>
+        <button onclick="closeModal('modalPaqueteCliente')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="bg-neutral-50 p-3 rounded-sm border border-brand-border flex justify-between items-center">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-brand-gray block">Clienta:</span>
+          <span id="paqModalClienteNombre" class="text-sm font-extrabold text-black">-</span>
+          <span id="paqModalClienteTelefono" class="text-xs text-brand-gray block mt-0.5">-</span>
+        </div>
+        <div id="paqModalEstadoBadge"></div>
+      </div>
+
+      <form id="formPaqueteCliente" onsubmit="guardarPaqueteClienteModal(event)" class="space-y-4">
+        <input type="hidden" id="paqModalClienteId">
+
+        <!-- Selector de Zonas del Paquete -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold">Zonas Cubiertas por el Paquete *</label>
+            <button type="button" onclick="seleccionarZonasPopularesPaqueteModal()" class="text-[11px] text-purple-700 font-semibold hover:underline">Bikini + Axilas</button>
+          </div>
+          <p class="text-[11px] text-brand-gray mb-1.5">Toca las zonas que incluye este paquete (estas zonas saldrán a $0 COP en sus citas):</p>
+          <div class="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1 border border-brand-border p-2 rounded-sm bg-white" id="paqModalGridZonas"></div>
+        </div>
+
+        <!-- Contador de Sesiones -->
+        <div class="grid grid-cols-2 gap-3 bg-purple-50/50 p-3 rounded-sm border border-purple-200">
+          <div>
+            <label class="block uppercase tracking-wider text-purple-950 font-bold text-[10px] mb-1">Sesiones Totales del Paquete *</label>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="ajustarSesionesTotalesModal(-1)" class="w-8 h-8 bg-white border border-purple-300 font-bold text-xs rounded-sm hover:bg-purple-100 transition">-</button>
+              <input type="number" id="paqModalSesionesTotales" value="6" min="1" max="30" class="w-14 text-center border border-purple-300 p-1.5 rounded-sm font-bold bg-white" onchange="onCambioSesionesTotalesModal()">
+              <button type="button" onclick="ajustarSesionesTotalesModal(1)" class="w-8 h-8 bg-white border border-purple-300 font-bold text-xs rounded-sm hover:bg-purple-100 transition">+</button>
+            </div>
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-purple-950 font-bold text-[10px] mb-1">Sesiones Restantes por Disfrutar *</label>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="ajustarSesionesRestantesModal(-1)" class="w-8 h-8 bg-white border border-purple-300 font-bold text-xs rounded-sm hover:bg-purple-100 transition">-</button>
+              <input type="number" id="paqModalSesionesRestantes" value="6" min="0" max="30" class="w-14 text-center border border-purple-300 p-1.5 rounded-sm font-bold bg-white">
+              <button type="button" onclick="ajustarSesionesRestantesModal(1)" class="w-8 h-8 bg-white border border-purple-300 font-bold text-xs rounded-sm hover:bg-purple-100 transition">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Precio Total Pagado ($ COP)</label>
+            <input type="number" id="paqModalPrecio" placeholder="Ej: 300000" class="w-full border border-brand-border p-2 rounded-sm font-mono font-bold">
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Fecha de Adquisición</label>
+            <input type="date" id="paqModalFecha" class="w-full border border-brand-border p-2 rounded-sm font-semibold">
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-between items-center gap-2 flex-wrap">
+          <button type="button" id="paqModalBtnDesactivar" onclick="desactivarPaqueteModal()" class="hidden px-3 py-2 text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-sm font-semibold text-xs transition">
+            Finalizar / Cancelar Paquete
+          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" onclick="closeModal('modalPaqueteCliente')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">
+              Cerrar
+            </button>
+            <button type="submit" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm shadow-sm transition flex items-center gap-1.5">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i> Guardar Paquete
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= JAVASCRIPT ================= -->
   <script>
     let appState = {
@@ -1909,6 +2098,8 @@
         el.classList.remove('hidden');
         if (id === 'modalNuevoCliente') {
           inicializarPreguntasNuevoCliente();
+        } else if (id === 'modalNuevaCita') {
+          onCambioClienteCita();
         }
         lucide.createIcons();
       }
@@ -2109,17 +2300,48 @@
 
     function onCambioClienteCita() {
       const select = document.getElementById('citaCliente');
-      const banner = document.getElementById('citaClientePublicidadBanner');
+      const bannerPub = document.getElementById('citaClientePublicidadBanner');
+      const bannerPaq = document.getElementById('citaClientePaqueteBanner');
+      const bloqueCompra = document.getElementById('bloqueCompraPaqueteCita');
       if (!select) return;
       const cliente = appState.clientes.find(c => c._id == select.value);
       const esPub = Boolean(cliente && cliente.esPublicidad);
-      if (banner) {
+      if (bannerPub) {
         if (esPub) {
-          banner.classList.remove('hidden');
+          bannerPub.classList.remove('hidden');
         } else {
-          banner.classList.add('hidden');
+          bannerPub.classList.add('hidden');
         }
       }
+
+      const tienePaquete = Boolean(cliente && cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0);
+
+      if (bannerPaq) {
+        if (tienePaquete) {
+          bannerPaq.classList.remove('hidden');
+          const paq = cliente.paqueteActivo;
+          const lblNom = document.getElementById('citaClientePaqueteNombre');
+          const lblDet = document.getElementById('citaClientePaqueteDetalle');
+          const badge = document.getElementById('citaClientePaqueteBadge');
+          if (lblNom) lblNom.innerText = `📦 Paquete: ${paq.zonas.join(' + ')}`;
+          if (lblDet) lblDet.innerText = `Zonas cubiertas a $0 COP. Si agregas otras zonas, solo se cobrarán las adicionales.`;
+          if (badge) badge.innerText = `${paq.sesionesRestantes} restantes de ${paq.sesionesTotales}`;
+
+          // Pre-marcar zonas cubiertas por el paquete
+          document.querySelectorAll('.chk-zona-laser').forEach(chk => {
+            if (paq.zonas.includes(chk.value)) {
+              chk.checked = true;
+            }
+          });
+
+          // Ocultar bloque de compra de paquete nuevo para evitar confusión si ya tiene uno activo
+          if (bloqueCompra) bloqueCompra.classList.add('hidden');
+        } else {
+          bannerPaq.classList.add('hidden');
+          if (bloqueCompra) bloqueCompra.classList.remove('hidden');
+        }
+      }
+
       onCambioServicio();
     }
 
@@ -2127,6 +2349,42 @@
       const chk = document.getElementById(`chk-zona-${index}`);
       if (!chk) return;
       chk.checked = !chk.checked;
+      actualizarCalculoZonas();
+    }
+
+    function onToggleAdquirirPaqueteCita() {
+      const chk = document.getElementById('chkAdquirirPaqueteCita');
+      const campos = document.getElementById('camposCompraPaqueteCita');
+      if (chk && campos) {
+        if (chk.checked) {
+          campos.classList.remove('hidden');
+          const valInput = document.getElementById('valorTotalPaqueteCita');
+          if (valInput && !valInput.value) {
+            const chks = document.querySelectorAll('.chk-zona-laser:checked');
+            const cantZonas = chks.length > 0 ? chks.length : 2;
+            const numSes = Number(document.getElementById('numSesionesPaqueteCita').value || 6);
+            valInput.value = cantZonas * numSes * 40000;
+          }
+        } else {
+          campos.classList.add('hidden');
+        }
+      }
+      actualizarCalculoZonas();
+    }
+
+    function ajustarSesionesPaqueteCita(delta) {
+      const input = document.getElementById('numSesionesPaqueteCita');
+      if (!input) return;
+      let val = Number(input.value || 6) + delta;
+      if (val < 2) val = 2;
+      if (val > 30) val = 30;
+      input.value = val;
+      actualizarCalculoZonas();
+    }
+
+    function setSesionesPaqueteCita(num) {
+      const input = document.getElementById('numSesionesPaqueteCita');
+      if (input) input.value = num;
       actualizarCalculoZonas();
     }
 
@@ -2160,10 +2418,12 @@
     function actualizarCalculoZonas() {
       const checkboxes = document.querySelectorAll('.chk-zona-laser');
       let cant = 0;
+      const zonasElegidas = [];
       checkboxes.forEach(chk => {
         const card = chk.closest('.zona-card');
         if (chk.checked) {
           cant++;
+          zonasElegidas.push(chk.value);
           if (card) {
             card.classList.add('bg-black', 'text-white', 'border-black');
             card.classList.remove('bg-white', 'text-brand-black', 'border-brand-border');
@@ -2183,17 +2443,38 @@
       const selectCliente = document.getElementById('citaCliente');
       const cliente = selectCliente ? appState.clientes.find(c => c._id == selectCliente.value) : null;
       const esPub = Boolean(cliente && cliente.esPublicidad);
+      const chkCompraPaq = document.getElementById('chkAdquirirPaqueteCita');
+      const estaComprandoPaquete = Boolean(chkCompraPaq && chkCompraPaq.checked && !esPub);
 
-      const total = cant * 50000;
       const lblCant = document.getElementById('lblCantZonas');
       const lblTotal = document.getElementById('lblTotalLaser');
       const display = document.getElementById('citaPrecioDisplay');
 
       if (lblCant) lblCant.innerText = cant;
+
       if (esPub) {
         if (lblTotal) lblTotal.innerText = '$0 (Publicidad)';
         if (display) display.innerText = '$0 (Cortesía Publicidad)';
+      } else if (estaComprandoPaquete) {
+        const valPaq = Number(document.getElementById('valorTotalPaqueteCita').value || 0);
+        const numSes = Number(document.getElementById('numSesionesPaqueteCita').value || 6);
+        if (lblTotal) lblTotal.innerText = `${formatMoney(valPaq)} (Paquete ${numSes} ses.)`;
+        if (display) display.innerText = `${formatMoney(valPaq)} (Compra Paquete)`;
+      } else if (cliente && cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0) {
+        const paqZonas = cliente.paqueteActivo.zonas || [];
+        const zonasCubiertas = zonasElegidas.filter(z => paqZonas.includes(z));
+        const zonasExtra = zonasElegidas.filter(z => !paqZonas.includes(z));
+        const total = zonasExtra.length * 50000;
+
+        if (zonasExtra.length === 0) {
+          if (lblTotal) lblTotal.innerText = '$0 (Cubierto por Paquete)';
+          if (display) display.innerText = '$0 (Sesión de Paquete Prepago)';
+        } else {
+          if (lblTotal) lblTotal.innerText = `${formatMoney(total)} (${zonasCubiertas.length} cubiertas + ${zonasExtra.length} extras)`;
+          if (display) display.innerText = `${formatMoney(total)} (+${zonasExtra.length} zonas extras)`;
+        }
       } else {
+        const total = cant * 50000;
         if (lblTotal) lblTotal.innerText = formatMoney(total);
         if (display) display.innerText = formatMoney(total);
       }
@@ -2519,6 +2800,12 @@
 
       const bannerPub = document.getElementById('sigClientePublicidadBanner');
       const badgePub = document.getElementById('sigBadgePublicidad');
+      const bannerPaq = document.getElementById('sigClientePaqueteBanner');
+      const badgePaq = document.getElementById('sigClientePaqueteBadge');
+      const detPaq = document.getElementById('sigClientePaqueteDetalle');
+
+      const tienePaq = Boolean(cliente && cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0);
+
       if (bannerPub) {
         if (esPub) bannerPub.classList.remove('hidden');
         else bannerPub.classList.add('hidden');
@@ -2526,6 +2813,16 @@
       if (badgePub) {
         if (esPub) badgePub.classList.remove('hidden');
         else badgePub.classList.add('hidden');
+      }
+      if (bannerPaq) {
+        if (tienePaq) {
+          bannerPaq.classList.remove('hidden');
+          const paq = cliente.paqueteActivo;
+          if (badgePaq) badgePaq.innerText = `${paq.sesionesRestantes} restantes de ${paq.sesionesTotales}`;
+          if (detPaq) detPaq.innerText = `Paquete: ${paq.zonas.join(' + ')}. Se preseleccionaron estas zonas a $0 COP. Si deseas puedes agregar otras zonas y solo se cobrarán las adicionales.`;
+        } else {
+          bannerPaq.classList.add('hidden');
+        }
       }
 
       // Sugerir fecha a 4 semanas (28 días) de la cita actual o de hoy
@@ -2545,9 +2842,9 @@
         selectOp.value = cita.operaria;
       }
 
-      // Renderizar zonas con las que traía la clienta ya pre-seleccionadas
+      // Renderizar zonas: si la clienta tiene paquete activo preseleccionar las del paquete; si no, las que traía la cita previa
       const contZonas = document.getElementById('sigGridZonas');
-      const zonasPrevias = cita.zonas || [];
+      const zonasPrevias = tienePaq ? (cliente.paqueteActivo.zonas || []) : (cita.zonas || []);
       if (contZonas) {
         contZonas.innerHTML = ZONAS_LASER.map((z, idx) => {
           const checked = zonasPrevias.includes(z);
@@ -2613,10 +2910,32 @@
       const clienteId = document.getElementById('sigClienteId').value;
       const clienteObj = appState.clientes.find(c => c._id == clienteId);
       const esPub = Boolean(clienteObj && clienteObj.esPublicidad);
+      const tienePaq = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
 
-      const total = esPub ? 0 : (cant * 50000);
+      let total = 0;
+      let textoTotal = '';
+
+      if (esPub) {
+        total = 0;
+        textoTotal = '$0 (Publicidad)';
+      } else if (tienePaq) {
+        const paqZonas = clienteObj.paqueteActivo.zonas || [];
+        const zonasElegidas = Array.from(document.querySelectorAll('.chk-sig-zona:checked')).map(chk => chk.value);
+        const zonasExtra = zonasElegidas.filter(z => !paqZonas.includes(z));
+        const zonasCubiertas = zonasElegidas.filter(z => paqZonas.includes(z));
+        total = zonasExtra.length * 50000;
+        if (zonasExtra.length === 0) {
+          textoTotal = '$0 (Cubierto por Paquete)';
+        } else {
+          textoTotal = `${formatMoney(total)} (${zonasCubiertas.length} cubiertas + ${zonasExtra.length} extras)`;
+        }
+      } else {
+        total = cant * 50000;
+        textoTotal = formatMoney(total);
+      }
+
       document.getElementById('sigLblCantZonas').innerText = cant;
-      document.getElementById('sigLblTotal').innerText = esPub ? '$0 (Publicidad)' : formatMoney(total);
+      document.getElementById('sigLblTotal').innerText = textoTotal;
       actualizarPreviewWhatsApp();
     }
 
@@ -2624,7 +2943,7 @@
       const fechaLegible = formatearFechaLegible(fecha);
       const zonasTexto = (zonas && zonas.length > 0) ? `\n📍 *Zonas:* ${zonas.join(', ')} (${zonas.length} zonas)` : '';
       const valorTexto = (valor !== undefined && valor !== null) 
-        ? (valor === 0 ? `\n💰 *Valor:* Cortesía / Publicidad ($0 COP)` : `\n💰 *Valor:* ${formatMoney(valor)} COP`)
+        ? (valor === 0 ? `\n💰 *Valor:* Cortesía / Paquete Prepago ($0 COP)` : `\n💰 *Valor:* ${formatMoney(valor)} COP`)
         : '';
       const especialistaTexto = operaria ? `\n👩‍⚕️ *Especialista:* ${operaria}` : '';
 
@@ -2661,7 +2980,18 @@
       const clienteId = document.getElementById('sigClienteId').value;
       const clienteObj = appState.clientes.find(c => c._id == clienteId);
       const esPub = Boolean(clienteObj && clienteObj.esPublicidad);
-      const valor = esPub ? 0 : (zonas.length * 50000);
+      const tienePaq = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
+
+      let valor = 0;
+      if (esPub) {
+        valor = 0;
+      } else if (tienePaq) {
+        const paqZonas = clienteObj.paqueteActivo.zonas || [];
+        const extras = zonas.filter(z => !paqZonas.includes(z));
+        valor = extras.length * 50000;
+      } else {
+        valor = zonas.length * 50000;
+      }
 
       const mensaje = construirMensajeWhatsApp({ nombre, fecha, hora, servicio, zonas, operaria, valor });
       const preview = document.getElementById('previewMensajeWhatsApp');
@@ -2687,7 +3017,18 @@
 
       const clienteObj = appState.clientes.find(c => c._id == clienteId);
       const esPub = Boolean(clienteObj && clienteObj.esPublicidad);
-      const valor = esPub ? 0 : (zonas.length * 50000);
+      const tienePaq = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
+
+      let valor = 0;
+      if (esPub) {
+        valor = 0;
+      } else if (tienePaq) {
+        const paqZonas = clienteObj.paqueteActivo.zonas || [];
+        const extras = zonas.filter(z => !paqZonas.includes(z));
+        valor = extras.length * 50000;
+      } else {
+        valor = zonas.length * 50000;
+      }
 
       const payload = {
         clienteId,
@@ -2837,6 +3178,36 @@
         return;
       }
 
+      const chkAdquirir = document.getElementById('chkAdquirirPaqueteCita');
+      let nuevoPaquete = null;
+
+      if (chkAdquirir && chkAdquirir.checked && (!clienteObj || !clienteObj.esPublicidad)) {
+        const sesiones = Number(document.getElementById('numSesionesPaqueteCita').value || 6);
+        const valPaq = Number(document.getElementById('valorTotalPaqueteCita').value || 0);
+        if (sesiones < 2) {
+          alert('⚠️ Un paquete debe tener al menos 2 sesiones.');
+          return;
+        }
+        if (valPaq <= 0) {
+          alert('⚠️ Por favor ingresa el valor total a cobrar por el paquete.');
+          return;
+        }
+        if (zonasSeleccionadas.length === 0) {
+          alert('⚠️ Selecciona las zonas que cubrirá el paquete.');
+          return;
+        }
+        nuevoPaquete = {
+          sesionesTotales: sesiones,
+          precioTotalPagado: valPaq,
+          zonas: zonasSeleccionadas
+        };
+        precioFinal = valPaq;
+      } else if (clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0 && !clienteObj.esPublicidad) {
+        const zonasPaq = clienteObj.paqueteActivo.zonas || [];
+        const extras = zonasSeleccionadas.filter(z => !zonasPaq.includes(z));
+        precioFinal = extras.length * 50000;
+      }
+
       const payload = {
         clienteId: clienteSelect.value,
         servicio: valServ,
@@ -2848,6 +3219,10 @@
         duracion: 45,
         notas: document.getElementById('citaNotas').value
       };
+
+      if (nuevoPaquete) {
+        payload.nuevoPaquete = nuevoPaquete;
+      }
 
       const btn = e.target.querySelector('button[type="submit"]');
       const originalText = btn ? btn.innerText : 'Guardar';
@@ -2867,8 +3242,16 @@
           closeModal('modalNuevaCita');
           limpiarZonasLaser(false);
           document.getElementById('citaNotas').value = '';
+          if (chkAdquirir) chkAdquirir.checked = false;
+          const camposPaq = document.getElementById('camposCompraPaqueteCita');
+          if (camposPaq) camposPaq.classList.add('hidden');
           await cargarDatosServidor();
-          const valorTxt = data.cita.valor === 0 ? '$0 (Cortesía Publicidad)' : formatMoney(data.cita.valor);
+          let valorTxt = formatMoney(data.cita.valor);
+          if (data.cita.valor === 0) {
+            valorTxt = clienteObj?.esPublicidad ? '$0 (Cortesía Publicidad)' : '$0 (Sesión de Paquete)';
+          } else if (nuevoPaquete) {
+            valorTxt = `${formatMoney(data.cita.valor)} (Compra Paquete ${nuevoPaquete.sesionesTotales} sesiones)`;
+          }
           alert(`✓ Cita agendada con éxito para ${data.cita.clienteNombre} (${valorTxt}).`);
         } else {
           alert('Error al guardar cita: ' + (data.error || 'Ocurrió un error'));
@@ -2894,7 +3277,9 @@
       document.getElementById('cobroOperariaNombre').innerText = cita.operaria;
 
       const clienteObj = appState.clientes.find(c => c._id == cita.clienteId);
-      const esPublicidad = Boolean(clienteObj && clienteObj.esPublicidad) || Number(cita.valor) === 0;
+      const esPublicidad = Boolean(clienteObj && clienteObj.esPublicidad);
+      const tienePaqueteActivo = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
+      const esSesionPaquete = Boolean(cita.esPaquete || (tienePaqueteActivo && Number(cita.valor) === 0));
 
       const bannerPub = document.getElementById('cobroPublicidadBanner');
       if (bannerPub) {
@@ -2902,12 +3287,41 @@
         else bannerPub.classList.add('hidden');
       }
 
+      const bannerPaq = document.getElementById('cobroPaqueteBanner');
+      const bloqueActivar = document.getElementById('bloqueActivarPaqueteCobro');
+      const chkActivar = document.getElementById('chkActivarPaqueteCobro');
+      const camposActivar = document.getElementById('camposActivarPaqueteCobro');
+
+      if (chkActivar) chkActivar.checked = false;
+      if (camposActivar) camposActivar.classList.add('hidden');
+
+      if (bannerPaq) {
+        if (esSesionPaquete && !esPublicidad) {
+          bannerPaq.classList.remove('hidden');
+          const badge = document.getElementById('cobroPaqueteBadge');
+          const det = document.getElementById('cobroPaqueteDetalle');
+          const paq = clienteObj?.paqueteActivo;
+          if (badge && paq) badge.innerText = `${paq.sesionesRestantes} restantes`;
+          if (det && paq) det.innerText = `Esta cita descuenta 1 sesión del paquete (${paq.zonas.join(' + ')}). No sumará dinero a la caja diaria.`;
+          if (bloqueActivar) bloqueActivar.classList.add('hidden');
+        } else {
+          bannerPaq.classList.add('hidden');
+          if (bloqueActivar) {
+            if (tienePaqueteActivo || esPublicidad) bloqueActivar.classList.add('hidden');
+            else bloqueActivar.classList.remove('hidden');
+          }
+        }
+      }
+
       if (esPublicidad) {
         document.getElementById('cobroMonto').value = 0;
         document.getElementById('cobroMetodo').value = 'Cortesía / Publicidad';
+      } else if (esSesionPaquete) {
+        document.getElementById('cobroMonto').value = cita.valor || 0;
+        document.getElementById('cobroMetodo').value = 'Sesión de Paquete Prepago ($0)';
       } else {
         document.getElementById('cobroMonto').value = cita.valor;
-        if (document.getElementById('cobroMetodo').value === 'Cortesía / Publicidad') {
+        if (document.getElementById('cobroMetodo').value === 'Cortesía / Publicidad' || document.getElementById('cobroMetodo').value === 'Sesión de Paquete Prepago ($0)') {
           document.getElementById('cobroMetodo').value = 'Efectivo';
         }
       }
@@ -2916,7 +3330,8 @@
       const txtZonas = document.getElementById('cobroZonasTexto');
       if (cita.zonas && cita.zonas.length > 0) {
         contZonas.classList.remove('hidden');
-        txtZonas.innerText = `${cita.zonas.join(', ')} (${cita.zonas.length} zonas${esPublicidad ? ' - Cortesía $0' : ' @ $50.000 c/u'})`;
+        const extraLabel = esPublicidad ? ' - Cortesía $0' : (esSesionPaquete ? ' - Cubierto por Paquete' : ' @ $50.000 c/u');
+        txtZonas.innerText = `${cita.zonas.join(', ')} (${cita.zonas.length} zonas${extraLabel})`;
       } else {
         contZonas.classList.add('hidden');
       }
@@ -2935,23 +3350,80 @@
       openModal('modalCobrarCita');
     }
 
+    function onToggleActivarPaqueteCobro() {
+      const chk = document.getElementById('chkActivarPaqueteCobro');
+      const campos = document.getElementById('camposActivarPaqueteCobro');
+      if (chk && campos) {
+        if (chk.checked) {
+          campos.classList.remove('hidden');
+          const montoInput = document.getElementById('cobroMonto');
+          const citaId = document.getElementById('cobroCitaId').value;
+          const cita = appState.citas.find(c => c._id == citaId);
+          const numSes = Number(document.getElementById('numSesionesCobro').value || 6);
+          const cantZonas = (cita && cita.zonas && cita.zonas.length > 0) ? cita.zonas.length : 2;
+          if (montoInput && Number(montoInput.value) <= 50000) {
+            montoInput.value = cantZonas * numSes * 40000;
+          }
+        } else {
+          campos.classList.add('hidden');
+        }
+      }
+    }
+
+    function ajustarSesionesCobro(delta) {
+      const input = document.getElementById('numSesionesCobro');
+      if (!input) return;
+      let val = Number(input.value || 6) + delta;
+      if (val < 2) val = 2;
+      if (val > 30) val = 30;
+      input.value = val;
+    }
+
+    function setSesionesCobro(num) {
+      const input = document.getElementById('numSesionesCobro');
+      if (input) input.value = num;
+    }
+
     async function procesarCobro(e) {
       e.preventDefault();
       const citaId = document.getElementById('cobroCitaId').value;
       const valor = document.getElementById('cobroMonto').value;
       const metodo = document.getElementById('cobroMetodo').value;
 
+      const cita = appState.citas.find(c => c._id == citaId);
+      const chkActivar = document.getElementById('chkActivarPaqueteCobro');
+      let activarPaquete = null;
+
+      if (chkActivar && chkActivar.checked) {
+        const sesiones = Number(document.getElementById('numSesionesCobro').value || 6);
+        const zonas = (cita && cita.zonas && cita.zonas.length > 0) ? cita.zonas : ['Bikini Completo', 'Axilas'];
+        activarPaquete = {
+          sesionesTotales: sesiones,
+          precioTotalPagado: Number(valor),
+          zonas: zonas
+        };
+      }
+
       try {
+        const payload = { valor, metodo };
+        if (activarPaquete) payload.activarPaquete = activarPaquete;
+
         const res = await fetch(`/api/citas/${citaId}/completar-cobro`, {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ valor, metodo })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (data.success) {
           closeModal('modalCobrarCita');
           await cargarDatosServidor();
-          alert('✓ Cita cobrada exitosamente. Sesión sumada al contador del cliente e ingreso registrado en Caja.');
+          if (activarPaquete) {
+            alert(`✓ ¡Paquete de ${activarPaquete.sesionesTotales} sesiones activado y pagado en caja! Se consumió la primera sesión.`);
+          } else if (metodo.includes('Paquete Prepago')) {
+            alert('✓ Sesión de paquete completada. Se descontó 1 sesión del paquete y se sumó al contador del cliente ($0 en caja).');
+          } else {
+            alert('✓ Cita cobrada exitosamente. Sesión sumada al contador del cliente e ingreso registrado en Caja.');
+          }
         } else {
           alert('Error al procesar cobro: ' + (data.error || 'Ocurrió un error'));
         }
@@ -3479,6 +3951,8 @@
         // Badge de Historia Clínica
         const badgeHC = obtenerBadgeHistoriaClinica(c._id, c.historiaClinica);
 
+        const tienePaq = Boolean(c.paqueteActivo && c.paqueteActivo.activo && c.paqueteActivo.sesionesRestantes > 0);
+
         return `
           <tr class="hover:bg-neutral-50 transition">
             <td class="p-4 font-semibold text-brand-black">
@@ -3489,12 +3963,17 @@
                     <i data-lucide="megaphone" class="w-3 h-3 text-amber-600"></i> Publicidad ($0)
                   </span>
                 ` : ''}
+                ${tienePaq ? `
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs" title="${(c.paqueteActivo.zonas || []).join(', ')}">
+                    <i data-lucide="package" class="w-3 h-3 text-purple-700"></i> Paquete: ${(c.paqueteActivo.zonas || []).join(' + ')} (${c.paqueteActivo.sesionesRestantes} restantes de ${c.paqueteActivo.sesionesTotales})
+                  </span>
+                ` : ''}
                 ${badgeHC}
               </div>
               ${c.notas ? `<p class="text-xs text-brand-gray font-normal mt-0.5">${c.notas}</p>` : ''}
             </td>
             <td class="p-4 text-brand-gray">
-              <a href="https://wa.me/57${c.telefono.replace(/\\D/g, '')}" target="_blank" class="hover:text-black hover:underline flex items-center gap-1 font-medium">
+              <a href="https://wa.me/57${c.telefono.replace(/\D/g, '')}" target="_blank" class="hover:text-black hover:underline flex items-center gap-1 font-medium">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i> ${c.telefono}
               </a>
             </td>
@@ -3512,6 +3991,9 @@
                     <span>Pasa a Pago</span>
                   </button>
                 ` : ''}
+                <button type="button" onclick="abrirModalPaqueteCliente('${c._id}')" class="bg-purple-50 hover:bg-purple-100 text-purple-950 border border-purple-300 px-2.5 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs transition" title="Gestionar o ajustar Paquete Prepago">
+                  <i data-lucide="package" class="w-3.5 h-3.5 text-purple-600"></i> Paquete
+                </button>
                 ${esMedicoOAdmin ? `
                   <button type="button" onclick="abrirModalDictamenMedico('${c._id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 px-2.5 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs transition" title="Emitir o editar Dictamen Médico">
                     <i data-lucide="stethoscope" class="w-3.5 h-3.5 text-emerald-600"></i> Dictamen
@@ -3535,6 +4017,161 @@
       }).join('');
 
       lucide.createIcons();
+    }
+
+    // --- GESTIÓN DE PAQUETE PREPAGO CLIENTE ---
+    function abrirModalPaqueteCliente(clienteId) {
+      const cliente = appState.clientes.find(c => c._id == clienteId);
+      if (!cliente) return;
+
+      document.getElementById('paqModalClienteId').value = cliente._id;
+      document.getElementById('paqModalClienteNombre').innerText = cliente.nombre;
+      document.getElementById('paqModalClienteTelefono').innerText = cliente.telefono;
+
+      const paq = cliente.paqueteActivo || {};
+      const esActivo = Boolean(paq.activo && paq.sesionesRestantes > 0);
+      const estadoBadge = document.getElementById('paqModalEstadoBadge');
+      const btnDesactivar = document.getElementById('paqModalBtnDesactivar');
+
+      if (estadoBadge) {
+        if (esActivo) {
+          estadoBadge.innerHTML = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-950 border border-purple-300">📦 Paquete Activo (${paq.sesionesRestantes} / ${paq.sesionesTotales} sesiones)</span>`;
+        } else {
+          estadoBadge.innerHTML = `<span class="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-600 border border-neutral-300">Sin paquete activo</span>`;
+        }
+      }
+
+      if (btnDesactivar) {
+        if (esActivo) btnDesactivar.classList.remove('hidden');
+        else btnDesactivar.classList.add('hidden');
+      }
+
+      document.getElementById('paqModalSesionesTotales').value = paq.sesionesTotales || 6;
+      document.getElementById('paqModalSesionesRestantes').value = esActivo ? paq.sesionesRestantes : 6;
+      document.getElementById('paqModalPrecio').value = paq.precioTotalPagado || '';
+      document.getElementById('paqModalFecha').value = paq.fechaAdquisicion ? paq.fechaAdquisicion.split('T')[0] : appState.fechaHoy;
+
+      // Renderizar zonas seleccionables en el modal
+      const contZonas = document.getElementById('paqModalGridZonas');
+      const zonasSeleccionadas = (paq.zonas && paq.zonas.length > 0) ? paq.zonas : ['Bikini Completo', 'Axilas'];
+
+      if (contZonas) {
+        contZonas.innerHTML = ZONAS_LASER.map((z, idx) => {
+          const checked = zonasSeleccionadas.includes(z);
+          return `
+            <label class="flex items-center gap-2 p-1.5 border border-brand-border rounded-xs bg-neutral-50 hover:bg-purple-50 cursor-pointer text-xs">
+              <input type="checkbox" value="${z}" ${checked ? 'checked' : ''} class="chk-modal-paq-zona accent-purple-600 w-3.5 h-3.5">
+              <span class="font-medium text-neutral-800">${z}</span>
+            </label>
+          `;
+        }).join('');
+      }
+
+      openModal('modalPaqueteCliente');
+    }
+
+    function ajustarSesionesTotalesModal(delta) {
+      const input = document.getElementById('paqModalSesionesTotales');
+      const inputRestantes = document.getElementById('paqModalSesionesRestantes');
+      if (!input) return;
+      let val = Number(input.value || 6) + delta;
+      if (val < 1) val = 1;
+      if (val > 30) val = 30;
+      input.value = val;
+      if (inputRestantes && delta > 0 && Number(inputRestantes.value) < val) {
+        inputRestantes.value = val;
+      }
+    }
+
+    function ajustarSesionesRestantesModal(delta) {
+      const input = document.getElementById('paqModalSesionesRestantes');
+      if (!input) return;
+      let val = Number(input.value || 0) + delta;
+      if (val < 0) val = 0;
+      if (val > 30) val = 30;
+      input.value = val;
+    }
+
+    function onCambioSesionesTotalesModal() {
+      const tot = Number(document.getElementById('paqModalSesionesTotales').value || 6);
+      const rest = document.getElementById('paqModalSesionesRestantes');
+      if (rest && Number(rest.value) > tot) rest.value = tot;
+    }
+
+    function seleccionarZonasPopularesPaqueteModal() {
+      document.querySelectorAll('.chk-modal-paq-zona').forEach(chk => {
+        if (chk.value === 'Bikini Completo' || chk.value === 'Axilas' || chk.value === 'Bikini') {
+          chk.checked = true;
+        } else {
+          chk.checked = false;
+        }
+      });
+    }
+
+    async function guardarPaqueteClienteModal(e) {
+      e.preventDefault();
+      const clienteId = document.getElementById('paqModalClienteId').value;
+      const sesionesTotales = Number(document.getElementById('paqModalSesionesTotales').value || 6);
+      const sesionesRestantes = Number(document.getElementById('paqModalSesionesRestantes').value || 0);
+      const precioTotalPagado = Number(document.getElementById('paqModalPrecio').value || 0);
+      const fechaAdquisicion = document.getElementById('paqModalFecha').value || appState.fechaHoy;
+
+      const zonas = Array.from(document.querySelectorAll('.chk-modal-paq-zona:checked')).map(chk => chk.value);
+      if (zonas.length === 0) {
+        alert('⚠️ Selecciona al menos una zona para este paquete.');
+        return;
+      }
+
+      const payload = {
+        activo: sesionesRestantes > 0,
+        nombre: `Paquete ${zonas.join(' + ')} (${sesionesTotales} ses.)`,
+        zonas,
+        sesionesTotales,
+        sesionesRestantes,
+        precioTotalPagado,
+        fechaAdquisicion
+      };
+
+      try {
+        const res = await fetch(`/api/clientes/${clienteId}/paquete`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalPaqueteCliente');
+          await cargarDatosServidor();
+          alert(`✓ ¡Paquete guardado exitosamente para ${data.cliente.nombre}!`);
+        } else {
+          alert('Error al guardar paquete: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    async function desactivarPaqueteModal() {
+      const clienteId = document.getElementById('paqModalClienteId').value;
+      if (!confirm('¿Deseas finalizar y archivar el paquete activo de esta clienta?')) return;
+
+      try {
+        const res = await fetch(`/api/clientes/${clienteId}/paquete`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ activo: false })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalPaqueteCliente');
+          await cargarDatosServidor();
+          alert('✓ Paquete finalizado y archivado.');
+        } else {
+          alert('Error al desactivar paquete: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
     }
 
     async function eliminarClienteDirecto(clienteId) {
@@ -4313,7 +4950,7 @@
           }
         }
       }
-      onCambioServicio();
+      onCambioClienteCita();
     }
 
     function agendarDirectoCliente(clienteId) {

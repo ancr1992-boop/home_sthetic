@@ -59,7 +59,26 @@ const clientSchema = new mongoose.Schema({
       fechaDictamen: { type: String, default: '' },
       horaDictamen: { type: String, default: '' }
     }
-  }
+  },
+  paqueteActivo: {
+    activo: { type: Boolean, default: false },
+    nombre: { type: String, default: '' },
+    zonas: { type: [String], default: [] },
+    sesionesTotales: { type: Number, default: 0 },
+    sesionesRestantes: { type: Number, default: 0 },
+    sesionesRealizadas: { type: Number, default: 0 },
+    precioTotalPagado: { type: Number, default: 0 },
+    fechaAdquisicion: { type: String, default: '' }
+  },
+  historialPaquetes: [{
+    nombre: { type: String, default: '' },
+    zonas: { type: [String], default: [] },
+    sesionesTotales: { type: Number, default: 0 },
+    sesionesRealizadas: { type: Number, default: 0 },
+    precioTotalPagado: { type: Number, default: 0 },
+    fechaAdquisicion: { type: String, default: '' },
+    fechaFinalizacion: { type: String, default: '' }
+  }]
 }, { timestamps: true });
 
 const Client = mongoose.model('Client', clientSchema);
@@ -71,6 +90,14 @@ const appointmentSchema = new mongoose.Schema({
   clienteTelefono: { type: String, default: '' },
   servicio: { type: String, required: true },
   zonas: { type: [String], default: [] },
+  esPaquete: { type: Boolean, default: false },
+  zonasPaquete: { type: [String], default: [] },
+  zonasExtra: { type: [String], default: [] },
+  esCompraPaquete: { type: Boolean, default: false },
+  detallesPaquete: {
+    sesionesTotales: { type: Number, default: 0 },
+    precioTotal: { type: Number, default: 0 }
+  },
   tratamientosAdicionales: [{
     nombre: { type: String, required: true },
     precio: { type: Number, required: true },
@@ -391,6 +418,51 @@ app.put('/api/clientes/:id/toggle-publicidad', async (req, res) => {
   }
 });
 
+// 2.05 Crear o Actualizar Paquete Prepago de un Cliente
+app.put('/api/clientes/:id/paquete', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { activo, nombre, zonas, sesionesTotales, sesionesRestantes, sesionesRealizadas, precioTotalPagado } = req.body;
+    const cliente = await Client.findById(id);
+    if (!cliente) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
+
+    if (activo === false) {
+      if (cliente.paqueteActivo && cliente.paqueteActivo.activo) {
+        cliente.paqueteActivo.activo = false;
+        cliente.historialPaquetes = cliente.historialPaquetes || [];
+        cliente.historialPaquetes.push({
+          nombre: cliente.paqueteActivo.nombre,
+          zonas: cliente.paqueteActivo.zonas,
+          sesionesTotales: cliente.paqueteActivo.sesionesTotales,
+          sesionesRealizadas: cliente.paqueteActivo.sesionesRealizadas,
+          precioTotalPagado: cliente.paqueteActivo.precioTotalPagado,
+          fechaAdquisicion: cliente.paqueteActivo.fechaAdquisicion,
+          fechaFinalizacion: getFechaHoy()
+        });
+      }
+    } else {
+      const sTot = Number(sesionesTotales) || 6;
+      const sRest = sesionesRestantes !== undefined ? Number(sesionesRestantes) : sTot;
+      cliente.paqueteActivo = {
+        activo: sRest > 0,
+        nombre: nombre || `Paquete (${sTot} sesiones): ${(zonas || []).join(', ')}`,
+        zonas: Array.isArray(zonas) ? zonas : [],
+        sesionesTotales: sTot,
+        sesionesRestantes: Math.max(0, sRest),
+        sesionesRealizadas: Number(sesionesRealizadas || 0),
+        precioTotalPagado: Number(precioTotalPagado) || 0,
+        fechaAdquisicion: (cliente.paqueteActivo && cliente.paqueteActivo.fechaAdquisicion) || getFechaHoy()
+      };
+    }
+    await cliente.save();
+    console.log(`✓ Paquete actualizado para ${cliente.nombre}: activo=${cliente.paqueteActivo?.activo}, restan=${cliente.paqueteActivo?.sesionesRestantes}`);
+    res.json({ success: true, cliente });
+  } catch (error) {
+    console.error('Error al actualizar paquete:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 2.1 Actualizar Historia Clínica de un Cliente
 app.put('/api/clientes/:id/historia-clinica', async (req, res) => {
   try {
@@ -505,7 +577,7 @@ app.delete('/api/clientes/:id', async (req, res) => {
 // 3. Crear Cita
 app.post('/api/citas', async (req, res) => {
   try {
-    const { clienteId, servicio, valor, operaria, fecha, hora, duracion, notas, zonas } = req.body;
+    const { clienteId, servicio, valor, operaria, fecha, hora, duracion, notas, zonas, nuevoPaquete } = req.body;
     const cliente = await Client.findById(clienteId);
     if (!cliente) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
 
@@ -515,13 +587,53 @@ app.post('/api/citas', async (req, res) => {
       nombreServicio = 'Depilación Láser';
     }
 
-    // Si el cliente es de publicidad / cortesía, el valor es $0 (no paga nada)
     let finalValor = Number(valor);
-    if (cliente.esPublicidad) {
+    let esPaquete = false;
+    let zonasPaquete = [];
+    let zonasExtra = [];
+    let esCompraPaquete = false;
+    let detallesPaquete = { sesionesTotales: 0, precioTotal: 0 };
+
+    // Caso A: Se registra la compra de un paquete al agendar
+    if (nuevoPaquete && nuevoPaquete.sesionesTotales) {
+      const sTot = Number(nuevoPaquete.sesionesTotales) || 6;
+      const sPrecio = Number(nuevoPaquete.precioTotalPagado) || 0;
+      const sZonas = (nuevoPaquete.zonas && nuevoPaquete.zonas.length > 0) ? nuevoPaquete.zonas : (zonas || []);
+
+      esCompraPaquete = true;
+      detallesPaquete = { sesionesTotales: sTot, precioTotal: sPrecio };
+      finalValor = sPrecio; // Se cobrará hoy en caja
+
+      cliente.paqueteActivo = {
+        activo: true,
+        nombre: `Paquete (${sTot} sesiones): ${sZonas.join(', ')}`,
+        zonas: sZonas,
+        sesionesTotales: sTot,
+        sesionesRestantes: sTot,
+        sesionesRealizadas: 0,
+        precioTotalPagado: sPrecio,
+        fechaAdquisicion: fecha || getFechaHoy()
+      };
+      await cliente.save();
+      console.log(`📦 Paquete activado al agendar para ${cliente.nombre}: ${sTot} sesiones en ${sZonas.join(', ')} ($${sPrecio})`);
+    } else if (cliente.esPublicidad) {
       finalValor = 0;
     } else if (zonas && Array.isArray(zonas) && zonas.length > 0) {
-      // Si tiene zonas seleccionadas (Depilación Láser), el valor es 50.000 COP por zona
-      finalValor = zonas.length * 50000;
+      // Caso B: Verificar si el cliente tiene un paquete activo con sesiones restantes
+      if (cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0) {
+        const pZonas = cliente.paqueteActivo.zonas || [];
+        zonasPaquete = zonas.filter(z => pZonas.includes(z));
+        zonasExtra = zonas.filter(z => !pZonas.includes(z));
+
+        if (zonasPaquete.length > 0) {
+          esPaquete = true;
+        }
+        // Las zonas cubiertas por el paquete salen a $0; las zonas adicionales a $50.000 c/u
+        finalValor = zonasExtra.length * 50000;
+        console.log(`📦 Cita con paquete activo para ${cliente.nombre}: ${zonasPaquete.length} zonas cubiertas ($0), ${zonasExtra.length} zonas extra ($${finalValor})`);
+      } else {
+        finalValor = zonas.length * 50000;
+      }
     }
 
     const nuevaCita = await Appointment.create({
@@ -530,6 +642,11 @@ app.post('/api/citas', async (req, res) => {
       clienteTelefono: cliente.telefono || '',
       servicio: nombreServicio,
       zonas: Array.isArray(zonas) ? zonas : [],
+      esPaquete,
+      zonasPaquete,
+      zonasExtra,
+      esCompraPaquete,
+      detallesPaquete,
       valor: finalValor,
       operaria: operaria || 'General',
       fecha: fecha || getFechaHoy(),
@@ -611,11 +728,26 @@ app.put('/api/citas/:id/enviar-a-facturar', async (req, res) => {
       } else {
         const sNorm = (cita.servicio || '').toLowerCase();
         const sumaAdicionales = (cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0);
+        let costoZonas = 0;
+
+        if (cita.esCompraPaquete) {
+          costoZonas = (cita.detallesPaquete && cita.detallesPaquete.precioTotal) || cita.valor;
+        } else if (cliente && cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0) {
+          const pZonas = cliente.paqueteActivo.zonas || [];
+          const extras = zonas.filter(z => !pZonas.includes(z));
+          costoZonas = extras.length * 50000;
+          cita.esPaquete = true;
+          cita.zonasPaquete = zonas.filter(z => pZonas.includes(z));
+          cita.zonasExtra = extras;
+        } else {
+          costoZonas = zonas.length * 50000;
+        }
+
         if (sNorm.includes('laser') || sNorm.includes('láser')) {
-          cita.valor = (zonas.length * 50000) + sumaAdicionales;
+          cita.valor = costoZonas + sumaAdicionales;
         } else if (zonas.length > 0) {
           cita.servicio = 'Depilación Láser';
-          cita.valor = (zonas.length * 50000) + sumaAdicionales;
+          cita.valor = costoZonas + sumaAdicionales;
         }
       }
     }
@@ -651,11 +783,26 @@ app.put('/api/citas/:id/actualizar-zonas', async (req, res) => {
       } else {
         const sNorm = (cita.servicio || '').toLowerCase();
         const sumaAdicionales = (cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0);
+        let costoZonas = 0;
+
+        if (cita.esCompraPaquete) {
+          costoZonas = (cita.detallesPaquete && cita.detallesPaquete.precioTotal) || cita.valor;
+        } else if (cliente && cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0) {
+          const pZonas = cliente.paqueteActivo.zonas || [];
+          const extras = zonas.filter(z => !pZonas.includes(z));
+          costoZonas = extras.length * 50000;
+          cita.esPaquete = true;
+          cita.zonasPaquete = zonas.filter(z => pZonas.includes(z));
+          cita.zonasExtra = extras;
+        } else {
+          costoZonas = zonas.length * 50000;
+        }
+
         if (sNorm.includes('laser') || sNorm.includes('láser')) {
-          cita.valor = (zonas.length * 50000) + sumaAdicionales;
+          cita.valor = costoZonas + sumaAdicionales;
         } else if (zonas.length > 0) {
           cita.servicio = 'Depilación Láser';
-          cita.valor = (zonas.length * 50000) + sumaAdicionales;
+          cita.valor = costoZonas + sumaAdicionales;
         }
       }
     }
@@ -767,7 +914,7 @@ app.delete('/api/citas/:id/adicional/:adicionalId', async (req, res) => {
 app.post('/api/citas/:id/completar-cobro', async (req, res) => {
   try {
     const { id } = req.params;
-    const { valor, metodo } = req.body;
+    const { valor, metodo, activarPaquete } = req.body;
 
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
@@ -776,19 +923,64 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
     cita.estado = 'Completada';
     await cita.save();
 
-    // Incrementar CONTADOR de servicios del cliente en MongoDB
     const cliente = await Client.findById(cita.clienteId);
-    const esPublicidad = Boolean(cliente && cliente.esPublicidad) || Number(cita.valor) === 0;
+    let esSesionPaquete = false;
 
+    // 1. Manejar activación o descuento de Paquete Prepago
     if (cliente) {
+      if (activarPaquete && activarPaquete.sesionesTotales) {
+        // Activación de nuevo paquete al facturar
+        const sTot = Number(activarPaquete.sesionesTotales) || 6;
+        const zPaq = (activarPaquete.zonas && activarPaquete.zonas.length > 0) ? activarPaquete.zonas : (cita.zonas || []);
+        const sPrecio = Number(activarPaquete.precioTotalPagado) !== undefined ? Number(activarPaquete.precioTotalPagado) : Number(valor);
+
+        cliente.paqueteActivo = {
+          activo: sTot > 1,
+          nombre: `Paquete (${sTot} sesiones): ${zPaq.join(', ')}`,
+          zonas: zPaq,
+          sesionesTotales: sTot,
+          sesionesRestantes: Math.max(0, sTot - 1), // Hoy realizó la 1ra sesión
+          sesionesRealizadas: 1,
+          precioTotalPagado: sPrecio,
+          fechaAdquisicion: getFechaHoy()
+        };
+        console.log(`📦 Paquete activado en caja para ${cliente.nombre}: ${sTot} sesiones en ${zPaq.join(', ')}. Restan ${cliente.paqueteActivo.sesionesRestantes}`);
+      } else if (cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0) {
+        // Descontar 1 sesión del paquete activo
+        const pZonas = cliente.paqueteActivo.zonas || [];
+        const tieneZonasPaq = (cita.zonas && cita.zonas.some(z => pZonas.includes(z))) || cita.esPaquete;
+
+        if (tieneZonasPaq) {
+          esSesionPaquete = true;
+          cliente.paqueteActivo.sesionesRestantes = Math.max(0, cliente.paqueteActivo.sesionesRestantes - 1);
+          cliente.paqueteActivo.sesionesRealizadas = (cliente.paqueteActivo.sesionesRealizadas || 0) + 1;
+
+          console.log(`📦 Sesión de paquete descontada para ${cliente.nombre}: realizada #${cliente.paqueteActivo.sesionesRealizadas}, restan ${cliente.paqueteActivo.sesionesRestantes}`);
+
+          if (cliente.paqueteActivo.sesionesRestantes <= 0) {
+            cliente.paqueteActivo.activo = false;
+            cliente.historialPaquetes = cliente.historialPaquetes || [];
+            cliente.historialPaquetes.push({
+              nombre: cliente.paqueteActivo.nombre,
+              zonas: cliente.paqueteActivo.zonas,
+              sesionesTotales: cliente.paqueteActivo.sesionesTotales,
+              sesionesRealizadas: cliente.paqueteActivo.sesionesRealizadas,
+              precioTotalPagado: cliente.paqueteActivo.precioTotalPagado,
+              fechaAdquisicion: cliente.paqueteActivo.fechaAdquisicion,
+              fechaFinalizacion: getFechaHoy()
+            });
+            console.log(`🎉 ¡Paquete completado para ${cliente.nombre}!`);
+          }
+        }
+      }
+
+      // Incrementar CONTADOR de servicios del cliente en MongoDB
       if (cita.zonas && cita.zonas.length > 0) {
-        // Incrementar cada zona seleccionada (ej: "Láser: Bikini")
         cita.zonas.forEach(z => {
           const key = `Láser: ${z}`;
           const actual = cliente.contadorServicios.get(key) || 0;
           cliente.contadorServicios.set(key, actual + 1);
         });
-        // Y el contador general de Depilación Láser
         const totalLaser = cliente.contadorServicios.get('Depilación Láser') || 0;
         cliente.contadorServicios.set('Depilación Láser', totalLaser + 1);
       } else {
@@ -820,14 +1012,27 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
       concepto += ` + Adicional: ${extraTxt}`;
     }
 
-    const valorCobro = esPublicidad ? 0 : (Number(valor) !== undefined && !isNaN(Number(valor)) ? Number(valor) : cita.valor);
-    const metodoCobro = esPublicidad ? 'Cortesía / Publicidad' : (metodo || 'Efectivo');
+    const esPublicidad = Boolean(cliente && cliente.esPublicidad);
+    let valorCobro = esPublicidad ? 0 : (Number(valor) !== undefined && !isNaN(Number(valor)) ? Number(valor) : cita.valor);
+    let metodoCobro = esPublicidad ? 'Cortesía / Publicidad' : (metodo || 'Efectivo');
+
+    if (esPublicidad) {
+      concepto += ' [Cortesía / Publicidad]';
+    } else if (esSesionPaquete && valorCobro === 0) {
+      metodoCobro = 'Sesión de Paquete Prepago ($0)';
+      const sReal = cliente?.paqueteActivo ? cliente.paqueteActivo.sesionesRealizadas : 1;
+      const sTot = cliente?.paqueteActivo ? cliente.paqueteActivo.sesionesTotales : '-';
+      concepto += ` [Sesión Paquete #${sReal} de ${sTot}]`;
+    } else if (activarPaquete || cita.esCompraPaquete) {
+      const cantTot = (activarPaquete && activarPaquete.sesionesTotales) || (cita.detallesPaquete && cita.detallesPaquete.sesionesTotales) || 6;
+      concepto += ` [Compra de Paquete: ${cantTot} sesiones]`;
+    }
 
     const venta = await Sale.create({
       fecha: getFechaHoy(),
       hora: horaStr,
       cliente: cita.clienteNombre,
-      concepto: esPublicidad ? `${concepto} [Cortesía / Publicidad]` : concepto,
+      concepto,
       metodo: metodoCobro,
       operaria: cita.operaria,
       valor: valorCobro
