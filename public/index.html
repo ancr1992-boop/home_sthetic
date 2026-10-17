@@ -1212,6 +1212,7 @@
             <option value="Tarjeta Débito">Tarjeta Débito</option>
             <option value="Tarjeta Crédito">Tarjeta Crédito</option>
             <option value="Transferencia">Transferencia (Nequi / Daviplata / Bancolombia)</option>
+            <option value="Crédito Addi">Crédito Addi</option>
           </select>
         </div>
 
@@ -1318,6 +1319,7 @@
             <option value="Tarjeta Débito">Tarjeta Débito</option>
             <option value="Tarjeta Crédito">Tarjeta Crédito</option>
             <option value="Transferencia">Transferencia (Nequi/Daviplata)</option>
+            <option value="Crédito Addi">Crédito Addi</option>
           </select>
         </div>
         <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
@@ -4199,13 +4201,15 @@
       let totalEf = 0;
       let totalTarj = 0;
       let totalTransf = 0;
+      let totalAddi = 0;
 
       (appState.ventas || []).forEach(v => {
         if (v.metodo === 'Efectivo') totalEf += v.valor;
+        else if (v.metodo === 'Crédito Addi' || v.metodo === 'Addi') totalAddi += v.valor;
         else if (v.metodo.includes('Tarjeta')) totalTarj += v.valor;
         else totalTransf += v.valor;
       });
-      const totalVentas = totalEf + totalTarj + totalTransf;
+      const totalVentas = totalEf + totalTarj + totalTransf + totalAddi;
 
       // 2. Cálculo de Gastos
       let totalGastos = 0;
@@ -4233,7 +4237,11 @@
 
       const elDesgloseVentas = document.getElementById('resumenDesgloseVentas');
       if (elDesgloseVentas) {
-        elDesgloseVentas.innerText = `Ef: ${formatMoney(totalEf)} | Tarj: ${formatMoney(totalTarj)} | Transf: ${formatMoney(totalTransf)}`;
+        let txtDesglose = `Ef: ${formatMoney(totalEf)} | Tarj: ${formatMoney(totalTarj)} | Transf: ${formatMoney(totalTransf)}`;
+        if (totalAddi > 0) {
+          txtDesglose += ` | Addi: ${formatMoney(totalAddi)}`;
+        }
+        elDesgloseVentas.innerText = txtDesglose;
       }
 
       const elTotalGastos = document.getElementById('resumenTotalGastos');
@@ -4367,9 +4375,23 @@
                 <span class="${esVenta ? 'text-neutral-900 font-medium' : 'text-brand-gray italic text-[11px]'}">${m.tercero}</span>
               </td>
               <td class="p-3">
-                <span class="px-2 py-0.5 border border-brand-border bg-white text-[11px] uppercase font-bold tracking-wider rounded-xs">
-                  ${m.metodo}
-                </span>
+                ${m.metodo === 'Crédito Addi' || m.metodo === 'Addi' ? `
+                  <span class="px-2 py-0.5 border border-purple-300 bg-purple-50 text-purple-900 text-[11px] font-extrabold uppercase tracking-wider rounded-xs inline-flex items-center gap-1 shadow-2xs">
+                    <i data-lucide="sparkles" class="w-3 h-3 text-purple-600"></i> Crédito Addi
+                  </span>
+                ` : m.metodo === 'Transferencia' ? `
+                  <span class="px-2 py-0.5 border border-blue-200 bg-blue-50 text-blue-900 text-[11px] font-semibold uppercase tracking-wider rounded-xs inline-flex items-center gap-1">
+                    <i data-lucide="smartphone" class="w-3 h-3 text-blue-600"></i> Transferencia
+                  </span>
+                ` : m.metodo.includes('Tarjeta') ? `
+                  <span class="px-2 py-0.5 border border-neutral-300 bg-neutral-100 text-neutral-900 text-[11px] font-semibold uppercase tracking-wider rounded-xs inline-flex items-center gap-1">
+                    <i data-lucide="credit-card" class="w-3 h-3 text-neutral-700"></i> ${m.metodo}
+                  </span>
+                ` : `
+                  <span class="px-2 py-0.5 border border-brand-border bg-white text-[11px] uppercase font-bold tracking-wider rounded-xs">
+                    ${m.metodo}
+                  </span>
+                `}
               </td>
               <td class="p-3 text-brand-gray">${m.responsable}</td>
               <td class="p-3 text-right font-mono text-xs ${esVenta ? 'font-bold text-emerald-800' : 'font-bold text-rose-600'}">
@@ -4468,9 +4490,11 @@
       let totalEf = 0;
       let totalTarj = 0;
       let totalTransf = 0;
+      let totalAddi = 0;
 
       (appState.ventas || []).forEach(v => {
         if (v.metodo === 'Efectivo') totalEf += v.valor;
+        else if (v.metodo === 'Crédito Addi' || v.metodo === 'Addi') totalAddi += v.valor;
         else if (v.metodo.includes('Tarjeta')) totalTarj += v.valor;
         else totalTransf += v.valor;
       });
@@ -4482,10 +4506,12 @@
         else totalGastosTransf += g.valor;
       });
 
-      const totalVentas = totalEf + totalTarj + totalTransf;
+      const totalVentas = totalEf + totalTarj + totalTransf + totalAddi;
       const totalGastos = totalGastosEf + totalGastosTransf;
       const dineroFisicoEsperado = fondo + totalEf - totalGastosEf;
       const balanceNeto = totalVentas - totalGastos;
+
+      let desgloseAddi = totalAddi > 0 ? `  - Crédito Addi:       ${formatMoney(totalAddi)}\n` : '';
 
       const resumen = 
         `🌸 CIERRE Y ARQUEO DE CAJA - HOME STHETIC 🌸\n` +
@@ -4501,6 +4527,7 @@
         `  - Efectivo:           ${formatMoney(totalEf)}\n` +
         `  - Tarjetas:           ${formatMoney(totalTarj)}\n` +
         `  - Transferencias:     ${formatMoney(totalTransf)}\n` +
+        desgloseAddi +
         `• Total Gastos/Egresos: -${formatMoney(totalGastos)}\n` +
         `  - Salidas Efectivo:   -${formatMoney(totalGastosEf)}\n` +
         `  - Salidas Transf:     -${formatMoney(totalGastosTransf)}\n` +

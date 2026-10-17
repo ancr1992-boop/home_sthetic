@@ -93,7 +93,7 @@ const saleSchema = new mongoose.Schema({
   hora: { type: String, required: true }, // HH:MM
   cliente: { type: String, required: true },
   concepto: { type: String, required: true },
-  metodo: { type: String, enum: ['Efectivo', 'Tarjeta Débito', 'Tarjeta Crédito', 'Transferencia'], required: true },
+  metodo: { type: String, enum: ['Efectivo', 'Tarjeta Débito', 'Tarjeta Crédito', 'Transferencia', 'Crédito Addi', 'Addi'], required: true },
   operaria: { type: String, default: 'General' },
   valor: { type: Number, required: true }
 }, { timestamps: true });
