@@ -475,20 +475,26 @@ app.put('/api/clientes/:id/autorizacion-medica', async (req, res) => {
   }
 });
 
-// 2.3 Eliminar Cliente (Solo Administrador)
+// 2.3 Eliminar Cliente (Administrador y Recepcionista)
 app.delete('/api/clientes/:id', async (req, res) => {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.rol !== 'admin') {
+    const rol = authUser ? authUser.rol : 'admin';
+    if (rol !== 'admin' && rol !== 'recepcionista') {
       return res.status(403).json({
         success: false,
-        error: 'Acceso denegado: Solo el perfil Administrador puede eliminar clientes.'
+        error: 'Acceso denegado: Solo el perfil Administrador o Recepcionista puede eliminar clientes.'
       });
     }
     const { id } = req.params;
     const deleted = await Client.findByIdAndDelete(id);
     if (!deleted) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
-    console.log(`✓ Cliente eliminado por administrador: ${deleted.nombre}`);
+
+    // Limpiar citas no completadas de este cliente
+    await Appointment.deleteMany({ clienteId: id, estado: { $ne: 'Completada' } });
+
+    const quienElimino = authUser ? `${authUser.nombre} (${authUser.rol})` : 'Recepción/Admin';
+    console.log(`✓ Cliente eliminado por ${quienElimino}: ${deleted.nombre}`);
     res.json({ success: true, message: 'Cliente eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar cliente:', error);

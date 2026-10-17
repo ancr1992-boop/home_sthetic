@@ -3433,6 +3433,7 @@
 
       const sesion = obtenerSesion();
       const esMedicoOAdmin = sesion && (sesion.rol === 'medico' || sesion.rol === 'admin');
+      const puedeEliminarCliente = sesion && (sesion.rol === 'admin' || sesion.rol === 'recepcionista');
 
       tbody.innerHTML = filtrados.map(c => {
         let contadoresHtml = '';
@@ -3510,6 +3511,11 @@
                 <button onclick="agendarDirectoCliente('${c._id}')" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 rounded-sm text-xs uppercase tracking-wider font-semibold flex items-center gap-1 shadow-xs transition">
                   <i data-lucide="calendar-plus" class="w-3 h-3"></i> + Cita
                 </button>
+                ${puedeEliminarCliente ? `
+                  <button type="button" onclick="eliminarClienteDirecto('${c._id}')" class="p-1.5 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-sm transition flex items-center justify-center shadow-2xs" title="Eliminar Cliente">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                ` : ''}
               </div>
             </td>
           </tr>
@@ -3517,6 +3523,32 @@
       }).join('');
 
       lucide.createIcons();
+    }
+
+    async function eliminarClienteDirecto(clienteId) {
+      const cliente = appState.clientes.find(c => c._id == clienteId);
+      if (!cliente) return;
+
+      const confirmar = confirm(
+        `⚠️ ¿Deseas eliminar a la clienta "${cliente.nombre}" (${cliente.telefono})?\n\nEsta acción eliminará su registro y citas asociadas de MongoDB Atlas.`
+      );
+      if (!confirmar) return;
+
+      try {
+        const res = await fetch(`/api/clientes/${clienteId}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert(`✓ Clienta "${cliente.nombre}" eliminada exitosamente.`);
+        } else {
+          alert('Error al eliminar clienta: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión al eliminar: ' + err.message);
+      }
     }
 
     async function togglePublicidadCliente(clienteId) {
