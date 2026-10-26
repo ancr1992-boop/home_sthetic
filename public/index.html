@@ -2093,6 +2093,14 @@
     }
 
     function openModal(id) {
+      const sesion = obtenerSesion();
+      if (sesion && sesion.rol === 'operaria') {
+        if (id === 'modalNuevaCita' || id === 'modalReprogramar' || id === 'modalSiguienteSesion') {
+          alert('Acceso restringido: El agendamiento y gestión de citas es realizado exclusivamente por Recepción o el Administrador.');
+          return;
+        }
+      }
+
       const el = document.getElementById(id);
       if (el) {
         el.classList.remove('hidden');
@@ -2739,8 +2747,9 @@
                     <i data-lucide="clock" class="w-3.5 h-3.5"></i>
                   </button>
                   ${esAdmin ? `
-                    <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="px-2.5 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-2 text-xs rounded-sm transition flex items-center justify-center" title="Eliminar Cita de la Agenda (Solo Administrador)">
-                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="px-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-300 py-2 text-xs font-bold rounded-sm transition flex items-center gap-1 shadow-2xs" title="Eliminar Cita de la Agenda (Solo Administrador)">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-600"></i>
+                      <span class="hidden sm:inline">Eliminar</span>
                     </button>
                   ` : ''}
                 </div>
@@ -2753,8 +2762,9 @@
                     <i data-lucide="clock" class="w-3.5 h-3.5"></i>
                   </button>
                   ${esAdmin ? `
-                    <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="px-2.5 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-2 text-xs rounded-sm transition flex items-center justify-center" title="Eliminar Cita de la Agenda (Solo Administrador)">
-                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="px-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-300 py-2 text-xs font-bold rounded-sm transition flex items-center gap-1 shadow-2xs" title="Eliminar Cita de la Agenda (Solo Administrador)">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-600"></i>
+                      <span class="hidden sm:inline">Eliminar</span>
                     </button>
                   ` : ''}
                 </div>
@@ -2768,8 +2778,9 @@
                       <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i> Asignar Siguiente Sesión
                     </button>
                     ${esAdmin ? `
-                      <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="px-3 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-2 text-xs rounded-sm transition flex items-center justify-center" title="Eliminar Cita de la Agenda (Solo Administrador)">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      <button type="button" onclick="eliminarCitaDirecta('${cita._id}')" class="px-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-300 py-2 text-xs font-bold rounded-sm transition flex items-center gap-1 shadow-2xs" title="Eliminar Cita de la Agenda (Solo Administrador)">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-600"></i>
+                        <span class="hidden sm:inline">Eliminar</span>
                       </button>
                     ` : ''}
                   </div>
@@ -2785,6 +2796,12 @@
 
     // --- ASIGNAR SIGUIENTE SESIÓN & WHATSAPP ---
     function iniciarSiguienteSesion(citaId) {
+      const sesion = obtenerSesion();
+      if (sesion && sesion.rol === 'operaria') {
+        alert('Acceso restringido: El agendamiento de sesiones es realizado exclusivamente por Recepción o el Administrador.');
+        return;
+      }
+
       const cita = appState.citas.find(c => c._id === citaId);
       if (!cita) return;
 
@@ -6024,13 +6041,14 @@
                 </div>
               </div>
             ` : `
-              <p class="text-xs text-brand-gray">Aún no tienes citas registradas en el sistema. Puedes agendar una con el botón de abajo.</p>
+              <p class="text-xs text-brand-gray">Aún no tienes citas registradas en el sistema para esta fecha.</p>
             `}
 
             <div class="pt-2">
-              <button onclick="abrirCitaDesdeCabina()" class="bg-black hover:bg-neutral-800 text-white px-4 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider inline-flex items-center gap-1.5 transition shadow-sm">
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Agendar Paciente en mi Cabina
-              </button>
+              <p class="text-xs text-brand-gray/80 italic flex items-center gap-1.5">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-brand-gray"></i>
+                El agendamiento y programación de citas es gestionado exclusivamente por Recepción y Administrador.
+              </p>
             </div>
           </div>
         `;
@@ -6054,9 +6072,6 @@
             <div class="pt-2 flex flex-wrap justify-center gap-3">
               <button type="button" onclick="cambiarFiltroEstadoCabina('atendidas')" class="bg-white hover:bg-neutral-100 text-black border border-brand-border px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wider inline-flex items-center gap-2 shadow-xs transition">
                 <i data-lucide="eye" class="w-3.5 h-3.5"></i> Ver ${citasAtendidas.length} Clientas Atendidas / En Caja
-              </button>
-              <button type="button" onclick="abrirCitaDesdeCabina()" class="bg-black hover:bg-neutral-800 text-white px-4 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider inline-flex items-center gap-1.5 transition shadow-sm">
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Agendar Otra Paciente
               </button>
             </div>
           </div>
@@ -6263,10 +6278,8 @@
                 </div>
               ` : c.estado === 'Completada' ? `
                 <div class="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-sm text-xs">
-                  <span class="font-bold text-emerald-800 flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> Sesión Cobrada en Caja</span>
-                  <button onclick="abrirModalSiguienteSesion('${c.clienteId}', '${c.servicio}', '${c.operaria}', ${JSON.stringify(zonas).replace(/"/g, '&quot;')})" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-sm transition">
-                    + Siguiente Sesión
-                  </button>
+                  <span class="font-bold text-emerald-800 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Sesión Cobrada en Caja</span>
+                  <span class="text-[10px] text-emerald-700 italic">Recepción gestiona la próxima cita</span>
                 </div>
               ` : ''}
             </div>
@@ -6305,6 +6318,10 @@
 
     function abrirCitaDesdeCabina() {
       const session = obtenerSesion();
+      if (session && session.rol === 'operaria') {
+        alert('Acceso restringido: El agendamiento de citas es gestionado exclusivamente por Recepción o Administrador.');
+        return;
+      }
       openModal('modalNuevaCita');
       const selectOp = document.getElementById('citaOperaria');
       if (selectOp && session) {

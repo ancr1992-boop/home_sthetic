@@ -577,6 +577,14 @@ app.delete('/api/clientes/:id', async (req, res) => {
 // 3. Crear Cita
 app.post('/api/citas', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol === 'operaria') {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado: El perfil de Operaria (Cabina) no tiene permisos para agendar citas. Esta función es exclusiva de Recepción y Administrador.'
+      });
+    }
+
     const { clienteId, servicio, valor, operaria, fecha, hora, duracion, notas, zonas, nuevoPaquete } = req.body;
     const cliente = await Client.findById(clienteId);
     if (!cliente) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
@@ -667,6 +675,14 @@ app.post('/api/citas', async (req, res) => {
 // 4. Reprogramar / Actualizar Cita
 app.put('/api/citas/:id/reprogramar', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol === 'operaria') {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado: El perfil de Operaria (Cabina) no tiene permisos para reprogramar o gestionar citas. Esta función es exclusiva de Recepción y Administrador.'
+      });
+    }
+
     const { id } = req.params;
     const { fecha, hora, operaria, estado } = req.body;
     const cita = await Appointment.findById(id);
@@ -685,6 +701,7 @@ app.put('/api/citas/:id/reprogramar', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
 
 // 4.0 Eliminar Cita (ESTRICTAMENTE SOLO ADMINISTRADOR)
 app.delete('/api/citas/:id', async (req, res) => {
