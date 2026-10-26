@@ -882,20 +882,24 @@
                 <span class="text-xs font-semibold text-purple-950">Número de sesiones pagadas:</span>
                 <div class="flex items-center gap-1.5">
                   <button type="button" onclick="ajustarSesionesPaqueteCita(-1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">-</button>
-                  <input type="number" id="numSesionesPaqueteCita" value="6" min="2" max="20" class="w-12 text-center border border-purple-300 p-1 rounded-sm font-bold text-xs" onchange="actualizarCalculoZonas()">
+                  <input type="number" id="numSesionesPaqueteCita" value="6" min="1" max="30" class="w-12 text-center border border-purple-300 p-1 rounded-sm font-bold text-xs" onchange="onInputSesionesPaqueteCita()">
                   <button type="button" onclick="ajustarSesionesPaqueteCita(1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">+</button>
                 </div>
               </div>
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="text-[10px] text-purple-800 font-medium">Accesos rápidos:</span>
+                <button type="button" onclick="setSesionesPaqueteCita(1)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">1 sesión</button>
                 <button type="button" onclick="setSesionesPaqueteCita(3)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">3 sesiones</button>
                 <button type="button" onclick="setSesionesPaqueteCita(6)" class="px-2 py-0.5 bg-purple-700 text-white border border-purple-700 text-[10px] font-bold rounded-xs shadow-2xs">6 sesiones</button>
                 <button type="button" onclick="setSesionesPaqueteCita(8)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">8 sesiones</button>
                 <button type="button" onclick="setSesionesPaqueteCita(10)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">10 sesiones</button>
               </div>
               <div>
-                <label class="block text-[10px] uppercase font-bold text-purple-900 mb-0.5">Valor Total a Cobrar por el Paquete ($ COP) *</label>
-                <input type="number" id="valorTotalPaqueteCita" placeholder="Ej: 250000" class="w-full border border-purple-300 p-2 rounded-sm bg-white font-bold text-xs focus:border-purple-600 outline-none" oninput="actualizarCalculoZonas()">
+                <div class="flex justify-between items-center mb-0.5">
+                  <label class="block text-[10px] uppercase font-bold text-purple-900">Valor Total a Cobrar por el Paquete ($ COP) *</label>
+                  <span class="text-[10px] text-purple-700 italic">Editable (puedes aplicar descuento)</span>
+                </div>
+                <input type="number" id="valorTotalPaqueteCita" placeholder="Ej: 250000" class="w-full border border-purple-300 p-2 rounded-sm bg-white font-bold text-xs focus:border-purple-600 outline-none font-mono" oninput="actualizarCalculoZonas()">
               </div>
             </div>
           </div>
@@ -1331,15 +1335,16 @@
               <span class="text-xs font-semibold text-purple-950">Total de sesiones compradas:</span>
               <div class="flex items-center gap-1.5">
                 <button type="button" onclick="ajustarSesionesCobro(-1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">-</button>
-                <input type="number" id="numSesionesCobro" value="6" min="2" max="20" class="w-12 text-center border border-purple-300 p-1 rounded-sm font-bold text-xs">
+                <input type="number" id="numSesionesCobro" value="6" min="1" max="30" class="w-12 text-center border border-purple-300 p-1 rounded-sm font-bold text-xs" onchange="onCambioSesionesCobro()">
                 <button type="button" onclick="ajustarSesionesCobro(1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">+</button>
               </div>
             </div>
             <div class="flex items-center gap-1.5 flex-wrap">
-              <button type="button" onclick="setSesionesCobro(3)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs">3 sesiones</button>
+              <button type="button" onclick="setSesionesCobro(1)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">1 sesión</button>
+              <button type="button" onclick="setSesionesCobro(3)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">3 sesiones</button>
               <button type="button" onclick="setSesionesCobro(6)" class="px-2 py-0.5 bg-purple-700 text-white border border-purple-700 text-[10px] font-bold rounded-xs shadow-2xs">6 sesiones</button>
-              <button type="button" onclick="setSesionesCobro(8)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs">8 sesiones</button>
-              <button type="button" onclick="setSesionesCobro(10)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs">10 sesiones</button>
+              <button type="button" onclick="setSesionesCobro(8)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">8 sesiones</button>
+              <button type="button" onclick="setSesionesCobro(10)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">10 sesiones</button>
             </div>
           </div>
         </div>
@@ -2369,7 +2374,7 @@
           const valInput = document.getElementById('valorTotalPaqueteCita');
           if (valInput && !valInput.value) {
             const chks = document.querySelectorAll('.chk-zona-laser:checked');
-            const cantZonas = chks.length > 0 ? chks.length : 2;
+            const cantZonas = chks.length > 0 ? chks.length : 1;
             const numSes = Number(document.getElementById('numSesionesPaqueteCita').value || 6);
             valInput.value = cantZonas * numSes * 40000;
           }
@@ -2384,16 +2389,36 @@
       const input = document.getElementById('numSesionesPaqueteCita');
       if (!input) return;
       let val = Number(input.value || 6) + delta;
-      if (val < 2) val = 2;
+      if (val < 1) val = 1;
       if (val > 30) val = 30;
       input.value = val;
+      actualizarPrecioSugeridoPaqueteCita();
       actualizarCalculoZonas();
     }
 
     function setSesionesPaqueteCita(num) {
       const input = document.getElementById('numSesionesPaqueteCita');
-      if (input) input.value = num;
+      if (input) input.value = Math.max(1, num);
+      actualizarPrecioSugeridoPaqueteCita();
       actualizarCalculoZonas();
+    }
+
+    function onInputSesionesPaqueteCita() {
+      const input = document.getElementById('numSesionesPaqueteCita');
+      if (input && Number(input.value) < 1) input.value = 1;
+      actualizarPrecioSugeridoPaqueteCita();
+      actualizarCalculoZonas();
+    }
+
+    function actualizarPrecioSugeridoPaqueteCita() {
+      const valInput = document.getElementById('valorTotalPaqueteCita');
+      const numSes = Number(document.getElementById('numSesionesPaqueteCita')?.value || 1);
+      const chks = document.querySelectorAll('.chk-zona-laser:checked');
+      const cantZonas = chks.length > 0 ? chks.length : 1;
+      if (valInput && (!valInput.value || valInput.dataset.autoCalculado === 'true')) {
+        valInput.value = cantZonas * numSes * 40000;
+        valInput.dataset.autoCalculado = 'true';
+      }
     }
 
     function onCambioServicio() {
@@ -3252,8 +3277,8 @@
       if (chkAdquirir && chkAdquirir.checked && (!clienteObj || !clienteObj.esPublicidad)) {
         const sesiones = Number(document.getElementById('numSesionesPaqueteCita').value || 6);
         const valPaq = Number(document.getElementById('valorTotalPaqueteCita').value || 0);
-        if (sesiones < 2) {
-          alert('⚠️ Un paquete debe tener al menos 2 sesiones.');
+        if (sesiones < 1) {
+          alert('⚠️ Un paquete debe tener al menos 1 sesión.');
           return;
         }
         if (valPaq <= 0) {
@@ -3442,14 +3467,33 @@
       const input = document.getElementById('numSesionesCobro');
       if (!input) return;
       let val = Number(input.value || 6) + delta;
-      if (val < 2) val = 2;
+      if (val < 1) val = 1;
       if (val > 30) val = 30;
       input.value = val;
+      actualizarPrecioSugeridoCobroPaquete();
     }
 
     function setSesionesCobro(num) {
       const input = document.getElementById('numSesionesCobro');
-      if (input) input.value = num;
+      if (input) input.value = Math.max(1, num);
+      actualizarPrecioSugeridoCobroPaquete();
+    }
+
+    function onCambioSesionesCobro() {
+      const input = document.getElementById('numSesionesCobro');
+      if (input && Number(input.value) < 1) input.value = 1;
+      actualizarPrecioSugeridoCobroPaquete();
+    }
+
+    function actualizarPrecioSugeridoCobroPaquete() {
+      const montoInput = document.getElementById('cobroMonto');
+      const citaId = document.getElementById('cobroCitaId').value;
+      const cita = appState.citas.find(c => c._id == citaId);
+      const numSes = Number(document.getElementById('numSesionesCobro')?.value || 1);
+      const cantZonas = (cita && cita.zonas && cita.zonas.length > 0) ? cita.zonas.length : 1;
+      if (montoInput) {
+        montoInput.value = cantZonas * numSes * 40000;
+      }
     }
 
     async function procesarCobro(e) {

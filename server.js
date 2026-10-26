@@ -951,17 +951,33 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
         const zPaq = (activarPaquete.zonas && activarPaquete.zonas.length > 0) ? activarPaquete.zonas : (cita.zonas || []);
         const sPrecio = Number(activarPaquete.precioTotalPagado) !== undefined ? Number(activarPaquete.precioTotalPagado) : Number(valor);
 
+        const sRestantes = Math.max(0, sTot - 1);
         cliente.paqueteActivo = {
-          activo: sTot > 1,
-          nombre: `Paquete (${sTot} sesiones): ${zPaq.join(', ')}`,
+          activo: sRestantes > 0,
+          nombre: `Paquete (${sTot} ${sTot === 1 ? 'sesión' : 'sesiones'}): ${zPaq.join(', ')}`,
           zonas: zPaq,
           sesionesTotales: sTot,
-          sesionesRestantes: Math.max(0, sTot - 1), // Hoy realizó la 1ra sesión
+          sesionesRestantes: sRestantes, // Hoy realizó la 1ra sesión
           sesionesRealizadas: 1,
           precioTotalPagado: sPrecio,
           fechaAdquisicion: getFechaHoy()
         };
-        console.log(`📦 Paquete activado en caja para ${cliente.nombre}: ${sTot} sesiones en ${zPaq.join(', ')}. Restan ${cliente.paqueteActivo.sesionesRestantes}`);
+
+        if (sRestantes === 0) {
+          cliente.historialPaquetes = cliente.historialPaquetes || [];
+          cliente.historialPaquetes.push({
+            nombre: cliente.paqueteActivo.nombre,
+            zonas: cliente.paqueteActivo.zonas,
+            sesionesTotales: sTot,
+            sesionesRealizadas: 1,
+            precioTotalPagado: sPrecio,
+            fechaAdquisicion: getFechaHoy(),
+            fechaFinalizacion: getFechaHoy()
+          });
+          console.log(`🎉 Paquete de 1 sesión completado y archivado hoy para ${cliente.nombre}`);
+        } else {
+          console.log(`📦 Paquete activado en caja para ${cliente.nombre}: ${sTot} sesiones en ${zPaq.join(', ')}. Restan ${sRestantes}`);
+        }
       } else if (cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0) {
         // Descontar 1 sesión del paquete activo
         const pZonas = cliente.paqueteActivo.zonas || [];
