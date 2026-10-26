@@ -124,7 +124,11 @@ const saleSchema = new mongoose.Schema({
   concepto: { type: String, required: true },
   metodo: { type: String, default: 'Efectivo' },
   operaria: { type: String, default: 'General' },
-  valor: { type: Number, required: true }
+  valor: { type: Number, required: true },
+  pagos: [{
+    metodo: { type: String, required: true },
+    valor: { type: Number, required: true }
+  }]
 }, { timestamps: true });
 
 const Sale = mongoose.model('Sale', saleSchema);
@@ -931,7 +935,7 @@ app.delete('/api/citas/:id/adicional/:adicionalId', async (req, res) => {
 app.post('/api/citas/:id/completar-cobro', async (req, res) => {
   try {
     const { id } = req.params;
-    const { valor, metodo, activarPaquete } = req.body;
+    const { valor, metodo, pagos, activarPaquete } = req.body;
 
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
@@ -1049,6 +1053,23 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
     let valorCobro = esPublicidad ? 0 : (Number(valor) !== undefined && !isNaN(Number(valor)) ? Number(valor) : cita.valor);
     let metodoCobro = esPublicidad ? 'Cortesía / Publicidad' : (metodo || 'Efectivo');
 
+    // Procesar desglose de pagos mixtos / divididos
+    let listaPagos = [];
+    if (Array.isArray(pagos) && pagos.length > 0 && !esPublicidad && !(esSesionPaquete && valorCobro === 0)) {
+      listaPagos = pagos
+        .map(p => ({ metodo: p.metodo, valor: Number(p.valor) || 0 }))
+        .filter(p => p.valor > 0);
+      
+      if (listaPagos.length > 1) {
+        // Formato: "Mixto (Addi: $100k + Transferencia: $100k)"
+        metodoCobro = `Mixto (${listaPagos.map(p => `${p.metodo}: $${p.valor.toLocaleString('es-CO')}`).join(' + ')})`;
+      } else if (listaPagos.length === 1) {
+        metodoCobro = listaPagos[0].metodo;
+      }
+    } else if (valorCobro > 0 && !esPublicidad) {
+      listaPagos = [{ metodo: metodoCobro, valor: valorCobro }];
+    }
+
     if (esPublicidad) {
       concepto += ' [Cortesía / Publicidad]';
     } else if (esSesionPaquete && valorCobro === 0) {
@@ -1068,7 +1089,8 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
       concepto,
       metodo: metodoCobro,
       operaria: cita.operaria,
-      valor: valorCobro
+      valor: valorCobro,
+      pagos: listaPagos
     });
 
     res.json({
@@ -1103,17 +1125,36 @@ app.post('/api/caja/apertura', async (req, res) => {
 // 7. Cobro Rápido Manual en Caja
 app.post('/api/caja/venta-rapida', async (req, res) => {
   try {
-    const { cliente, concepto, metodo, operaria, valor } = req.body;
+    const { cliente, concepto, metodo, pagos, operaria, valor } = req.body;
     const horaStr = getHoraActual();
+    const montoTotal = Number(valor) || 0;
+
+    let metodoFinal = metodo || 'Efectivo';
+    let listaPagos = [];
+
+    if (Array.isArray(pagos) && pagos.length > 0) {
+      listaPagos = pagos
+        .map(p => ({ metodo: p.metodo, valor: Number(p.valor) || 0 }))
+        .filter(p => p.valor > 0);
+
+      if (listaPagos.length > 1) {
+        metodoFinal = `Mixto (${listaPagos.map(p => `${p.metodo}: $${p.valor.toLocaleString('es-CO')}`).join(' + ')})`;
+      } else if (listaPagos.length === 1) {
+        metodoFinal = listaPagos[0].metodo;
+      }
+    } else if (montoTotal > 0) {
+      listaPagos = [{ metodo: metodoFinal, valor: montoTotal }];
+    }
 
     const venta = await Sale.create({
       fecha: getFechaHoy(),
       hora: horaStr,
       cliente: cliente || 'Cliente General',
       concepto: concepto || 'Venta Rápida',
-      metodo: metodo || 'Efectivo',
+      metodo: metodoFinal,
       operaria: operaria || 'General',
-      valor: Number(valor) || 0
+      valor: montoTotal,
+      pagos: listaPagos
     });
 
     res.json({ success: true, venta });

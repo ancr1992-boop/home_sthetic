@@ -302,7 +302,7 @@
           <span class="text-[10px] text-rose-700" id="resumenDesgloseGastos">0 gastos registrados</span>
         </div>
         <div class="p-4 border border-brand-border rounded-sm bg-white">
-          <p class="text-[10px] uppercase tracking-wider text-brand-gray font-semibold">Efectivo en Caja</p>
+          <p class="text-[10px] uppercase tracking-wider text-brand-gray font-semibold">Efectivo Físico en Caja</p>
           <p class="text-xl font-bold mt-1 text-black font-mono" id="resumenEfectivoCaja">$0</p>
           <span class="text-[10px] text-brand-gray">Fondo + Ef. - Gastos Ef.</span>
         </div>
@@ -310,6 +310,43 @@
           <p class="text-[10px] uppercase tracking-wider text-brand-black font-black">Balance Neto Hoy</p>
           <p class="text-xl font-black mt-1 text-black font-mono" id="resumenBalanceNeto">$0</p>
           <span class="text-[10px] text-neutral-600 font-semibold">Ventas - Gastos</span>
+        </div>
+      </div>
+
+      <!-- Cuadre Detallado por Medio de Pago (Efectivo, Addi, Transferencias, Tarjetas) -->
+      <div class="border border-brand-border rounded-sm bg-white p-3.5 space-y-2 shadow-2xs">
+        <div class="flex justify-between items-center border-b border-brand-border/60 pb-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5">
+            <i data-lucide="layers" class="w-4 h-4 text-purple-700"></i>
+            Cuadre y Arqueo por Medios de Pago (Ventas Recibidas)
+          </span>
+          <span class="text-[11px] text-brand-gray">Desglose exacto para cuadre de caja</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+          <div class="p-2.5 rounded-sm bg-neutral-50 border border-brand-border">
+            <div class="flex items-center justify-between text-[11px] text-neutral-600 font-semibold mb-0.5">
+              <span>💵 Efectivo</span>
+            </div>
+            <p class="text-sm font-black text-black font-mono" id="cuadreTotalEfectivo">$0</p>
+          </div>
+          <div class="p-2.5 rounded-sm bg-purple-50/80 border border-purple-200">
+            <div class="flex items-center justify-between text-[11px] text-purple-900 font-bold mb-0.5">
+              <span class="flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3 text-purple-600"></i> Crédito Addi</span>
+            </div>
+            <p class="text-sm font-black text-purple-950 font-mono" id="cuadreTotalAddi">$0</p>
+          </div>
+          <div class="p-2.5 rounded-sm bg-blue-50/80 border border-blue-200">
+            <div class="flex items-center justify-between text-[11px] text-blue-900 font-bold mb-0.5">
+              <span class="flex items-center gap-1"><i data-lucide="smartphone" class="w-3 h-3 text-blue-600"></i> Transferencias</span>
+            </div>
+            <p class="text-sm font-black text-blue-950 font-mono" id="cuadreTotalTransferencias">$0</p>
+          </div>
+          <div class="p-2.5 rounded-sm bg-neutral-100 border border-neutral-300">
+            <div class="flex items-center justify-between text-[11px] text-neutral-700 font-semibold mb-0.5">
+              <span class="flex items-center gap-1"><i data-lucide="credit-card" class="w-3 h-3 text-neutral-700"></i> Tarjetas (Datáfono)</span>
+            </div>
+            <p class="text-sm font-black text-neutral-900 font-mono" id="cuadreTotalTarjetas">$0</p>
+          </div>
         </div>
       </div>
 
@@ -329,7 +366,7 @@
             <button onclick="abrirModalNuevoGasto()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1 shadow-2xs">
               <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i> + Registrar Gasto
             </button>
-            <button onclick="openModal('modalVentaManual')" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 text-xs uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1 shadow-2xs">
+            <button onclick="abrirModalVentaManual()" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 text-xs uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1 shadow-2xs">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Cobro Rápido
             </button>
           </div>
@@ -1350,21 +1387,57 @@
         </div>
 
         <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Valor a Cobrar ($ COP) *</label>
-          <input type="number" id="cobroMonto" required class="w-full border border-brand-border p-2.5 text-base font-bold rounded-sm focus:border-black outline-none bg-white">
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Valor Total a Cobrar ($ COP) *</label>
+          <input type="number" id="cobroMonto" required oninput="actualizarCalculoPagoMixto()" class="w-full border border-brand-border p-2.5 text-base font-bold rounded-sm focus:border-black outline-none bg-white font-mono">
         </div>
 
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Medio de Pago *</label>
-          <select id="cobroMetodo" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white text-xs font-semibold">
-            <option value="Efectivo">Efectivo</option>
-            <option value="Tarjeta Débito">Tarjeta Débito</option>
-            <option value="Tarjeta Crédito">Tarjeta Crédito</option>
-            <option value="Transferencia">Transferencia (Nequi / Daviplata / Bancolombia)</option>
-            <option value="Crédito Addi">Crédito Addi</option>
-            <option value="Sesión de Paquete Prepago ($0)">Sesión de Paquete Prepago ($0)</option>
-            <option value="Cortesía / Publicidad">Cortesía / Publicidad ($0)</option>
-          </select>
+        <!-- Opción Pago Mixto / Múltiples Medios -->
+        <div id="bloqueTogglePagoMixto" class="border border-brand-border rounded-sm p-3 bg-neutral-50/80 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="chkPagoMixto" onchange="togglePagoMixto()" class="w-4 h-4 accent-black rounded-xs cursor-pointer">
+              <span class="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="split" class="w-3.5 h-3.5 text-purple-700"></i>
+                Dividir en Varios Medios de Pago (Mixto)
+              </span>
+            </label>
+            <span class="text-[10px] text-brand-gray hidden sm:inline">Ej: Addi + Transferencia</span>
+          </div>
+
+          <!-- Selector simple (cuando NO es mixto) -->
+          <div id="bloqueMedioPagoSimple">
+            <select id="cobroMetodo" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white text-xs font-semibold">
+              <option value="Efectivo">Efectivo</option>
+              <option value="Tarjeta Débito">Tarjeta Débito</option>
+              <option value="Tarjeta Crédito">Tarjeta Crédito</option>
+              <option value="Transferencia">Transferencia (Nequi / Daviplata / Bancolombia)</option>
+              <option value="Crédito Addi">Crédito Addi</option>
+              <option value="Sesión de Paquete Prepago ($0)">Sesión de Paquete Prepago ($0)</option>
+              <option value="Cortesía / Publicidad">Cortesía / Publicidad ($0)</option>
+            </select>
+          </div>
+
+          <!-- Filas de Pago Mixto (cuando SÍ es mixto) -->
+          <div id="bloqueMedioPagoMixto" class="hidden space-y-2 pt-1 border-t border-brand-border/60">
+            <div id="contenedorFilasPagoMixto" class="space-y-2">
+              <!-- Renderizado dinámico de filas de métodos y montos -->
+            </div>
+
+            <div class="flex justify-between items-center pt-1">
+              <button type="button" onclick="agregarFilaPagoMixto()" class="text-[11px] font-bold text-purple-800 hover:text-black flex items-center gap-1">
+                <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-purple-600"></i> + Agregar otro medio de pago
+              </button>
+              <button type="button" onclick="repartirEquitativoPagoMixto()" class="text-[10px] text-brand-gray hover:text-black underline">
+                Repartir 50% y 50%
+              </button>
+            </div>
+
+            <!-- Resumen y validador de cuadre -->
+            <div id="alertaCuadrePagoMixto" class="p-2.5 rounded-sm text-xs flex justify-between items-center border bg-neutral-100 border-brand-border font-semibold">
+              <span id="txtEstadoCuadreMixto">Suma de pagos: $0</span>
+              <span id="badgeEstadoCuadreMixto" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-neutral-200">Falta asignar</span>
+            </div>
+          </div>
         </div>
 
         <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
@@ -1460,18 +1533,44 @@
           <input type="text" id="vrConcepto" required placeholder="Ej: Protector Solar / Kit Post-Tratamiento" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
         </div>
         <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Valor ($ COP)</label>
-          <input type="number" id="vrValor" required placeholder="50000" class="w-full border border-brand-border p-2 text-base font-bold rounded-sm focus:border-black outline-none">
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Valor Total ($ COP) *</label>
+          <input type="number" id="vrValor" required placeholder="50000" oninput="actualizarCalculoPagoMixtoVR()" class="w-full border border-brand-border p-2 text-base font-bold rounded-sm focus:border-black outline-none font-mono">
         </div>
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Medio de Pago</label>
-          <select id="vrMetodo" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white">
-            <option value="Efectivo">Efectivo</option>
-            <option value="Tarjeta Débito">Tarjeta Débito</option>
-            <option value="Tarjeta Crédito">Tarjeta Crédito</option>
-            <option value="Transferencia">Transferencia (Nequi/Daviplata)</option>
-            <option value="Crédito Addi">Crédito Addi</option>
-          </select>
+
+        <!-- Opción Pago Mixto Cobro Rápido -->
+        <div id="bloqueTogglePagoMixtoVR" class="border border-brand-border rounded-sm p-2.5 bg-neutral-50 space-y-2">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="chkPagoMixtoVR" onchange="togglePagoMixtoVR()" class="w-4 h-4 accent-black rounded-xs cursor-pointer">
+            <span class="text-[11px] font-bold text-black uppercase tracking-wider flex items-center gap-1">
+              <i data-lucide="split" class="w-3 h-3 text-purple-700"></i>
+              Dividir Pago en Varios Medios
+            </span>
+          </label>
+
+          <div id="bloqueMedioPagoSimpleVR">
+            <select id="vrMetodo" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white text-xs font-semibold">
+              <option value="Efectivo">Efectivo</option>
+              <option value="Tarjeta Débito">Tarjeta Débito</option>
+              <option value="Tarjeta Crédito">Tarjeta Crédito</option>
+              <option value="Transferencia">Transferencia (Nequi/Daviplata)</option>
+              <option value="Crédito Addi">Crédito Addi</option>
+            </select>
+          </div>
+
+          <div id="bloqueMedioPagoMixtoVR" class="hidden space-y-2 pt-1 border-t border-brand-border/60">
+            <div id="contenedorFilasPagoMixtoVR" class="space-y-1.5">
+              <!-- Renderizado dinámico de filas VR -->
+            </div>
+            <div class="flex justify-between items-center pt-0.5">
+              <button type="button" onclick="agregarFilaPagoMixtoVR()" class="text-[10px] font-bold text-purple-800 hover:text-black flex items-center gap-1">
+                <i data-lucide="plus-circle" class="w-3 h-3 text-purple-600"></i> + Agregar medio
+              </button>
+            </div>
+            <div id="alertaCuadrePagoMixtoVR" class="p-2 rounded-sm text-[11px] flex justify-between items-center border bg-neutral-100 border-brand-border font-semibold">
+              <span id="txtEstadoCuadreMixtoVR">Suma: $0</span>
+              <span id="badgeEstadoCuadreMixtoVR" class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-neutral-200">Falta</span>
+            </div>
+          </div>
         </div>
         <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
           <button type="button" onclick="closeModal('modalVentaManual')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
@@ -3440,6 +3539,23 @@
         }
       }
 
+      // Reiniciar estado de pago mixto
+      const chkMixto = document.getElementById('chkPagoMixto');
+      if (chkMixto) chkMixto.checked = false;
+      filasPagoMixto = [];
+      const bloqueSimple = document.getElementById('bloqueMedioPagoSimple');
+      const bloqueMixto = document.getElementById('bloqueMedioPagoMixto');
+      const bloqueToggleMixto = document.getElementById('bloqueTogglePagoMixto');
+      if (bloqueSimple) bloqueSimple.classList.remove('hidden');
+      if (bloqueMixto) bloqueMixto.classList.add('hidden');
+      if (bloqueToggleMixto) {
+        if (esPublicidad || (esSesionPaquete && Number(cita.valor) === 0)) {
+          bloqueToggleMixto.classList.add('hidden');
+        } else {
+          bloqueToggleMixto.classList.remove('hidden');
+        }
+      }
+
       openModal('modalCobrarCita');
     }
 
@@ -3496,11 +3612,153 @@
       }
     }
 
+    // ── GESTIÓN DE PAGO MIXTO / MÚLTIPLES MEDIOS EN COBRAR CITA ──
+    const MEDIOS_PAGO_OPCIONES = [
+      'Crédito Addi',
+      'Transferencia',
+      'Efectivo',
+      'Tarjeta Débito',
+      'Tarjeta Crédito'
+    ];
+
+    let filasPagoMixto = [];
+
+    function togglePagoMixto() {
+      const chk = document.getElementById('chkPagoMixto');
+      const bloqueSimple = document.getElementById('bloqueMedioPagoSimple');
+      const bloqueMixto = document.getElementById('bloqueMedioPagoMixto');
+      if (!chk) return;
+
+      if (chk.checked) {
+        if (bloqueSimple) bloqueSimple.classList.add('hidden');
+        if (bloqueMixto) bloqueMixto.classList.remove('hidden');
+        
+        // Si no hay filas inicializadas, inicializar con 2 medios típicos: Addi y Transferencia
+        if (filasPagoMixto.length === 0) {
+          const totalCobro = Number(document.getElementById('cobroMonto')?.value || 0);
+          const mitad1 = Math.round(totalCobro / 2);
+          const mitad2 = totalCobro - mitad1;
+          filasPagoMixto = [
+            { metodo: 'Crédito Addi', valor: mitad1 },
+            { metodo: 'Transferencia', valor: mitad2 }
+          ];
+        }
+        renderizarFilasPagoMixto();
+      } else {
+        if (bloqueSimple) bloqueSimple.classList.remove('hidden');
+        if (bloqueMixto) bloqueMixto.classList.add('hidden');
+      }
+    }
+
+    function renderizarFilasPagoMixto() {
+      const cont = document.getElementById('contenedorFilasPagoMixto');
+      if (!cont) return;
+
+      cont.innerHTML = filasPagoMixto.map((f, idx) => `
+        <div class="flex items-center gap-2 bg-white p-1.5 border border-brand-border rounded-xs">
+          <div class="w-1/2">
+            <select onchange="cambiarMetodoFilaPagoMixto(${idx}, this.value)" class="w-full border border-brand-border p-1.5 rounded-xs text-xs bg-white font-semibold outline-none focus:border-black">
+              ${MEDIOS_PAGO_OPCIONES.map(m => `
+                <option value="${m}" ${m === f.metodo ? 'selected' : ''}>${m}</option>
+              `).join('')}
+            </select>
+          </div>
+          <div class="w-1/2 flex items-center gap-1.5">
+            <input type="number" value="${f.valor || 0}" min="0" oninput="cambiarMontoFilaPagoMixto(${idx}, this.value)" placeholder="Monto" class="w-full border border-brand-border p-1.5 rounded-xs text-xs font-mono font-bold outline-none focus:border-black text-right">
+            ${filasPagoMixto.length > 2 ? `
+              <button type="button" onclick="eliminarFilaPagoMixto(${idx})" class="p-1 text-neutral-400 hover:text-red-600 rounded-full" title="Quitar este medio">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+      actualizarCalculoPagoMixto();
+    }
+
+    function agregarFilaPagoMixto() {
+      const totalEsperado = Number(document.getElementById('cobroMonto')?.value || 0);
+      const sumaActual = filasPagoMixto.reduce((acc, f) => acc + (Number(f.valor) || 0), 0);
+      const faltante = Math.max(0, totalEsperado - sumaActual);
+      
+      // Escoger un método que no esté repetido si es posible
+      const usados = filasPagoMixto.map(f => f.metodo);
+      const disponible = MEDIOS_PAGO_OPCIONES.find(m => !usados.includes(m)) || 'Efectivo';
+
+      filasPagoMixto.push({ metodo: disponible, valor: faltante });
+      renderizarFilasPagoMixto();
+    }
+
+    function eliminarFilaPagoMixto(index) {
+      if (filasPagoMixto.length <= 2) return;
+      filasPagoMixto.splice(index, 1);
+      renderizarFilasPagoMixto();
+    }
+
+    function cambiarMetodoFilaPagoMixto(index, nuevoMetodo) {
+      if (filasPagoMixto[index]) {
+        filasPagoMixto[index].metodo = nuevoMetodo;
+      }
+      actualizarCalculoPagoMixto();
+    }
+
+    function cambiarMontoFilaPagoMixto(index, nuevoMonto) {
+      if (filasPagoMixto[index]) {
+        filasPagoMixto[index].valor = Number(nuevoMonto) || 0;
+      }
+      actualizarCalculoPagoMixto();
+    }
+
+    function repartirEquitativoPagoMixto() {
+      const totalEsperado = Number(document.getElementById('cobroMonto')?.value || 0);
+      if (filasPagoMixto.length === 0) return;
+      const partes = filasPagoMixto.length;
+      const base = Math.floor(totalEsperado / partes);
+      filasPagoMixto.forEach((f, i) => {
+        f.valor = (i === partes - 1) ? (totalEsperado - base * (partes - 1)) : base;
+      });
+      renderizarFilasPagoMixto();
+    }
+
+    function actualizarCalculoPagoMixto() {
+      const chk = document.getElementById('chkPagoMixto');
+      if (!chk || !chk.checked) return;
+
+      const totalEsperado = Number(document.getElementById('cobroMonto')?.value || 0);
+      const sumaActual = filasPagoMixto.reduce((acc, f) => acc + (Number(f.valor) || 0), 0);
+      const diff = totalEsperado - sumaActual;
+
+      const txt = document.getElementById('txtEstadoCuadreMixto');
+      const badge = document.getElementById('badgeEstadoCuadreMixto');
+      const box = document.getElementById('alertaCuadrePagoMixto');
+
+      if (!txt || !badge || !box) return;
+
+      if (diff === 0 && totalEsperado > 0) {
+        txt.innerHTML = `Suma de medios: <strong class="text-emerald-900 font-mono">${formatMoney(sumaActual)}</strong>`;
+        badge.textContent = '✓ Cuadrado Exacto';
+        badge.className = 'text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-emerald-600 text-white';
+        box.className = 'p-2.5 rounded-sm text-xs flex justify-between items-center border bg-emerald-50 border-emerald-300 font-semibold text-emerald-950';
+      } else if (diff > 0) {
+        txt.innerHTML = `Suma: <span class="font-mono">${formatMoney(sumaActual)}</span> de <span class="font-mono">${formatMoney(totalEsperado)}</span>`;
+        badge.textContent = `Faltan ${formatMoney(diff)}`;
+        badge.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-500 text-black animate-pulse';
+        box.className = 'p-2.5 rounded-sm text-xs flex justify-between items-center border bg-amber-50 border-amber-300 font-semibold text-amber-950';
+      } else {
+        txt.innerHTML = `Suma: <span class="font-mono">${formatMoney(sumaActual)}</span> de <span class="font-mono">${formatMoney(totalEsperado)}</span>`;
+        badge.textContent = `Sobra ${formatMoney(Math.abs(diff))}`;
+        badge.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white';
+        box.className = 'p-2.5 rounded-sm text-xs flex justify-between items-center border bg-rose-50 border-rose-300 font-semibold text-rose-950';
+      }
+    }
+
     async function procesarCobro(e) {
       e.preventDefault();
       const citaId = document.getElementById('cobroCitaId').value;
-      const valor = document.getElementById('cobroMonto').value;
-      const metodo = document.getElementById('cobroMetodo').value;
+      const valor = Number(document.getElementById('cobroMonto').value) || 0;
+      let metodo = document.getElementById('cobroMetodo').value;
 
       const cita = appState.citas.find(c => c._id == citaId);
       const chkActivar = document.getElementById('chkActivarPaqueteCobro');
@@ -3511,13 +3769,31 @@
         const zonas = (cita && cita.zonas && cita.zonas.length > 0) ? cita.zonas : ['Bikini Completo', 'Axilas'];
         activarPaquete = {
           sesionesTotales: sesiones,
-          precioTotalPagado: Number(valor),
+          precioTotalPagado: valor,
           zonas: zonas
         };
       }
 
+      const chkMixto = document.getElementById('chkPagoMixto');
+      let pagos = [];
+
+      if (chkMixto && chkMixto.checked && valor > 0) {
+        pagos = filasPagoMixto.map(f => ({ metodo: f.metodo, valor: Number(f.valor) || 0 })).filter(f => f.valor > 0);
+        const sumaPagos = pagos.reduce((acc, p) => acc + p.valor, 0);
+        if (sumaPagos !== valor) {
+          alert(`⚠️ Los medios de pago no cuadran con el valor total a cobrar:\n\n• Valor a cobrar: ${formatMoney(valor)}\n• Suma de pagos ingresados: ${formatMoney(sumaPagos)}\n• Diferencia: ${formatMoney(Math.abs(valor - sumaPagos))}\n\nPor favor ajusta los montos para que la suma sea exactamente igual.`);
+          return;
+        }
+        if (pagos.length > 1) {
+          metodo = `Mixto (${pagos.map(p => `${p.metodo}: ${formatMoney(p.valor)}`).join(' + ')})`;
+        } else if (pagos.length === 1) {
+          metodo = pagos[0].metodo;
+        }
+      }
+
       try {
         const payload = { valor, metodo };
+        if (pagos.length > 0) payload.pagos = pagos;
         if (activarPaquete) payload.activarPaquete = activarPaquete;
 
         const res = await fetch(`/api/citas/${citaId}/completar-cobro`, {
@@ -3534,13 +3810,153 @@
           } else if (metodo.includes('Paquete Prepago')) {
             alert('✓ Sesión de paquete completada. Se descontó 1 sesión del paquete y se sumó al contador del cliente ($0 en caja).');
           } else {
-            alert('✓ Cita cobrada exitosamente. Sesión sumada al contador del cliente e ingreso registrado en Caja.');
+            alert('✓ Cita cobrada exitosamente. Sesión sumada al contador del cliente e ingreso registrado en Caja con sus medios de pago.');
           }
         } else {
           alert('Error al procesar cobro: ' + (data.error || 'Ocurrió un error'));
         }
       } catch (err) {
         alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    // --- COBRO RÁPIDO / VENTA MANUAL (PAGO MIXTO) ---
+    let filasPagoMixtoVR = [];
+
+    function abrirModalVentaManual() {
+      const elCli = document.getElementById('vrCliente');
+      if (elCli) elCli.value = '';
+      const elCon = document.getElementById('vrConcepto');
+      if (elCon) elCon.value = '';
+      const elVal = document.getElementById('vrValor');
+      if (elVal) elVal.value = '';
+      const elMet = document.getElementById('vrMetodo');
+      if (elMet) elMet.value = 'Efectivo';
+      const chk = document.getElementById('chkPagoMixtoVR');
+      if (chk) {
+        chk.checked = false;
+        togglePagoMixtoVR();
+      }
+      filasPagoMixtoVR = [];
+      openModal('modalVentaManual');
+      setTimeout(() => { if (elCli) elCli.focus(); }, 100);
+    }
+
+    function togglePagoMixtoVR() {
+      const chk = document.getElementById('chkPagoMixtoVR');
+      const bloqueSimple = document.getElementById('bloqueMedioPagoSimpleVR');
+      const bloqueMixto = document.getElementById('bloqueMedioPagoMixtoVR');
+      if (!chk) return;
+
+      if (chk.checked) {
+        if (bloqueSimple) bloqueSimple.classList.add('hidden');
+        if (bloqueMixto) bloqueMixto.classList.remove('hidden');
+
+        if (filasPagoMixtoVR.length === 0) {
+          const totalCobro = Number(document.getElementById('vrValor')?.value || 0);
+          const mitad1 = Math.round(totalCobro / 2);
+          const mitad2 = totalCobro - mitad1;
+          filasPagoMixtoVR = [
+            { metodo: 'Crédito Addi', valor: mitad1 },
+            { metodo: 'Transferencia', valor: mitad2 }
+          ];
+        }
+        renderizarFilasPagoMixtoVR();
+      } else {
+        if (bloqueSimple) bloqueSimple.classList.remove('hidden');
+        if (bloqueMixto) bloqueMixto.classList.add('hidden');
+      }
+    }
+
+    function renderizarFilasPagoMixtoVR() {
+      const cont = document.getElementById('contenedorFilasPagoMixtoVR');
+      if (!cont) return;
+
+      cont.innerHTML = filasPagoMixtoVR.map((f, idx) => `
+        <div class="flex items-center gap-2 bg-white p-1.5 border border-brand-border rounded-xs">
+          <div class="w-1/2">
+            <select onchange="cambiarMetodoFilaPagoMixtoVR(${idx}, this.value)" class="w-full border border-brand-border p-1.5 rounded-xs text-xs bg-white font-semibold outline-none focus:border-black">
+              ${MEDIOS_PAGO_OPCIONES.map(m => `
+                <option value="${m}" ${m === f.metodo ? 'selected' : ''}>${m}</option>
+              `).join('')}
+            </select>
+          </div>
+          <div class="w-1/2 flex items-center gap-1.5">
+            <input type="number" value="${f.valor || 0}" min="0" oninput="cambiarMontoFilaPagoMixtoVR(${idx}, this.value)" placeholder="Monto" class="w-full border border-brand-border p-1.5 rounded-xs text-xs font-mono font-bold outline-none focus:border-black text-right">
+            ${filasPagoMixtoVR.length > 2 ? `
+              <button type="button" onclick="eliminarFilaPagoMixtoVR(${idx})" class="p-1 text-neutral-400 hover:text-red-600 rounded-full" title="Quitar este medio">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+      actualizarCalculoPagoMixtoVR();
+    }
+
+    function agregarFilaPagoMixtoVR() {
+      const totalEsperado = Number(document.getElementById('vrValor')?.value || 0);
+      const sumaActual = filasPagoMixtoVR.reduce((acc, f) => acc + (Number(f.valor) || 0), 0);
+      const faltante = Math.max(0, totalEsperado - sumaActual);
+
+      const usados = filasPagoMixtoVR.map(f => f.metodo);
+      const disponible = MEDIOS_PAGO_OPCIONES.find(m => !usados.includes(m)) || 'Efectivo';
+
+      filasPagoMixtoVR.push({ metodo: disponible, valor: faltante });
+      renderizarFilasPagoMixtoVR();
+    }
+
+    function eliminarFilaPagoMixtoVR(index) {
+      if (filasPagoMixtoVR.length <= 2) return;
+      filasPagoMixtoVR.splice(index, 1);
+      renderizarFilasPagoMixtoVR();
+    }
+
+    function cambiarMetodoFilaPagoMixtoVR(index, nuevoMetodo) {
+      if (filasPagoMixtoVR[index]) {
+        filasPagoMixtoVR[index].metodo = nuevoMetodo;
+      }
+      actualizarCalculoPagoMixtoVR();
+    }
+
+    function cambiarMontoFilaPagoMixtoVR(index, nuevoMonto) {
+      if (filasPagoMixtoVR[index]) {
+        filasPagoMixtoVR[index].valor = Number(nuevoMonto) || 0;
+      }
+      actualizarCalculoPagoMixtoVR();
+    }
+
+    function actualizarCalculoPagoMixtoVR() {
+      const chk = document.getElementById('chkPagoMixtoVR');
+      if (!chk || !chk.checked) return;
+
+      const totalEsperado = Number(document.getElementById('vrValor')?.value || 0);
+      const sumaActual = filasPagoMixtoVR.reduce((acc, f) => acc + (Number(f.valor) || 0), 0);
+      const diff = totalEsperado - sumaActual;
+
+      const txt = document.getElementById('txtEstadoCuadreMixtoVR');
+      const badge = document.getElementById('badgeEstadoCuadreMixtoVR');
+      const box = document.getElementById('alertaCuadrePagoMixtoVR');
+
+      if (!txt || !badge || !box) return;
+
+      if (diff === 0 && totalEsperado > 0) {
+        txt.innerHTML = `Suma: <strong class="text-emerald-900 font-mono">${formatMoney(sumaActual)}</strong>`;
+        badge.textContent = '✓ Cuadrado';
+        badge.className = 'text-[9px] uppercase font-black px-1.5 py-0.5 rounded-full bg-emerald-600 text-white';
+        box.className = 'p-2 rounded-sm text-[11px] flex justify-between items-center border bg-emerald-50 border-emerald-300 font-semibold text-emerald-950';
+      } else if (diff > 0) {
+        txt.innerHTML = `Suma: <span class="font-mono">${formatMoney(sumaActual)}</span> / <span class="font-mono">${formatMoney(totalEsperado)}</span>`;
+        badge.textContent = `Faltan ${formatMoney(diff)}`;
+        badge.className = 'text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-amber-500 text-black';
+        box.className = 'p-2 rounded-sm text-[11px] flex justify-between items-center border bg-amber-50 border-amber-300 font-semibold text-amber-950';
+      } else {
+        txt.innerHTML = `Suma: <span class="font-mono">${formatMoney(sumaActual)}</span> / <span class="font-mono">${formatMoney(totalEsperado)}</span>`;
+        badge.textContent = `Sobra ${formatMoney(Math.abs(diff))}`;
+        badge.className = 'text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-rose-600 text-white';
+        box.className = 'p-2 rounded-sm text-[11px] flex justify-between items-center border bg-rose-50 border-rose-300 font-semibold text-rose-950';
       }
     }
 
@@ -5180,17 +5596,30 @@
 
       const fondo = (appState.config && appState.config.caja && appState.config.caja.fondoInicial) || 0;
       
-      // 1. Cálculo de Ventas
+      // 1. Cálculo de Ventas (soportando ventas con pago mixto / múltiples medios)
       let totalEf = 0;
       let totalTarj = 0;
       let totalTransf = 0;
       let totalAddi = 0;
 
       (appState.ventas || []).forEach(v => {
-        if (v.metodo === 'Efectivo') totalEf += v.valor;
-        else if (v.metodo === 'Crédito Addi' || v.metodo === 'Addi') totalAddi += v.valor;
-        else if (v.metodo.includes('Tarjeta')) totalTarj += v.valor;
-        else totalTransf += v.valor;
+        if (Array.isArray(v.pagos) && v.pagos.length > 0) {
+          v.pagos.forEach(p => {
+            const m = p.metodo || '';
+            const val = Number(p.valor) || 0;
+            if (m === 'Efectivo') totalEf += val;
+            else if (m === 'Crédito Addi' || m === 'Addi') totalAddi += val;
+            else if (m.includes('Tarjeta')) totalTarj += val;
+            else totalTransf += val;
+          });
+        } else {
+          const m = v.metodo || '';
+          const val = Number(v.valor) || 0;
+          if (m === 'Efectivo') totalEf += val;
+          else if (m === 'Crédito Addi' || m === 'Addi') totalAddi += val;
+          else if (m.includes('Tarjeta')) totalTarj += val;
+          else totalTransf += val;
+        }
       });
       const totalVentas = totalEf + totalTarj + totalTransf + totalAddi;
 
@@ -5226,6 +5655,19 @@
         }
         elDesgloseVentas.innerText = txtDesglose;
       }
+
+      // Actualizar Tarjetas de Medios de Pago Individuales en Caja
+      const elCuadreEf = document.getElementById('cuadreTotalEfectivo');
+      if (elCuadreEf) elCuadreEf.innerText = formatMoney(totalEf);
+
+      const elCuadreAddi = document.getElementById('cuadreTotalAddi');
+      if (elCuadreAddi) elCuadreAddi.innerText = formatMoney(totalAddi);
+
+      const elCuadreTransf = document.getElementById('cuadreTotalTransferencias');
+      if (elCuadreTransf) elCuadreTransf.innerText = formatMoney(totalTransf);
+
+      const elCuadreTarj = document.getElementById('cuadreTotalTarjetas');
+      if (elCuadreTarj) elCuadreTarj.innerText = formatMoney(totalTarj);
 
       const elTotalGastos = document.getElementById('resumenTotalGastos');
       if (elTotalGastos) {
@@ -5300,6 +5742,7 @@
           concepto: v.concepto || 'Ingreso por tratamiento',
           tercero: v.cliente || 'Cliente General',
           metodo: v.metodo || 'Efectivo',
+          pagos: (Array.isArray(v.pagos) && v.pagos.length > 0) ? v.pagos : null,
           responsable: v.operaria || 'Recepción',
           valor: v.valor || 0
         });
@@ -5358,7 +5801,25 @@
                 <span class="${esVenta ? 'text-neutral-900 font-medium' : 'text-brand-gray italic text-[11px]'}">${m.tercero}</span>
               </td>
               <td class="p-3">
-                ${m.metodo === 'Crédito Addi' || m.metodo === 'Addi' ? `
+                ${m.pagos && m.pagos.length > 1 ? `
+                  <div class="flex flex-col gap-1 items-start">
+                    <span class="text-[9px] font-black uppercase text-purple-900 bg-purple-100/90 px-1.5 py-0.5 rounded-xs border border-purple-300 flex items-center gap-1">
+                      <i data-lucide="split" class="w-2.5 h-2.5 text-purple-700"></i> Mixto (${m.pagos.length} medios)
+                    </span>
+                    <div class="flex flex-wrap gap-1">
+                      ${m.pagos.map(p => `
+                        <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-xs border ${
+                          p.metodo === 'Crédito Addi' || p.metodo === 'Addi' ? 'bg-purple-50 text-purple-950 border-purple-300' :
+                          p.metodo === 'Transferencia' ? 'bg-blue-50 text-blue-950 border-blue-200' :
+                          p.metodo.includes('Tarjeta') ? 'bg-neutral-100 text-neutral-900 border-neutral-300' :
+                          'bg-emerald-50 text-emerald-950 border-emerald-300'
+                        }">
+                          ${p.metodo}: <strong>${formatMoney(p.valor)}</strong>
+                        </span>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : m.metodo === 'Crédito Addi' || m.metodo === 'Addi' ? `
                   <span class="px-2 py-0.5 border border-purple-300 bg-purple-50 text-purple-900 text-[11px] font-extrabold uppercase tracking-wider rounded-xs inline-flex items-center gap-1 shadow-2xs">
                     <i data-lucide="sparkles" class="w-3 h-3 text-purple-600"></i> Crédito Addi
                   </span>
@@ -5442,12 +5903,30 @@
 
     async function guardarCobroRapido(e) {
       e.preventDefault();
-      const payload = {
-        cliente: document.getElementById('vrCliente').value,
-        concepto: document.getElementById('vrConcepto').value,
-        valor: document.getElementById('vrValor').value,
-        metodo: document.getElementById('vrMetodo').value
-      };
+      const cliente = (document.getElementById('vrCliente').value || '').trim();
+      const concepto = (document.getElementById('vrConcepto').value || '').trim();
+      const valor = Number(document.getElementById('vrValor').value) || 0;
+      let metodo = document.getElementById('vrMetodo').value;
+
+      const chkMixto = document.getElementById('chkPagoMixtoVR');
+      let pagos = [];
+
+      if (chkMixto && chkMixto.checked && valor > 0) {
+        pagos = filasPagoMixtoVR.map(f => ({ metodo: f.metodo, valor: Number(f.valor) || 0 })).filter(f => f.valor > 0);
+        const sumaPagos = pagos.reduce((acc, p) => acc + p.valor, 0);
+        if (sumaPagos !== valor) {
+          alert(`⚠️ Los medios de pago no cuadran con el valor total a cobrar:\n\n• Total a cobrar: ${formatMoney(valor)}\n• Suma de medios ingresados: ${formatMoney(sumaPagos)}\n• Diferencia: ${formatMoney(Math.abs(valor - sumaPagos))}\n\nPor favor ajusta los montos.`);
+          return;
+        }
+        if (pagos.length > 1) {
+          metodo = `Mixto (${pagos.map(p => `${p.metodo}: ${formatMoney(p.valor)}`).join(' + ')})`;
+        } else if (pagos.length === 1) {
+          metodo = pagos[0].metodo;
+        }
+      }
+
+      const payload = { cliente, concepto, valor, metodo };
+      if (pagos.length > 0) payload.pagos = pagos;
 
       try {
         const res = await fetch('/api/caja/venta-rapida', {
@@ -5476,25 +5955,36 @@
       let totalAddi = 0;
 
       (appState.ventas || []).forEach(v => {
-        if (v.metodo === 'Efectivo') totalEf += v.valor;
-        else if (v.metodo === 'Crédito Addi' || v.metodo === 'Addi') totalAddi += v.valor;
-        else if (v.metodo.includes('Tarjeta')) totalTarj += v.valor;
-        else totalTransf += v.valor;
+        if (Array.isArray(v.pagos) && v.pagos.length > 0) {
+          v.pagos.forEach(p => {
+            const m = p.metodo || '';
+            const val = Number(p.valor) || 0;
+            if (m === 'Efectivo') totalEf += val;
+            else if (m === 'Crédito Addi' || m === 'Addi') totalAddi += val;
+            else if (m.includes('Tarjeta')) totalTarj += val;
+            else totalTransf += val;
+          });
+        } else {
+          const m = v.metodo || '';
+          const val = Number(v.valor) || 0;
+          if (m === 'Efectivo') totalEf += val;
+          else if (m === 'Crédito Addi' || m === 'Addi') totalAddi += val;
+          else if (m.includes('Tarjeta')) totalTarj += val;
+          else totalTransf += val;
+        }
       });
 
       let totalGastosEf = 0;
       let totalGastosTransf = 0;
       (appState.gastos || []).forEach(g => {
-        if (g.metodo === 'Efectivo') totalGastosEf += g.valor;
-        else totalGastosTransf += g.valor;
+        if (g.metodo === 'Efectivo') totalGastosEf += (g.valor || 0);
+        else totalGastosTransf += (g.valor || 0);
       });
 
       const totalVentas = totalEf + totalTarj + totalTransf + totalAddi;
       const totalGastos = totalGastosEf + totalGastosTransf;
       const dineroFisicoEsperado = fondo + totalEf - totalGastosEf;
       const balanceNeto = totalVentas - totalGastos;
-
-      let desgloseAddi = totalAddi > 0 ? `  - Crédito Addi:       ${formatMoney(totalAddi)}\n` : '';
 
       const resumen = 
         `🌸 CIERRE Y ARQUEO DE CAJA - HOME STHETIC 🌸\n` +
@@ -5505,15 +5995,17 @@
         `=========================================\n` +
         `💵 EFECTIVO FÍSICO A CONTAR EN CAJA: ${formatMoney(dineroFisicoEsperado)}\n` +
         `=========================================\n\n` +
-        `📊 RESUMEN GENERAL DEL DÍA:\n` +
-        `• Total Ventas:         ${formatMoney(totalVentas)}\n` +
-        `  - Efectivo:           ${formatMoney(totalEf)}\n` +
-        `  - Tarjetas:           ${formatMoney(totalTarj)}\n` +
-        `  - Transferencias:     ${formatMoney(totalTransf)}\n` +
-        desgloseAddi +
-        `• Total Gastos/Egresos: -${formatMoney(totalGastos)}\n` +
-        `  - Salidas Efectivo:   -${formatMoney(totalGastosEf)}\n` +
-        `  - Salidas Transf:     -${formatMoney(totalGastosTransf)}\n` +
+        `📊 DESGLOSE DE INGRESOS POR MEDIO DE PAGO:\n` +
+        `• Efectivo:             ${formatMoney(totalEf)}\n` +
+        `• Transferencias:       ${formatMoney(totalTransf)} (Nequi/Daviplata/Bancos)\n` +
+        `• Créditos Addi:        ${formatMoney(totalAddi)} (Financiamiento Addi)\n` +
+        `• Tarjetas (Datáfono):  ${formatMoney(totalTarj)}\n` +
+        `-----------------------------------------\n` +
+        `📈 Total Ventas del Día: ${formatMoney(totalVentas)}\n\n` +
+        `📉 GASTOS / EGRESOS DEL DÍA:\n` +
+        `• En Efectivo:          -${formatMoney(totalGastosEf)}\n` +
+        `• En Transferencia:     -${formatMoney(totalGastosTransf)}\n` +
+        `• Total Egresos:        -${formatMoney(totalGastos)}\n` +
         `-----------------------------------------\n` +
         `🎯 BALANCE NETO DEL DÍA: ${formatMoney(balanceNeto)}\n\n` +
         `¿Deseas confirmar el arqueo del día?`;
