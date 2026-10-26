@@ -175,7 +175,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   nombre: { type: String, required: true },
-  rol: { type: String, enum: ['admin', 'recepcionista', 'operaria', 'medico'], required: true },
+  rol: { type: String, enum: ['admin', 'recepcionista', 'operaria', 'medico', 'socio'], required: true },
   operariaNombre: { type: String, default: '' },
   activo: { type: Boolean, default: true }
 }, { timestamps: true });
@@ -306,6 +306,17 @@ async function initDatabaseDefaults() {
       rol: 'medico'
     });
     console.log('✓ Usuario Médico creado: doctor / 123');
+  }
+
+  const socioExists = await User.findOne({ rol: 'socio' });
+  if (!socioExists) {
+    await User.create({
+      username: 'socio',
+      password: '123',
+      nombre: 'Socio / Control de Retiros',
+      rol: 'socio'
+    });
+    console.log('✓ Usuario Socio creado: socio / 123');
   }
 
   // Asegurar usuarios para las operarias registradas
@@ -1237,6 +1248,73 @@ app.delete('/api/caja/gastos/:id', async (req, res) => {
     res.json({ success: true, message: 'Gasto eliminado exitosamente', gasto });
   } catch (error) {
     console.error('Error al eliminar gasto:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 7.4 Retiro / Recogida de Efectivo en Caja (Socio o Admin)
+app.post('/api/caja/retiros', async (req, res) => {
+  try {
+    const { valor, concepto } = req.body;
+    const monto = Number(valor);
+    if (isNaN(monto) || monto <= 0) {
+      return res.status(400).json({ success: false, error: 'Ingresa un monto válido mayor a 0 para el retiro.' });
+    }
+
+    const authUser = await getAuthUser(req);
+    const nombreResponsable = authUser ? authUser.nombre : 'Socio';
+
+    // Verificar cuánto efectivo físico hay actualmente en caja
+    const hoy = getFechaHoy();
+    const config = await getOrCreateConfig();
+    const fondo = (config.caja && config.caja.fondoInicial) || 0;
+    const [ventasHoy, gastosHoy] = await Promise.all([
+      Sale.find({ fecha: hoy }),
+      Expense.find({ fecha: hoy })
+    ]);
+
+    let totalEf = 0;
+    ventasHoy.forEach(v => {
+      if (Array.isArray(v.pagos) && v.pagos.length > 0) {
+        v.pagos.forEach(p => {
+          if (p.metodo === 'Efectivo') totalEf += (Number(p.valor) || 0);
+        });
+      } else if (v.metodo === 'Efectivo') {
+        totalEf += (Number(v.valor) || 0);
+      }
+    });
+
+    let totalGastosEf = 0;
+    gastosHoy.forEach(g => {
+      if (g.metodo === 'Efectivo') totalGastosEf += (Number(g.valor) || 0);
+    });
+
+    const efectivoDisponible = fondo + totalEf - totalGastosEf;
+    if (monto > efectivoDisponible) {
+      return res.status(400).json({ 
+        success: false, 
+        error: `El monto a retirar ($${monto.toLocaleString('es-CO')}) supera el efectivo físico disponible en caja ($${efectivoDisponible.toLocaleString('es-CO')}).` 
+      });
+    }
+
+    const detalleConcepto = (concepto && concepto.trim())
+      ? `Retiro de Efectivo (Recogida): ${concepto.trim()}`
+      : 'Retiro de Efectivo en Caja (Recogida Socio)';
+
+    const retiro = await Expense.create({
+      fecha: getFechaHoy(),
+      hora: getHoraActual(),
+      concepto: detalleConcepto,
+      categoria: 'Retiro de Efectivo',
+      metodo: 'Efectivo',
+      responsable: nombreResponsable,
+      valor: monto
+    });
+
+    console.log(`💸 Retiro de efectivo registrado en caja: $${monto} por ${nombreResponsable}`);
+    res.json({ success: true, retiro, efectivoRestante: efectivoDisponible - monto });
+  } catch (error) {
+    console.error('Error al registrar retiro de efectivo:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

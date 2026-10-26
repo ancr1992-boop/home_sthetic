@@ -256,16 +256,24 @@
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
-          <button onclick="abrirModalNuevoGasto()" class="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center gap-1.5 transition shadow-2xs">
+          <button type="button" onclick="abrirModalRetiroEfectivo()" id="btnCajaRetiroEfectivo" class="bg-amber-500 hover:bg-amber-600 text-black px-3.5 py-2 text-xs font-black uppercase tracking-wider rounded-sm flex items-center gap-1.5 transition shadow-xs hover:scale-[1.01]">
+            <i data-lucide="hand-coins" class="w-4 h-4 text-black"></i> Retirar / Recoger Efectivo
+          </button>
+          <button type="button" onclick="abrirModalNuevoGasto()" id="btnCajaNuevoGasto" class="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center gap-1.5 transition shadow-2xs">
             <i data-lucide="minus-circle" class="w-4 h-4"></i> + Registrar Gasto
           </button>
-          <button onclick="openModal('modalAperturaCaja')" class="border border-black px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-black hover:text-white transition">
+          <button type="button" onclick="openModal('modalAperturaCaja')" id="btnCajaAbrir" class="border border-black px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-black hover:text-white transition">
             Abrir Caja
           </button>
-          <button onclick="cerrarCajaDelDia()" class="bg-black text-white px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition">
+          <button type="button" onclick="cerrarCajaDelDia()" id="btnCajaCerrar" class="bg-black text-white px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition">
             Cerrar Caja del Día
           </button>
         </div>
+      </div>
+
+      <!-- Banner Inteligente de Recogida / Retiro de Efectivo -->
+      <div id="bannerRecogidaEfectivo">
+        <!-- Renderizado dinámico según el efectivo físico en caja -->
       </div>
 
       <!-- Pacientes enviadas por Cabina esperando facturación en Caja -->
@@ -360,13 +368,17 @@
               <button type="button" onclick="filtrarMovimientosCaja('todos')" id="btnFiltroCajaTodos" class="px-2.5 py-1 font-bold rounded-xs bg-black text-white">Todos</button>
               <button type="button" onclick="filtrarMovimientosCaja('ventas')" id="btnFiltroCajaVentas" class="px-2.5 py-1 text-brand-gray hover:text-black">Ventas</button>
               <button type="button" onclick="filtrarMovimientosCaja('gastos')" id="btnFiltroCajaGastos" class="px-2.5 py-1 text-brand-gray hover:text-black">Gastos</button>
+              <button type="button" onclick="filtrarMovimientosCaja('retiros')" id="btnFiltroCajaRetiros" class="px-2.5 py-1 text-brand-gray hover:text-black">Retiros Efectivo</button>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button onclick="abrirModalNuevoGasto()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1 shadow-2xs">
+            <button type="button" onclick="abrirModalRetiroEfectivo()" class="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 text-xs uppercase tracking-wider font-bold rounded-sm transition flex items-center gap-1 shadow-2xs">
+              <i data-lucide="hand-coins" class="w-3.5 h-3.5"></i> Retirar Efectivo
+            </button>
+            <button type="button" id="btnCajaNuevoGastoTabla" onclick="abrirModalNuevoGasto()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1 shadow-2xs">
               <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i> + Registrar Gasto
             </button>
-            <button onclick="abrirModalVentaManual()" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 text-xs uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1 shadow-2xs">
+            <button type="button" id="btnCajaVentaRapida" onclick="abrirModalVentaManual()" class="bg-black hover:bg-neutral-800 text-white px-3 py-1.5 text-xs uppercase tracking-wider font-semibold rounded-sm transition flex items-center gap-1 shadow-2xs">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Cobro Rápido
             </button>
           </div>
@@ -1634,6 +1646,57 @@
     </div>
   </div>
 
+  <!-- Modal: Retiro / Recogida de Efectivo en Caja -->
+  <div id="modalRetiroEfectivo" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-sm w-full border-2 border-amber-500 rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-amber-950">
+          <i data-lucide="hand-coins" class="w-5 h-5 text-amber-600"></i> Retirar / Recoger Efectivo
+        </h3>
+        <button onclick="closeModal('modalRetiroEfectivo')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-sm text-xs space-y-1">
+        <p class="text-neutral-600 text-[11px] font-semibold uppercase">Efectivo Físico Actual en Caja:</p>
+        <p class="text-2xl font-black text-amber-950 font-mono" id="mreEfectivoDisponible">$0</p>
+        <p class="text-[10px] text-amber-900" id="mreSubDetalleEfectivo">Incluye base de apertura y ventas en efectivo.</p>
+      </div>
+
+      <form onsubmit="guardarRetiroEfectivo(event)" class="space-y-3.5">
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Monto a Retirar / Recoger ($ COP) *</label>
+          <div class="relative">
+            <input type="number" id="mreValor" required min="1000" step="500" placeholder="Ej: 200000" class="w-full border border-brand-border p-2.5 text-base font-black rounded-sm focus:border-black outline-none font-mono">
+            <button type="button" onclick="retirarTodoEfectivoDisponible()" class="absolute right-2 top-2 px-2 py-1 bg-amber-200 hover:bg-amber-300 text-amber-950 text-[10px] font-black uppercase rounded-xs transition">
+              Excedente
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Concepto / Motivo de la Recogida</label>
+          <input type="text" id="mreConcepto" placeholder="Ej: Recogida de efectivo por socio" class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-medium">
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Responsable que Recoge *</label>
+          <input type="text" id="mreResponsable" required class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none bg-neutral-100 font-bold" readonly>
+        </div>
+
+        <div class="p-2.5 rounded-sm bg-neutral-50 border border-brand-border text-[11px] text-neutral-600">
+          ℹ️ Este retiro descontará inmediatamente del dinero físico en caja y quedará registrado con fecha, hora y responsable para llevar la cuenta 100% clara.
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalRetiroEfectivo')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
+          <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-black px-4 py-2 uppercase tracking-wider font-black rounded-sm shadow-xs transition hover:scale-[1.01]">Confirmar Retiro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal: Agregar Tratamiento Adicional a la Cita -->
   <div id="modalTratamientoAdicional" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
     <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
@@ -1749,6 +1812,7 @@
             <option value="recepcionista">Recepcionista — Gestión & Caja</option>
             <option value="operaria">Operaria — Solo Cabina</option>
             <option value="medico">Médico / Doctor — Control de Historias Clínicas & Aval</option>
+            <option value="socio">Socio / Propietario — Solo Caja & Retiros de Efectivo</option>
             <option value="admin">Administrador — Control Total</option>
           </select>
         </div>
@@ -1951,14 +2015,20 @@
       const navRole = document.getElementById('navUserRole');
       if (navName) navName.textContent = user.nombre;
       if (navRole) {
-        const labels = { admin: '🛡 Administrador', recepcionista: '🖥 Recepcionista', operaria: '✨ Especialista', medico: '🩺 Médico / Director' };
+        const labels = { 
+          admin: '🛡 Administrador', 
+          recepcionista: '🖥 Recepcionista', 
+          operaria: '✨ Especialista', 
+          medico: '🩺 Médico / Director',
+          socio: '💼 Socio / Control de Efectivo'
+        };
         navRole.textContent = labels[rol] || rol;
       }
 
-      // ── Badge "Caja Hoy" en Navbar: EXCLUSIVO Y ÚNICAMENTE PARA ADMINISTRADOR ──
+      // ── Badge "Caja Hoy" en Navbar: Visible para Administrador y Socio ──
       const navCaja = document.getElementById('navCajaBadgeContainer');
       if (navCaja) {
-        if (rol === 'admin') {
+        if (rol === 'admin' || rol === 'socio') {
           navCaja.style.display = 'flex';
         } else {
           navCaja.style.display = 'none';
@@ -2037,6 +2107,45 @@
         if (tabCabina) tabCabina.classList.add('hidden');
 
         cambiarSeccion('agenda');
+        return;
+      }
+
+      if (rol === 'socio') {
+        // ── SOCIO: Exclusivo para revisar dinero en caja y retirar/recoger efectivo ──
+        ['tab-agenda','tab-clientes','tab-equipo','tab-usuarios','tab-operaria','tab-medico'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('hidden');
+        });
+
+        // Asegurarse de que Caja esté visible
+        const tabCaja = document.getElementById('tab-caja');
+        if (tabCaja) tabCaja.classList.remove('hidden');
+
+        // Ocultar botón "Nueva Cita" del navbar
+        const btnNuevaCita = document.getElementById('btnNavNuevaCita');
+        if (btnNuevaCita) btnNuevaCita.classList.add('hidden');
+
+        // Ocultar botones no pertinentes para el socio en la vista de caja
+        const bloqueFacturar = document.getElementById('bloqueCajaPorFacturar');
+        if (bloqueFacturar) bloqueFacturar.classList.add('hidden');
+
+        const btnAbrirCaja = document.getElementById('btnCajaAbrir');
+        if (btnAbrirCaja) btnAbrirCaja.classList.add('hidden');
+
+        const btnCerrarCaja = document.getElementById('btnCajaCerrar');
+        if (btnCerrarCaja) btnCerrarCaja.classList.add('hidden');
+
+        const btnVentaRapida = document.getElementById('btnCajaVentaRapida');
+        if (btnVentaRapida) btnVentaRapida.classList.add('hidden');
+
+        const btnNuevoGasto = document.getElementById('btnCajaNuevoGasto');
+        if (btnNuevoGasto) btnNuevoGasto.classList.add('hidden');
+
+        // En la tabla de ventas, el socio puede ver acciones de eliminación de retiros
+        const thAcciones = document.getElementById('thAccionesVenta');
+        if (thAcciones) thAcciones.classList.remove('hidden');
+
+        cambiarSeccion('caja');
         return;
       }
 
@@ -5486,17 +5595,18 @@
       abrirCitaParaCliente(clienteId, 'Depilación Láser');
     }
 
-    // --- CAJA DIARIA (VENTAS, GASTOS & ARQUEO) ---
+    // --- CAJA DIARIA (VENTAS, GASTOS, RETIROS & ARQUEO) ---
     function filtrarMovimientosCaja(tipo) {
       filtroCajaActivo = tipo;
       const btnTodos = document.getElementById('btnFiltroCajaTodos');
       const btnVentas = document.getElementById('btnFiltroCajaVentas');
       const btnGastos = document.getElementById('btnFiltroCajaGastos');
+      const btnRetiros = document.getElementById('btnFiltroCajaRetiros');
 
       const activoClass = ['bg-black', 'text-white', 'font-bold'];
       const inactivoClass = ['text-brand-gray', 'hover:text-black', 'bg-transparent', 'font-normal'];
 
-      [btnTodos, btnVentas, btnGastos].forEach(b => {
+      [btnTodos, btnVentas, btnGastos, btnRetiros].forEach(b => {
         if (b) {
           b.classList.remove(...activoClass);
           b.classList.add(...inactivoClass);
@@ -5512,6 +5622,9 @@
       } else if (tipo === 'gastos' && btnGastos) {
         btnGastos.classList.remove(...inactivoClass);
         btnGastos.classList.add(...activoClass);
+      } else if (tipo === 'retiros' && btnRetiros) {
+        btnRetiros.classList.remove(...inactivoClass);
+        btnRetiros.classList.add(...activoClass);
       }
 
       renderizarCaja();
@@ -5589,10 +5702,107 @@
       }
     }
 
+    function calcularEfectivoActualCaja() {
+      const fondo = (appState.config && appState.config.caja && appState.config.caja.fondoInicial) || 0;
+      let totalEf = 0;
+      (appState.ventas || []).forEach(v => {
+        if (Array.isArray(v.pagos) && v.pagos.length > 0) {
+          v.pagos.forEach(p => {
+            if (p.metodo === 'Efectivo') totalEf += Number(p.valor) || 0;
+          });
+        } else if (v.metodo === 'Efectivo') {
+          totalEf += Number(v.valor) || 0;
+        }
+      });
+      let totalGastosEf = 0;
+      (appState.gastos || []).forEach(g => {
+        if (g.metodo === 'Efectivo') totalGastosEf += Number(g.valor) || 0;
+      });
+      const efectivo = Math.max(0, fondo + totalEf - totalGastosEf);
+      const excedente = Math.max(0, efectivo - fondo);
+      return { fondo, totalEf, totalGastosEf, efectivo, excedente };
+    }
+
+    function abrirModalRetiroEfectivo() {
+      const { fondo, efectivo, excedente } = calcularEfectivoActualCaja();
+      const elDisp = document.getElementById('mreEfectivoDisponible');
+      if (elDisp) elDisp.innerText = formatMoney(efectivo);
+
+      const elSub = document.getElementById('mreSubDetalleEfectivo');
+      if (elSub) {
+        elSub.innerHTML = `Base de apertura en caja: <strong>${formatMoney(fondo)}</strong> • Excedente retirable: <strong>${formatMoney(excedente)}</strong>`;
+      }
+
+      const inputVal = document.getElementById('mreValor');
+      if (inputVal) {
+        inputVal.max = efectivo;
+        inputVal.value = excedente > 0 ? excedente : (efectivo > 0 ? efectivo : '');
+      }
+
+      const inputCon = document.getElementById('mreConcepto');
+      if (inputCon) inputCon.value = 'Recogida de efectivo en local por socio';
+
+      const inputResp = document.getElementById('mreResponsable');
+      const session = obtenerSesion();
+      if (inputResp) inputResp.value = session ? `${session.nombre} (${session.rol})` : 'Socio';
+
+      openModal('modalRetiroEfectivo');
+      setTimeout(() => {
+        if (inputVal) inputVal.focus();
+      }, 100);
+    }
+
+    function retirarTodoEfectivoDisponible() {
+      const { fondo, efectivo, excedente } = calcularEfectivoActualCaja();
+      const inputVal = document.getElementById('mreValor');
+      if (!inputVal) return;
+      if (efectivo <= 0) {
+        alert('No hay dinero físico disponible en caja para retirar.');
+        return;
+      }
+      inputVal.value = excedente > 0 ? excedente : efectivo;
+    }
+
+    async function guardarRetiroEfectivo(e) {
+      e.preventDefault();
+      const valor = Number(document.getElementById('mreValor')?.value || 0);
+      const concepto = (document.getElementById('mreConcepto')?.value || 'Recogida de efectivo por socio').trim();
+      const responsable = (document.getElementById('mreResponsable')?.value || '').trim();
+
+      if (!valor || valor <= 0) {
+        alert('Por favor ingresa un monto válido mayor a 0.');
+        return;
+      }
+
+      const { efectivo } = calcularEfectivoActualCaja();
+      if (valor > efectivo) {
+        alert(`No puedes retirar ${formatMoney(valor)} porque solo hay ${formatMoney(efectivo)} en efectivo físico en la caja.`);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/caja/retiros', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ valor, concepto, responsable })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalRetiroEfectivo');
+          await cargarDatosServidor();
+          alert(`✓ Retiro de ${formatMoney(valor)} registrado exitosamente.\nQueda en caja física: ${formatMoney(data.efectivoRestante)}.`);
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo registrar el retiro.'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
     function renderizarCaja() {
       const session = obtenerSesion();
       const esAdmin = session && session.rol === 'admin';
-      const puedeEliminarGasto = session && (session.rol === 'admin' || session.rol === 'recepcionista');
+      const puedeEliminarGasto = session && (session.rol === 'admin' || session.rol === 'recepcionista' || session.rol === 'socio');
 
       const fondo = (appState.config && appState.config.caja && appState.config.caja.fondoInicial) || 0;
       
@@ -5623,19 +5833,26 @@
       });
       const totalVentas = totalEf + totalTarj + totalTransf + totalAddi;
 
-      // 2. Cálculo de Gastos
+      // 2. Cálculo de Gastos y Retiros
       let totalGastos = 0;
       let totalGastosEf = 0;
       let totalGastosTransf = 0;
+      let totalRetirosEf = 0;
 
       (appState.gastos || []).forEach(g => {
         totalGastos += (g.valor || 0);
-        if (g.metodo === 'Efectivo') totalGastosEf += (g.valor || 0);
-        else totalGastosTransf += (g.valor || 0);
+        const esRetiro = g.categoria === 'Retiro de Efectivo' || (g.concepto && g.concepto.toLowerCase().includes('retiro'));
+        if (g.metodo === 'Efectivo') {
+          totalGastosEf += (g.valor || 0);
+          if (esRetiro) totalRetirosEf += (g.valor || 0);
+        } else {
+          totalGastosTransf += (g.valor || 0);
+        }
       });
 
       // 3. Efectivo Físico en Caja = Fondo Inicial + Ventas Efectivo - Gastos Efectivo
-      const efectivoEnCaja = fondo + totalEf - totalGastosEf;
+      const efectivoEnCaja = Math.max(0, fondo + totalEf - totalGastosEf);
+      const efectivoExcedente = Math.max(0, efectivoEnCaja - fondo);
 
       // 4. Balance Neto del Día = Total Ventas - Total Gastos
       const balanceNeto = totalVentas - totalGastos;
@@ -5677,7 +5894,11 @@
       const elDesgloseGastos = document.getElementById('resumenDesgloseGastos');
       if (elDesgloseGastos) {
         const cantGastos = (appState.gastos || []).length;
-        elDesgloseGastos.innerText = `${cantGastos} egreso${cantGastos === 1 ? '' : 's'} (Ef: ${formatMoney(totalGastosEf)} | Transf: ${formatMoney(totalGastosTransf)})`;
+        let txtGastos = `${cantGastos} egreso${cantGastos === 1 ? '' : 's'} (Ef: ${formatMoney(totalGastosEf)} | Transf: ${formatMoney(totalGastosTransf)})`;
+        if (totalRetirosEf > 0) {
+          txtGastos += ` • Retiros: ${formatMoney(totalRetirosEf)}`;
+        }
+        elDesgloseGastos.innerText = txtGastos;
       }
 
       const elEfectivoCaja = document.getElementById('resumenEfectivoCaja');
@@ -5697,6 +5918,64 @@
       const navCaja = document.getElementById('navCajaTotal');
       if (navCaja) navCaja.innerText = formatMoney(efectivoEnCaja);
 
+      // Actualizar Banner Inteligente de Recogida de Efectivo
+      const bannerRecogida = document.getElementById('bannerRecogidaEfectivo');
+      if (bannerRecogida) {
+        if (efectivoEnCaja > fondo) {
+          bannerRecogida.className = 'border-2 rounded-sm p-4 bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-emerald-50 border-emerald-400 text-emerald-950 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-xs';
+          bannerRecogida.innerHTML = `
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center p-1.5 rounded-full bg-emerald-600 text-white shadow-2xs">
+                  <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </span>
+                <h4 class="text-xs font-black uppercase tracking-wider text-emerald-900">
+                  ¡SÍ HAY EFECTIVO DISPONIBLE PARA RECOGER EN EL LOCAL!
+                </h4>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-700 text-white uppercase tracking-wider">
+                  Recogida Recomendada
+                </span>
+              </div>
+              <p class="text-xs text-emerald-950">
+                Hay <strong class="font-mono text-sm font-black text-emerald-900">${formatMoney(efectivoEnCaja)}</strong> en efectivo físico en el local 
+                (<span class="font-bold text-emerald-800">${formatMoney(efectivoExcedente)}</span> producidos por encima de la base de caja de ${formatMoney(fondo)}).
+                ${totalRetirosEf > 0 ? ` Ya se han retirado hoy: <strong class="text-amber-900 font-mono">${formatMoney(totalRetirosEf)}</strong>.` : ''}
+              </p>
+            </div>
+            <button type="button" onclick="abrirModalRetiroEfectivo()" class="whitespace-nowrap bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 text-xs font-black uppercase tracking-wider rounded-sm flex items-center gap-1.5 shadow-xs transition hover:scale-[1.01]">
+              <i data-lucide="hand-coins" class="w-4 h-4"></i> Registrar Recogida de Efectivo
+            </button>
+          `;
+        } else {
+          bannerRecogida.className = 'border-2 rounded-sm p-4 bg-gradient-to-r from-neutral-50 via-neutral-100/70 to-neutral-50 border-neutral-300 text-neutral-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-2xs';
+          bannerRecogida.innerHTML = `
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center p-1.5 rounded-full bg-neutral-400 text-white">
+                  <i data-lucide="info" class="w-4 h-4"></i>
+                </span>
+                <h4 class="text-xs font-black uppercase tracking-wider text-neutral-900">
+                  NO ES NECESARIO PASAR POR EL LOCAL A RECOGER EFECTIVO
+                </h4>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-200 text-neutral-700 uppercase tracking-wider">
+                  Caja en Nivel Base
+                </span>
+              </div>
+              <p class="text-xs text-neutral-700">
+                Actualmente solo hay <strong class="font-mono text-sm font-bold text-black">${formatMoney(efectivoEnCaja)}</strong> en efectivo físico (corresponde a la base inicial de ${formatMoney(fondo)}). 
+                Las ventas adicionales del día entraron por canales digitales (Addi o Transferencias).
+                ${totalRetirosEf > 0 ? `<br><span class="text-amber-800 font-medium">Nota: Hoy ya se retiraron ${formatMoney(totalRetirosEf)} de efectivo de la caja.</span>` : ''}
+              </p>
+            </div>
+            ${efectivoEnCaja > 0 ? `
+              <button type="button" onclick="abrirModalRetiroEfectivo()" class="whitespace-nowrap border border-neutral-400 bg-white hover:bg-neutral-100 text-neutral-900 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center gap-1.5 transition">
+                <i data-lucide="hand-coins" class="w-3.5 h-3.5 text-neutral-600"></i> Retirar Efectivo de Base
+              </button>
+            ` : ''}
+          `;
+        }
+      }
+
       // Citas listas para facturar dentro de la sección de Caja
       const citasFacturar = (appState.citas || []).filter(c => c.estado === 'Listo para Facturar');
       const bloqueFacturar = document.getElementById('bloqueCajaPorFacturar');
@@ -5704,7 +5983,7 @@
       const lblTotalFacturar = document.getElementById('lblCajaPorFacturarTotal');
 
       if (bloqueFacturar && listaFacturar) {
-        if (citasFacturar.length > 0) {
+        if (citasFacturar.length > 0 && (!session || session.rol !== 'socio')) {
           bloqueFacturar.classList.remove('hidden');
           const sumFacturar = citasFacturar.reduce((acc, c) => acc + (c.valor || 0), 0);
           if (lblTotalFacturar) lblTotalFacturar.textContent = `Total pendiente: ${formatMoney(sumFacturar)}`;
@@ -5731,7 +6010,7 @@
         }
       }
 
-      // Preparar Movimientos Unificados de Caja (Ventas + Gastos)
+      // Preparar Movimientos Unificados de Caja (Ventas + Gastos + Retiros)
       const listaMovimientos = [];
 
       (appState.ventas || []).forEach(v => {
@@ -5749,12 +6028,14 @@
       });
 
       (appState.gastos || []).forEach(g => {
+        const esRetiro = g.categoria === 'Retiro de Efectivo' || (g.concepto && g.concepto.toLowerCase().includes('retiro'));
         listaMovimientos.push({
           id: g._id,
           tipo: 'gasto',
+          esRetiro: esRetiro,
           hora: g.hora || '--:--',
           concepto: g.concepto || 'Egreso de caja',
-          tercero: g.categoria || 'Gasto Operativo',
+          tercero: esRetiro ? `Recogida Socio: ${g.responsable}` : (g.categoria || 'Gasto Operativo'),
           metodo: g.metodo || 'Efectivo',
           responsable: g.responsable || 'Recepción',
           valor: g.valor || 0
@@ -5767,7 +6048,8 @@
       // Filtrar según botón seleccionado
       const filtrados = listaMovimientos.filter(m => {
         if (filtroCajaActivo === 'ventas') return m.tipo === 'venta';
-        if (filtroCajaActivo === 'gastos') return m.tipo === 'gasto';
+        if (filtroCajaActivo === 'gastos') return m.tipo === 'gasto' && !m.esRetiro;
+        if (filtroCajaActivo === 'retiros') return m.tipo === 'gasto' && m.esRetiro;
         return true; // 'todos'
       });
 
@@ -5777,7 +6059,8 @@
       if (filtrados.length === 0) {
         const msg = filtroCajaActivo === 'ventas'
           ? 'No se han registrado ventas hoy.'
-          : (filtroCajaActivo === 'gastos' ? 'No se han registrado gastos hoy.' : 'No hay movimientos registrados en caja hoy.');
+          : (filtroCajaActivo === 'gastos' ? 'No se han registrado gastos hoy.' 
+            : (filtroCajaActivo === 'retiros' ? 'No se han registrado retiros de efectivo hoy.' : 'No hay movimientos registrados en caja hoy.'));
         tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-brand-gray">${msg}</td></tr>`;
       } else {
         tbody.innerHTML = filtrados.map(m => {
@@ -5790,15 +6073,19 @@
                   <span class="px-2 py-0.5 border border-emerald-300 bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase rounded-xs tracking-wider flex items-center gap-1 w-fit">
                     <i data-lucide="trending-up" class="w-3 h-3 text-emerald-600"></i> Ingreso
                   </span>
+                ` : m.esRetiro ? `
+                  <span class="px-2 py-0.5 border border-amber-300 bg-amber-50 text-amber-900 text-[10px] font-black uppercase rounded-xs tracking-wider flex items-center gap-1 w-fit shadow-2xs">
+                    <i data-lucide="hand-coins" class="w-3 h-3 text-amber-600"></i> Retiro Socio
+                  </span>
                 ` : `
                   <span class="px-2 py-0.5 border border-rose-300 bg-rose-50 text-rose-800 text-[10px] font-bold uppercase rounded-xs tracking-wider flex items-center gap-1 w-fit">
                     <i data-lucide="minus-circle" class="w-3 h-3 text-rose-600"></i> Egreso
                   </span>
                 `}
               </td>
-              <td class="p-3 font-semibold ${esVenta ? 'text-black' : 'text-rose-950'}">${m.concepto}</td>
+              <td class="p-3 font-semibold ${esVenta ? 'text-black' : (m.esRetiro ? 'text-amber-950 font-bold' : 'text-rose-950')}">${m.concepto}</td>
               <td class="p-3">
-                <span class="${esVenta ? 'text-neutral-900 font-medium' : 'text-brand-gray italic text-[11px]'}">${m.tercero}</span>
+                <span class="${esVenta ? 'text-neutral-900 font-medium' : (m.esRetiro ? 'text-amber-900 font-bold text-[11px]' : 'text-brand-gray italic text-[11px]')}">${m.tercero}</span>
               </td>
               <td class="p-3">
                 ${m.pagos && m.pagos.length > 1 ? `
@@ -5976,9 +6263,19 @@
 
       let totalGastosEf = 0;
       let totalGastosTransf = 0;
+      let totalRetirosEf = 0;
+      let totalGastosOperativosEf = 0;
+
       (appState.gastos || []).forEach(g => {
-        if (g.metodo === 'Efectivo') totalGastosEf += (g.valor || 0);
-        else totalGastosTransf += (g.valor || 0);
+        const val = Number(g.valor) || 0;
+        const esRetiro = g.categoria === 'Retiro de Efectivo' || (g.concepto && g.concepto.toLowerCase().includes('retiro'));
+        if (g.metodo === 'Efectivo') {
+          totalGastosEf += val;
+          if (esRetiro) totalRetirosEf += val;
+          else totalGastosOperativosEf += val;
+        } else {
+          totalGastosTransf += val;
+        }
       });
 
       const totalVentas = totalEf + totalTarj + totalTransf + totalAddi;
@@ -5989,9 +6286,10 @@
       const resumen = 
         `🌸 CIERRE Y ARQUEO DE CAJA - HOME STHETIC 🌸\n` +
         `-----------------------------------------\n` +
-        `(+) Fondo Inicial en Caja:    ${formatMoney(fondo)}\n` +
-        `(+) Ventas en Efectivo:       ${formatMoney(totalEf)}\n` +
-        `(-) Gastos en Efectivo:       ${formatMoney(totalGastosEf)}\n` +
+        `(+) Fondo Inicial en Caja:        ${formatMoney(fondo)}\n` +
+        `(+) Ventas en Efectivo:           ${formatMoney(totalEf)}\n` +
+        `(-) Gastos Operativos (Efectivo): -${formatMoney(totalGastosOperativosEf)}\n` +
+        (totalRetirosEf > 0 ? `(-) Retiros de Socios (Efectivo): -${formatMoney(totalRetirosEf)}\n` : '') +
         `=========================================\n` +
         `💵 EFECTIVO FÍSICO A CONTAR EN CAJA: ${formatMoney(dineroFisicoEsperado)}\n` +
         `=========================================\n\n` +
@@ -6002,12 +6300,13 @@
         `• Tarjetas (Datáfono):  ${formatMoney(totalTarj)}\n` +
         `-----------------------------------------\n` +
         `📈 Total Ventas del Día: ${formatMoney(totalVentas)}\n\n` +
-        `📉 GASTOS / EGRESOS DEL DÍA:\n` +
-        `• En Efectivo:          -${formatMoney(totalGastosEf)}\n` +
-        `• En Transferencia:     -${formatMoney(totalGastosTransf)}\n` +
-        `• Total Egresos:        -${formatMoney(totalGastos)}\n` +
+        `📉 EGRESOS Y RETIROS DEL DÍA:\n` +
+        `• Gastos Operativos en Efectivo: -${formatMoney(totalGastosOperativosEf)}\n` +
+        (totalRetirosEf > 0 ? `• Retiros de Efectivo por Socios: -${formatMoney(totalRetirosEf)}\n` : '') +
+        `• Pagos por Transferencia:       -${formatMoney(totalGastosTransf)}\n` +
+        `• Total Egresos + Retiros:       -${formatMoney(totalGastos)}\n` +
         `-----------------------------------------\n` +
-        `🎯 BALANCE NETO DEL DÍA: ${formatMoney(balanceNeto)}\n\n` +
+        `🎯 BALANCE NETO OPERATIVO:       ${formatMoney(balanceNeto)}\n\n` +
         `¿Deseas confirmar el arqueo del día?`;
 
       if (confirm(resumen)) {
@@ -6221,7 +6520,9 @@
       const rolLabels = {
         admin: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-purple-100 text-purple-800 border border-purple-200 rounded-full">Administrador</span>',
         recepcionista: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-100 text-blue-800 border border-blue-200 rounded-full">Recepcionista</span>',
-        operaria: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-pink-100 text-pink-800 border border-pink-200 rounded-full">Operaria</span>'
+        operaria: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-pink-100 text-pink-800 border border-pink-200 rounded-full">Operaria</span>',
+        medico: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full">Médico</span>',
+        socio: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300 rounded-full">Socio / Retiros</span>'
       };
 
       tbody.innerHTML = usuarios.map(u => `
