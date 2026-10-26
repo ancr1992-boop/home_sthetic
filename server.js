@@ -153,9 +153,14 @@ const Expense = mongoose.model('Expense', expenseSchema);
 const configSchema = new mongoose.Schema({
   key: { type: String, default: 'main_config', unique: true },
   caja: {
-    abierta: { type: Boolean, default: true },
+    abierta: { type: Boolean, default: false },
     fondoInicial: { type: Number, default: 50000 },
-    fechaApertura: { type: String, default: '' }
+    fechaApertura: { type: String, default: '' },
+    horaApertura: { type: String, default: '' },
+    usuarioApertura: { type: String, default: '' },
+    fechaCierre: { type: String, default: '' },
+    horaCierre: { type: String, default: '' },
+    usuarioCierre: { type: String, default: '' }
   },
   operarias: [{
     nombre: String,
@@ -215,6 +220,12 @@ function getHoraActual() {
   }).format(new Date());
 }
 
+function isCajaAbierta(config) {
+  if (!config || !config.caja) return false;
+  const hoy = getFechaHoy();
+  return Boolean(config.caja.abierta && config.caja.fechaApertura === hoy);
+}
+
 // Obtener o inicializar la configuración de forma 100% segura
 async function getOrCreateConfig() {
   let config = await Config.findOne();
@@ -222,9 +233,14 @@ async function getOrCreateConfig() {
     config = await Config.create({
       key: 'main_config',
       caja: {
-        abierta: true,
+        abierta: false,
         fondoInicial: 50000,
-        fechaApertura: getFechaHoy()
+        fechaApertura: '',
+        horaApertura: '',
+        usuarioApertura: '',
+        fechaCierre: '',
+        horaCierre: '',
+        usuarioCierre: ''
       },
       operarias: [
         { nombre: 'Valentina Restrepo', rol: 'Cosmiatra Especialista' },
@@ -344,7 +360,15 @@ async function initDatabaseDefaults() {
 app.get('/api/bootstrap', async (req, res) => {
   try {
     const hoy = getFechaHoy();
-    const config = await getOrCreateConfig();
+    let config = await getOrCreateConfig();
+
+    // Si la caja quedó abierta de un día anterior, cerrarla para exigir apertura matutina del nuevo día
+    if (config.caja && config.caja.abierta && config.caja.fechaApertura !== hoy) {
+      config.caja.abierta = false;
+      await config.save();
+      console.log(`⏰ Nuevo día (${hoy}): Caja del día anterior cerrada automáticamente para exigir apertura matutina.`);
+    }
+
     const [clientes, todasLasCitas, ventasHoy, gastosHoy, usuarios] = await Promise.all([
       Client.find().sort({ nombre: 1 }),
       Appointment.find().sort({ fecha: 1, hora: 1 }),
@@ -948,6 +972,15 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
     const { id } = req.params;
     const { valor, metodo, pagos, activarPaquete } = req.body;
 
+    const config = await getOrCreateConfig();
+    if (!isCajaAbierta(config)) {
+      return res.status(400).json({
+        success: false,
+        cajaCerrada: true,
+        error: 'La caja se encuentra CERRADA. Es obligatorio realizar la apertura de caja antes de registrar cobros o facturar citas.'
+      });
+    }
+
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
 
@@ -1120,12 +1153,16 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
 app.post('/api/caja/apertura', async (req, res) => {
   try {
     const { fondoInicial } = req.body;
+    const authUser = await getAuthUser(req);
     let config = await getOrCreateConfig();
     config.caja.abierta = true;
-    config.caja.fondoInicial = Number(fondoInicial) || 0;
+    config.caja.fondoInicial = Number(fondoInicial) >= 0 ? Number(fondoInicial) : 50000;
     config.caja.fechaApertura = getFechaHoy();
+    config.caja.horaApertura = getHoraActual();
+    config.caja.usuarioApertura = authUser ? authUser.nombre : 'Recepción';
     await config.save();
 
+    console.log(`🔓 Caja abierta exitosamente con base de $${config.caja.fondoInicial} por ${config.caja.usuarioApertura} a las ${config.caja.horaApertura}`);
     res.json({ success: true, caja: config.caja });
   } catch (error) {
     console.error('Error en apertura de caja:', error);
@@ -1133,9 +1170,37 @@ app.post('/api/caja/apertura', async (req, res) => {
   }
 });
 
+// 6.1 Cierre de Caja del Día
+app.post('/api/caja/cierre', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    let config = await getOrCreateConfig();
+    config.caja.abierta = false;
+    config.caja.fechaCierre = getFechaHoy();
+    config.caja.horaCierre = getHoraActual();
+    config.caja.usuarioCierre = authUser ? authUser.nombre : 'Recepción';
+    await config.save();
+
+    console.log(`🔒 Caja cerrada del día por ${config.caja.usuarioCierre} a las ${config.caja.horaCierre}`);
+    res.json({ success: true, caja: config.caja });
+  } catch (error) {
+    console.error('Error al cerrar caja:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 7. Cobro Rápido Manual en Caja
 app.post('/api/caja/venta-rapida', async (req, res) => {
   try {
+    const config = await getOrCreateConfig();
+    if (!isCajaAbierta(config)) {
+      return res.status(400).json({
+        success: false,
+        cajaCerrada: true,
+        error: 'La caja se encuentra CERRADA. Es obligatorio realizar la apertura de caja antes de registrar cobros rápidos.'
+      });
+    }
+
     const { cliente, concepto, metodo, pagos, operaria, valor } = req.body;
     const horaStr = getHoraActual();
     const montoTotal = Number(valor) || 0;
@@ -1315,6 +1380,120 @@ app.post('/api/caja/retiros', async (req, res) => {
     res.json({ success: true, retiro, efectivoRestante: efectivoDisponible - monto });
   } catch (error) {
     console.error('Error al registrar retiro de efectivo:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ================= 7.5 INFORMES Y REPORTES FINANCIEROS (EXCLUSIVO ADMINISTRADOR) =================
+app.get('/api/reportes/financiero', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado. Solo el Administrador tiene autorización para consultar los informes y balances financieros.'
+      });
+    }
+
+    const hoy = getFechaHoy();
+    let { desde, hasta } = req.query;
+
+    if (!desde || !String(desde).trim()) {
+      desde = hoy.slice(0, 8) + '01'; // Primer día del mes actual
+    }
+    if (!hasta || !String(hasta).trim()) {
+      hasta = hoy;
+    }
+
+    desde = String(desde).trim().slice(0, 10);
+    hasta = String(hasta).trim().slice(0, 10);
+
+    const [ventas, gastos] = await Promise.all([
+      Sale.find({ fecha: { $gte: desde, $lte: hasta } }).sort({ fecha: -1, hora: -1, createdAt: -1 }),
+      Expense.find({ fecha: { $gte: desde, $lte: hasta } }).sort({ fecha: -1, hora: -1, createdAt: -1 })
+    ]);
+
+    let totalVentas = 0;
+    let totalEf = 0;
+    let totalTransf = 0;
+    let totalAddi = 0;
+    let totalTarj = 0;
+
+    ventas.forEach(v => {
+      const vVal = Number(v.valor) || 0;
+      totalVentas += vVal;
+
+      if (Array.isArray(v.pagos) && v.pagos.length > 0) {
+        v.pagos.forEach(p => {
+          const pVal = Number(p.valor) || 0;
+          const m = p.metodo || '';
+          if (m === 'Efectivo') totalEf += pVal;
+          else if (m === 'Crédito Addi' || m === 'Addi') totalAddi += pVal;
+          else if (m.includes('Tarjeta')) totalTarj += pVal;
+          else totalTransf += pVal;
+        });
+      } else {
+        const m = v.metodo || '';
+        if (m === 'Efectivo') totalEf += vVal;
+        else if (m === 'Crédito Addi' || m === 'Addi') totalAddi += vVal;
+        else if (m.includes('Tarjeta')) totalTarj += vVal;
+        else totalTransf += vVal;
+      }
+    });
+
+    let totalGastos = 0;
+    let totalGastosOperativos = 0;
+    let totalRetirosSocios = 0;
+    let totalGastosEf = 0;
+    let totalGastosTransf = 0;
+
+    gastos.forEach(g => {
+      const gVal = Number(g.valor) || 0;
+      totalGastos += gVal;
+
+      const esRetiro = g.categoria === 'Retiro de Efectivo' || (g.concepto && g.concepto.toLowerCase().includes('retiro'));
+      if (esRetiro) {
+        totalRetirosSocios += gVal;
+      } else {
+        totalGastosOperativos += gVal;
+      }
+
+      if (g.metodo === 'Efectivo') {
+        totalGastosEf += gVal;
+      } else {
+        totalGastosTransf += gVal;
+      }
+    });
+
+    const balanceNeto = totalVentas - totalGastos;
+    const balanceOperativo = totalVentas - totalGastosOperativos;
+
+    res.json({
+      success: true,
+      desde,
+      hasta,
+      resumen: {
+        totalVentas,
+        totalEf,
+        totalTransf,
+        totalAddi,
+        totalTarj,
+        totalGastos,
+        totalGastosOperativos,
+        totalRetirosSocios,
+        totalGastosEf,
+        totalGastosTransf,
+        balanceNeto,
+        balanceOperativo,
+        cantidadVentas: ventas.length,
+        cantidadGastos: gastos.length,
+        ticketPromedio: ventas.length > 0 ? Math.round(totalVentas / ventas.length) : 0
+      },
+      ventas,
+      gastos
+    });
+  } catch (error) {
+    console.error('Error al generar informe financiero:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

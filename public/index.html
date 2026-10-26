@@ -113,6 +113,9 @@
       <button onclick="cambiarSeccion('usuarios')" id="tab-usuarios" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap">
         <i data-lucide="shield-check" class="w-4 h-4 text-purple-600"></i> Usuarios & Permisos
       </button>
+      <button onclick="cambiarSeccion('informes')" id="tab-informes" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap hidden">
+        <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-600"></i> Informes Financieros
+      </button>
       <button onclick="cambiarSeccion('operaria')" id="tab-operaria" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap hidden">
         <i data-lucide="sparkles" class="w-4 h-4 text-pink-600"></i> Mi Cabina / Clientes
       </button>
@@ -251,11 +254,17 @@
     <section id="sec-caja" class="hidden space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
         <div>
-          <h2 class="text-2xl font-bold tracking-tight">Caja Diaria</h2>
-          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">Apertura, ingresos por ventas, gastos y arqueo del día</p>
+          <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-bold tracking-tight">Caja Diaria</h2>
+            <span id="badgeEstadoCaja" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider"></span>
+          </div>
+          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1" id="subtextoEstadoCaja">Apertura, ingresos por ventas, gastos y arqueo del día</p>
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
+          <button type="button" onclick="irAInformesFinancieros()" id="btnCajaIrInformes" class="bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center gap-1.5 transition">
+            <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-600"></i> Informes Históricos
+          </button>
           <button type="button" onclick="abrirModalRetiroEfectivo()" id="btnCajaRetiroEfectivo" class="bg-amber-500 hover:bg-amber-600 text-black px-3.5 py-2 text-xs font-black uppercase tracking-wider rounded-sm flex items-center gap-1.5 transition shadow-xs hover:scale-[1.01]">
             <i data-lucide="hand-coins" class="w-4 h-4 text-black"></i> Retirar / Recoger Efectivo
           </button>
@@ -269,6 +278,29 @@
             Cerrar Caja del Día
           </button>
         </div>
+      </div>
+
+      <!-- Alerta cuando la Caja está CERRADA -->
+      <div id="bannerCajaCerradaAlerta" class="hidden border-2 border-rose-400 bg-rose-50 text-rose-950 p-4 rounded-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-xs">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center p-1.5 rounded-full bg-rose-600 text-white shadow-2xs">
+              <i data-lucide="lock" class="w-4 h-4"></i>
+            </span>
+            <h4 class="text-xs font-black uppercase tracking-wider text-rose-900">
+              LA CAJA SE ENCUENTRA CERRADA
+            </h4>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-700 text-white uppercase tracking-wider">
+              Apertura Requerida
+            </span>
+          </div>
+          <p class="text-xs text-rose-950">
+            Para poder <strong>facturar citas, paquetes o registrar ventas</strong>, es obligatorio realizar la Apertura de Caja e ingresar la base inicial en efectivo.
+          </p>
+        </div>
+        <button type="button" onclick="openModal('modalAperturaCaja')" class="whitespace-nowrap bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-black uppercase tracking-wider rounded-sm flex items-center gap-1.5 shadow-xs transition hover:scale-[1.01]">
+          <i data-lucide="key-round" class="w-4 h-4"></i> Abrir Caja Ahora
+        </button>
       </div>
 
       <!-- Banner Inteligente de Recogida / Retiro de Efectivo -->
@@ -538,6 +570,184 @@
               <tr><td colspan="4" class="p-6 text-center text-brand-gray">Cargando copias de seguridad...</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SECCIÓN 8: INFORMES & REPORTES FINANCIEROS (EXCLUSIVO ADMINISTRADOR) ================= -->
+    <section id="sec-informes" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 class="text-2xl font-bold tracking-tight">Informes & Reportes Financieros</h2>
+            <span class="px-2.5 py-0.5 text-[10px] font-black uppercase bg-purple-100 text-purple-900 border border-purple-300 rounded-full">Exclusivo Admin</span>
+          </div>
+          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">
+            Histórico consolidado de ventas por medio de pago, gastos operativos y retiros de socios entre fechas
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="imprimirInformeFinanciero()" class="border border-brand-border hover:border-black px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center gap-1.5 transition bg-white shadow-2xs">
+            <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Reporte
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtro por Rango de Fechas y Botones Rápidos -->
+      <div class="bg-white border border-brand-border p-4 sm:p-5 rounded-sm shadow-xs space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 max-w-xl">
+            <div>
+              <label class="block uppercase tracking-wider text-brand-gray font-bold text-[11px] mb-1">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1 text-purple-600"></i> Fecha Inicio (Desde) *
+              </label>
+              <input type="date" id="infFechaDesde" class="w-full border border-brand-border p-2.5 text-xs rounded-sm focus:border-black outline-none font-bold font-mono">
+            </div>
+            <div>
+              <label class="block uppercase tracking-wider text-brand-gray font-bold text-[11px] mb-1">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1 text-purple-600"></i> Fecha Fin (Hasta) *
+              </label>
+              <input type="date" id="infFechaHasta" class="w-full border border-brand-border p-2.5 text-xs rounded-sm focus:border-black outline-none font-bold font-mono">
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="consultarInformeFinanciero()" id="btnBuscarInforme" class="bg-black hover:bg-neutral-800 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-sm flex items-center gap-2 shadow-xs transition hover:scale-[1.01]">
+              <i data-lucide="search" class="w-4 h-4"></i> Consultar Informe
+            </button>
+          </div>
+        </div>
+
+        <!-- Presets rápidos de fechas -->
+        <div class="pt-3 border-t border-brand-border/60 flex items-center gap-1.5 flex-wrap text-xs">
+          <span class="text-[11px] text-brand-gray font-semibold uppercase mr-1">Rangos Rápidos:</span>
+          <button type="button" onclick="establecerRangoInforme('hoy')" class="px-2.5 py-1 border border-brand-border hover:border-black rounded-xs text-[11px] font-semibold uppercase bg-neutral-50 hover:bg-neutral-100 transition">Hoy</button>
+          <button type="button" onclick="establecerRangoInforme('semana')" class="px-2.5 py-1 border border-brand-border hover:border-black rounded-xs text-[11px] font-semibold uppercase bg-neutral-50 hover:bg-neutral-100 transition">Esta Semana</button>
+          <button type="button" onclick="establecerRangoInforme('mes')" class="px-2.5 py-1 border border-brand-border hover:border-black rounded-xs text-[11px] font-semibold uppercase bg-neutral-50 hover:bg-neutral-100 transition">Este Mes</button>
+          <button type="button" onclick="establecerRangoInforme('mes_anterior')" class="px-2.5 py-1 border border-brand-border hover:border-black rounded-xs text-[11px] font-semibold uppercase bg-neutral-50 hover:bg-neutral-100 transition">Mes Anterior</button>
+          <button type="button" onclick="establecerRangoInforme('ultimos_30')" class="px-2.5 py-1 border border-brand-border hover:border-black rounded-xs text-[11px] font-semibold uppercase bg-neutral-50 hover:bg-neutral-100 transition">Últimos 30 Días</button>
+          <button type="button" onclick="establecerRangoInforme('ano')" class="px-2.5 py-1 border border-brand-border hover:border-black rounded-xs text-[11px] font-semibold uppercase bg-neutral-50 hover:bg-neutral-100 transition">Todo el Año</button>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Métricas Resumen del Período -->
+      <div id="bloqueMetricasInforme" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <!-- Tarjeta 1: Total Ventas -->
+        <div class="p-4 border-2 border-emerald-300 bg-emerald-50/40 rounded-sm space-y-1">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] uppercase tracking-wider text-emerald-800 font-bold">Ventas Totales</span>
+            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+          </div>
+          <p class="text-2xl font-black text-emerald-950 font-mono" id="infTotalVentas">$0</p>
+          <p class="text-[10px] text-emerald-800 font-medium" id="infSubVentas">0 ventas registradas</p>
+        </div>
+
+        <!-- Tarjeta 2: Desglose Medios de Pago -->
+        <div class="p-4 border border-brand-border bg-white rounded-sm space-y-1">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold">Ingresos por Medio</span>
+            <i data-lucide="wallet" class="w-4 h-4 text-neutral-500"></i>
+          </div>
+          <div class="text-[11px] space-y-1 pt-1 font-mono">
+            <div class="flex justify-between"><span>Efectivo:</span> <strong id="infMedioEf">$0</strong></div>
+            <div class="flex justify-between"><span>Transferencias:</span> <strong id="infMedioTransf">$0</strong></div>
+            <div class="flex justify-between text-purple-900"><span>Créditos Addi:</span> <strong id="infMedioAddi">$0</strong></div>
+            <div class="flex justify-between text-blue-900"><span>Tarjetas:</span> <strong id="infMedioTarj">$0</strong></div>
+          </div>
+        </div>
+
+        <!-- Tarjeta 3: Egresos y Retiros -->
+        <div class="p-4 border border-rose-200 bg-rose-50/40 rounded-sm space-y-1">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] uppercase tracking-wider text-rose-800 font-bold">Egresos & Retiros</span>
+            <i data-lucide="minus-circle" class="w-4 h-4 text-rose-600"></i>
+          </div>
+          <p class="text-2xl font-black text-rose-950 font-mono" id="infTotalGastos">$0</p>
+          <div class="text-[10px] text-rose-900 space-y-0.5 pt-0.5 font-medium">
+            <div>Gastos Operativos: <strong id="infGastosOperativos">$0</strong></div>
+            <div>Retiros Socios: <strong id="infRetirosSocios">$0</strong></div>
+          </div>
+        </div>
+
+        <!-- Tarjeta 4: Balance Neto -->
+        <div class="p-4 border-2 border-black bg-neutral-900 text-white rounded-sm space-y-1">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] uppercase tracking-wider text-neutral-400 font-bold">Balance Neto</span>
+            <i data-lucide="scale" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="text-2xl font-black text-white font-mono" id="infBalanceNeto">$0</p>
+          <p class="text-[10px] text-neutral-300 font-medium" id="infSubBalance">Ventas - Egresos Totales</p>
+        </div>
+      </div>
+
+      <!-- Tablas Detalladas: Ventas y Gastos con Pestañas Internas -->
+      <div class="bg-white border border-brand-border rounded-sm shadow-xs overflow-hidden">
+        <div class="flex border-b border-brand-border bg-neutral-50 px-4 pt-3 gap-2 overflow-x-auto">
+          <button type="button" onclick="cambiarSubTabInforme('ventas')" id="subtab-inf-ventas" class="px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 border-black text-black bg-white rounded-t-sm flex items-center gap-2">
+            <i data-lucide="receipt" class="w-4 h-4"></i> Detalle de Ventas (<span id="infBadgeCantVentas">0</span>)
+          </button>
+          <button type="button" onclick="cambiarSubTabInforme('gastos')" id="subtab-inf-gastos" class="px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-brand-gray hover:text-black rounded-t-sm flex items-center gap-2">
+            <i data-lucide="arrow-down-right" class="w-4 h-4"></i> Detalle de Gastos & Retiros (<span id="infBadgeCantGastos">0</span>)
+          </button>
+        </div>
+
+        <!-- Contenedor Pestaña 1: Ventas -->
+        <div id="contenedorInfVentas" class="p-4 space-y-3">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="relative w-full sm:w-80">
+              <input type="text" id="filtroBuscadorVentasInf" oninput="filtrarVentasInforme()" placeholder="Buscar por cliente, concepto u operaria..." class="w-full border border-brand-border pl-8 pr-3 py-1.5 text-xs rounded-sm focus:border-black outline-none font-medium">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-brand-gray"></i>
+            </div>
+            <span class="text-xs text-brand-gray font-mono font-bold" id="lblInfVentasSumatoria">Total listado: $0</span>
+          </div>
+
+          <div class="overflow-x-auto border border-brand-border rounded-sm">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-neutral-100/75 border-b border-brand-border text-[10px] uppercase font-bold tracking-wider text-brand-gray">
+                  <th class="p-3">Fecha & Hora</th>
+                  <th class="p-3">Cliente</th>
+                  <th class="p-3">Tratamiento / Concepto</th>
+                  <th class="p-3">Especialista</th>
+                  <th class="p-3">Medio de Pago</th>
+                  <th class="p-3 text-right">Monto ($ COP)</th>
+                </tr>
+              </thead>
+              <tbody id="tablaInfVentasBody" class="divide-y divide-brand-border">
+                <tr><td colspan="6" class="p-6 text-center text-brand-gray">Pulsa "Consultar Informe" para cargar las ventas del período.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Contenedor Pestaña 2: Gastos -->
+        <div id="contenedorInfGastos" class="p-4 space-y-3 hidden">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="relative w-full sm:w-80">
+              <input type="text" id="filtroBuscadorGastosInf" oninput="filtrarGastosInforme()" placeholder="Buscar por concepto, categoría o responsable..." class="w-full border border-brand-border pl-8 pr-3 py-1.5 text-xs rounded-sm focus:border-black outline-none font-medium">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-brand-gray"></i>
+            </div>
+            <span class="text-xs text-brand-gray font-mono font-bold" id="lblInfGastosSumatoria">Total listado: $0</span>
+          </div>
+
+          <div class="overflow-x-auto border border-brand-border rounded-sm">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-neutral-100/75 border-b border-brand-border text-[10px] uppercase font-bold tracking-wider text-brand-gray">
+                  <th class="p-3">Fecha & Hora</th>
+                  <th class="p-3">Concepto / Detalle</th>
+                  <th class="p-3">Categoría</th>
+                  <th class="p-3">Responsable</th>
+                  <th class="p-3">Medio</th>
+                  <th class="p-3 text-right">Monto ($ COP)</th>
+                </tr>
+              </thead>
+              <tbody id="tablaInfGastosBody" class="divide-y divide-brand-border">
+                <tr><td colspan="6" class="p-6 text-center text-brand-gray">Pulsa "Consultar Informe" para cargar los egresos del período.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -2037,10 +2247,12 @@
 
       if (rol === 'operaria') {
         // ── OPERARIA: ocultar casi todo, mostrar solo "Mi Cabina" ──
-        ['tab-agenda','tab-clientes','tab-caja','tab-equipo','tab-usuarios','tab-medico'].forEach(id => {
+        ['tab-agenda','tab-clientes','tab-caja','tab-equipo','tab-usuarios','tab-medico','tab-informes'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.add('hidden');
         });
+        const btnInf = document.getElementById('btnCajaIrInformes');
+        if (btnInf) btnInf.classList.add('hidden');
 
         // Mostrar pestaña "Mi Cabina"
         const tabCabina = document.getElementById('tab-operaria');
@@ -2069,10 +2281,12 @@
 
       if (rol === 'medico') {
         // ── MÉDICO: Panel Médico, Clientes & Historias Clínicas, Agenda ──
-        ['tab-caja','tab-equipo','tab-usuarios','tab-operaria'].forEach(id => {
+        ['tab-caja','tab-equipo','tab-usuarios','tab-operaria','tab-informes'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.add('hidden');
         });
+        const btnInf = document.getElementById('btnCajaIrInformes');
+        if (btnInf) btnInf.classList.add('hidden');
 
         ['tab-medico','tab-clientes','tab-agenda'].forEach(id => {
           const el = document.getElementById(id);
@@ -2087,12 +2301,18 @@
       }
 
       if (rol === 'recepcionista') {
-        // ── RECEPCIONISTA: todo excepto eliminar ventas y modificar precios ──
+        // ── RECEPCIONISTA: todo excepto eliminar ventas, modificar precios e informes ──
         const tabUsuarios = document.getElementById('tab-usuarios');
         if (tabUsuarios) tabUsuarios.classList.add('hidden');
 
         const tabMed = document.getElementById('tab-medico');
         if (tabMed) tabMed.classList.add('hidden');
+
+        const tabInf = document.getElementById('tab-informes');
+        if (tabInf) tabInf.classList.add('hidden');
+
+        const btnInf = document.getElementById('btnCajaIrInformes');
+        if (btnInf) btnInf.classList.add('hidden');
 
         // Ocultar botón de eliminar ventas (columna de acciones en tabla ventas)
         const thAcciones = document.getElementById('thAccionesVenta');
@@ -2112,10 +2332,12 @@
 
       if (rol === 'socio') {
         // ── SOCIO: Exclusivo para revisar dinero en caja y retirar/recoger efectivo ──
-        ['tab-agenda','tab-clientes','tab-equipo','tab-usuarios','tab-operaria','tab-medico'].forEach(id => {
+        ['tab-agenda','tab-clientes','tab-equipo','tab-usuarios','tab-operaria','tab-medico','tab-informes'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.add('hidden');
         });
+        const btnInf = document.getElementById('btnCajaIrInformes');
+        if (btnInf) btnInf.classList.add('hidden');
 
         // Asegurarse de que Caja esté visible
         const tabCaja = document.getElementById('tab-caja');
@@ -2165,6 +2387,12 @@
 
         const tabUsuarios = document.getElementById('tab-usuarios');
         if (tabUsuarios) tabUsuarios.classList.remove('hidden');
+
+        const tabInf = document.getElementById('tab-informes');
+        if (tabInf) tabInf.classList.remove('hidden');
+
+        const btnInf = document.getElementById('btnCajaIrInformes');
+        if (btnInf) btnInf.classList.remove('hidden');
 
         cambiarSeccion('agenda');
         return;
@@ -2274,7 +2502,7 @@
     }
 
     function cambiarSeccion(seccion) {
-      const secciones = ['agenda', 'clientes', 'caja', 'equipo', 'usuarios', 'operaria', 'medico'];
+      const secciones = ['agenda', 'clientes', 'caja', 'equipo', 'usuarios', 'operaria', 'medico', 'informes'];
       secciones.forEach(sec => {
         const el = document.getElementById(`sec-${sec}`);
         if (el) el.classList.add('hidden');
@@ -2299,6 +2527,15 @@
         cargarHistorialBackups();
       } else if (seccion === 'medico') {
         renderizarPanelMedico();
+      } else if (seccion === 'informes') {
+        const session = obtenerSesion();
+        if (!session || session.rol !== 'admin') {
+          alert('Solo el Administrador tiene acceso a los informes financieros.');
+          cambiarSeccion('agenda');
+          return;
+        }
+        inicializarFechasInformeSiVacio();
+        consultarInformeFinanciero();
       } else {
         renderizarBannerCitasFacturar();
       }
@@ -3569,6 +3806,7 @@
 
     // --- COBRAR CITA ---
     function iniciarCobroCita(citaId) {
+      if (!verificarCajaAbierta('facturar citas')) return;
       const cita = appState.citas.find(c => c._id == citaId);
       if (!cita) return;
 
@@ -3933,6 +4171,7 @@
     let filasPagoMixtoVR = [];
 
     function abrirModalVentaManual() {
+      if (!verificarCajaAbierta('registrar cobros rápidos')) return;
       const elCli = document.getElementById('vrCliente');
       if (elCli) elCli.value = '';
       const elCon = document.getElementById('vrConcepto');
@@ -5918,6 +6157,51 @@
       const navCaja = document.getElementById('navCajaTotal');
       if (navCaja) navCaja.innerText = formatMoney(efectivoEnCaja);
 
+      // Estado de Caja Abierta / Cerrada
+      const hoyCaja = appState.fechaHoy || new Date().toISOString().split('T')[0];
+      const cajaConfig = (appState.config && appState.config.caja) || {};
+      const cajaAbierta = Boolean(cajaConfig.abierta && cajaConfig.fechaApertura === hoyCaja);
+
+      const elBadgeEstado = document.getElementById('badgeEstadoCaja');
+      const elBannerCerrada = document.getElementById('bannerCajaCerradaAlerta');
+      const btnAbrir = document.getElementById('btnCajaAbrir');
+      const btnCerrar = document.getElementById('btnCajaCerrar');
+      const subtexto = document.getElementById('subtextoEstadoCaja');
+
+      if (cajaAbierta) {
+        if (elBadgeEstado) {
+          elBadgeEstado.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5';
+          elBadgeEstado.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span> Abierta (${cajaConfig.horaApertura || 'Jornada activa'})`;
+        }
+        if (subtexto) {
+          subtexto.innerText = `Caja abierta hoy a las ${cajaConfig.horaApertura || 'inicio de jornada'} por ${cajaConfig.usuarioApertura || 'Recepción'} con base de ${formatMoney(fondo)}.`;
+        }
+        if (elBannerCerrada) elBannerCerrada.classList.add('hidden');
+        if (btnAbrir && (!session || session.rol !== 'socio')) {
+          btnAbrir.innerText = 'Ajustar Base Caja';
+          btnAbrir.className = 'border border-neutral-300 text-neutral-700 hover:border-black hover:text-black px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm transition';
+        }
+        if (btnCerrar && (!session || session.rol !== 'socio')) {
+          btnCerrar.classList.remove('hidden');
+        }
+      } else {
+        if (elBadgeEstado) {
+          elBadgeEstado.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1.5';
+          elBadgeEstado.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-600"></span> Caja Cerrada`;
+        }
+        if (subtexto) {
+          subtexto.innerText = `La caja se encuentra cerrada. Es obligatorio realizar la apertura para registrar cobros o facturar.`;
+        }
+        if (elBannerCerrada) elBannerCerrada.classList.remove('hidden');
+        if (btnAbrir && (!session || session.rol !== 'socio')) {
+          btnAbrir.innerText = '⚡ Abrir Caja del Día';
+          btnAbrir.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-black uppercase tracking-wider rounded-sm transition shadow-xs hover:scale-[1.01]';
+        }
+        if (btnCerrar) {
+          btnCerrar.classList.add('hidden');
+        }
+      }
+
       // Actualizar Banner Inteligente de Recogida de Efectivo
       const bannerRecogida = document.getElementById('bannerRecogidaEfectivo');
       if (bannerRecogida) {
@@ -6310,8 +6594,52 @@
         `¿Deseas confirmar el arqueo del día?`;
 
       if (confirm(resumen)) {
-        alert('✓ Arqueo de caja finalizado exitosamente.');
+        cerrarCajaOficialmente();
       }
+    }
+
+    async function cerrarCajaOficialmente() {
+      try {
+        const res = await fetch('/api/caja/cierre', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          alert('✓ Caja cerrada del día exitosamente.\n\nA partir de este momento, si se requiere volver a facturar o registrar cobros, el sistema exigirá obligatoriamente realizar una nueva Apertura de Caja.');
+        } else {
+          alert('Error al cerrar caja: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión al cerrar caja: ' + err.message);
+      }
+    }
+
+    function verificarCajaAbierta(accion = 'facturar o registrar cobros') {
+      const hoy = appState.fechaHoy || new Date().toISOString().split('T')[0];
+      const caja = (appState.config && appState.config.caja) || {};
+      const abierta = Boolean(caja.abierta && caja.fechaApertura === hoy);
+
+      if (!abierta) {
+        const mensaje = (!caja.abierta)
+          ? 'La caja se encuentra CERRADA.'
+          : 'Aún no se ha realizado la apertura de caja para el día de hoy.';
+
+        alert(`⚠️ ATENCIÓN: ${mensaje}\n\nPara poder ${accion}, es obligatorio iniciar la jornada abriendo caja e ingresando la base inicial en efectivo.`);
+
+        openModal('modalAperturaCaja');
+        setTimeout(() => {
+          const inp = document.getElementById('montoAperturaInput');
+          if (inp) {
+            inp.value = (caja && caja.fondoInicial) || 50000;
+            inp.focus();
+            inp.select();
+          }
+        }, 150);
+        return false;
+      }
+      return true;
     }
 
     // --- OPERARIAS & TRATAMIENTOS ---
@@ -6771,6 +7099,301 @@
       } catch (err) {
         alert('Error al descargar archivo: ' + err.message);
       }
+    }
+
+    // ================= INFORMES Y REPORTES FINANCIEROS (EXCLUSIVO ADMINISTRADOR) =================
+    let cacheInformeActual = { ventas: [], gastos: [], resumen: {} };
+    let subTabInformeActiva = 'ventas';
+
+    function irAInformesFinancieros() {
+      const session = obtenerSesion();
+      if (!session || session.rol !== 'admin') {
+        alert('Solo el Administrador tiene acceso a los informes financieros.');
+        return;
+      }
+      cambiarSeccion('informes');
+    }
+
+    function inicializarFechasInformeSiVacio() {
+      const hoy = appState.fechaHoy || new Date().toISOString().split('T')[0];
+      const inDesde = document.getElementById('infFechaDesde');
+      const inHasta = document.getElementById('infFechaHasta');
+      if (inDesde && !inDesde.value) {
+        inDesde.value = hoy.slice(0, 8) + '01'; // 1er día del mes actual
+      }
+      if (inHasta && !inHasta.value) {
+        inHasta.value = hoy;
+      }
+    }
+
+    function establecerRangoInforme(tipo) {
+      const hoyStr = appState.fechaHoy || new Date().toISOString().split('T')[0];
+      const inDesde = document.getElementById('infFechaDesde');
+      const inHasta = document.getElementById('infFechaHasta');
+      if (!inDesde || !inHasta) return;
+
+      const ahora = new Date();
+      if (tipo === 'hoy') {
+        inDesde.value = hoyStr;
+        inHasta.value = hoyStr;
+      } else if (tipo === 'semana') {
+        const diaSemana = ahora.getDay();
+        const diff = ahora.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
+        const lunes = new Date(ahora.setDate(diff));
+        inDesde.value = lunes.toISOString().split('T')[0];
+        inHasta.value = hoyStr;
+      } else if (tipo === 'mes') {
+        inDesde.value = hoyStr.slice(0, 8) + '01';
+        inHasta.value = hoyStr;
+      } else if (tipo === 'mes_anterior') {
+        const y = ahora.getFullYear();
+        const m = ahora.getMonth();
+        const iniPrev = new Date(y, m - 1, 1);
+        const finPrev = new Date(y, m, 0);
+        inDesde.value = iniPrev.toISOString().split('T')[0];
+        inHasta.value = finPrev.toISOString().split('T')[0];
+      } else if (tipo === 'ultimos_30') {
+        const d30 = new Date();
+        d30.setDate(d30.getDate() - 30);
+        inDesde.value = d30.toISOString().split('T')[0];
+        inHasta.value = hoyStr;
+      } else if (tipo === 'ano') {
+        inDesde.value = hoyStr.slice(0, 4) + '-01-01';
+        inHasta.value = hoyStr;
+      }
+      consultarInformeFinanciero();
+    }
+
+    async function consultarInformeFinanciero() {
+      const session = obtenerSesion();
+      if (!session || session.rol !== 'admin') {
+        alert('Acceso no autorizado.');
+        return;
+      }
+
+      inicializarFechasInformeSiVacio();
+      const desde = document.getElementById('infFechaDesde')?.value || '';
+      const hasta = document.getElementById('infFechaHasta')?.value || '';
+
+      const btn = document.getElementById('btnBuscarInforme');
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Consultando...`;
+        lucide.createIcons();
+      }
+
+      try {
+        const res = await fetch(`/api/reportes/financiero?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`, {
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (!data.success) {
+          alert('Error al consultar informe: ' + (data.error || 'Ocurrió un error'));
+          return;
+        }
+
+        cacheInformeActual = data;
+        renderizarResultadosInforme(data);
+      } catch (err) {
+        alert('Error de conexión al consultar informe: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          lucide.createIcons();
+        }
+      }
+    }
+
+    function renderizarResultadosInforme(data) {
+      const res = data.resumen || {};
+
+      // 1. Tarjetas de métricas
+      const elTotVentas = document.getElementById('infTotalVentas');
+      if (elTotVentas) elTotVentas.innerText = formatMoney(res.totalVentas || 0);
+
+      const elSubVentas = document.getElementById('infSubVentas');
+      if (elSubVentas) {
+        elSubVentas.innerText = `${res.cantidadVentas || 0} ventas • Ticket Prom: ${formatMoney(res.ticketPromedio || 0)}`;
+      }
+
+      const elMedEf = document.getElementById('infMedioEf');
+      if (elMedEf) elMedEf.innerText = formatMoney(res.totalEf || 0);
+
+      const elMedTransf = document.getElementById('infMedioTransf');
+      if (elMedTransf) elMedTransf.innerText = formatMoney(res.totalTransf || 0);
+
+      const elMedAddi = document.getElementById('infMedioAddi');
+      if (elMedAddi) elMedAddi.innerText = formatMoney(res.totalAddi || 0);
+
+      const elMedTarj = document.getElementById('infMedioTarj');
+      if (elMedTarj) elMedTarj.innerText = formatMoney(res.totalTarj || 0);
+
+      const elTotGastos = document.getElementById('infTotalGastos');
+      if (elTotGastos) elTotGastos.innerText = (res.totalGastos > 0 ? '-' : '') + formatMoney(res.totalGastos || 0);
+
+      const elGastosOp = document.getElementById('infGastosOperativos');
+      if (elGastosOp) elGastosOp.innerText = formatMoney(res.totalGastosOperativos || 0);
+
+      const elRetirosSoc = document.getElementById('infRetirosSocios');
+      if (elRetirosSoc) elRetirosSoc.innerText = formatMoney(res.totalRetirosSocios || 0);
+
+      const elBalance = document.getElementById('infBalanceNeto');
+      if (elBalance) {
+        const bal = res.balanceNeto || 0;
+        elBalance.innerText = (bal < 0 ? '-' : '') + formatMoney(Math.abs(bal));
+        elBalance.className = bal >= 0 ? 'text-2xl font-black text-emerald-400 font-mono' : 'text-2xl font-black text-rose-400 font-mono';
+      }
+
+      const elSubBal = document.getElementById('infSubBalance');
+      if (elSubBal) {
+        elSubBal.innerText = `Margen Operativo: ${formatMoney(res.balanceOperativo || 0)}`;
+      }
+
+      const badgeVentas = document.getElementById('infBadgeCantVentas');
+      if (badgeVentas) badgeVentas.innerText = (data.ventas || []).length;
+
+      const badgeGastos = document.getElementById('infBadgeCantGastos');
+      if (badgeGastos) badgeGastos.innerText = (data.gastos || []).length;
+
+      // 2. Renderizar listas
+      filtrarVentasInforme();
+      filtrarGastosInforme();
+      lucide.createIcons();
+    }
+
+    function cambiarSubTabInforme(tab) {
+      subTabInformeActiva = tab;
+      const btnVentas = document.getElementById('subtab-inf-ventas');
+      const btnGastos = document.getElementById('subtab-inf-gastos');
+      const contVentas = document.getElementById('contenedorInfVentas');
+      const contGastos = document.getElementById('contenedorInfGastos');
+
+      if (tab === 'ventas') {
+        if (btnVentas) {
+          btnVentas.className = 'px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 border-black text-black bg-white rounded-t-sm flex items-center gap-2';
+        }
+        if (btnGastos) {
+          btnGastos.className = 'px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-brand-gray hover:text-black rounded-t-sm flex items-center gap-2';
+        }
+        if (contVentas) contVentas.classList.remove('hidden');
+        if (contGastos) contGastos.classList.add('hidden');
+      } else {
+        if (btnVentas) {
+          btnVentas.className = 'px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-brand-gray hover:text-black rounded-t-sm flex items-center gap-2';
+        }
+        if (btnGastos) {
+          btnGastos.className = 'px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 border-black text-black bg-white rounded-t-sm flex items-center gap-2';
+        }
+        if (contVentas) contVentas.classList.add('hidden');
+        if (contGastos) contGastos.classList.remove('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    function filtrarVentasInforme() {
+      const q = (document.getElementById('filtroBuscadorVentasInf')?.value || '').trim().toLowerCase();
+      const tbody = document.getElementById('tablaInfVentasBody');
+      const lblSum = document.getElementById('lblInfVentasSumatoria');
+      if (!tbody) return;
+
+      const ventas = (cacheInformeActual.ventas || []).filter(v => {
+        if (!q) return true;
+        const cli = (v.cliente || '').toLowerCase();
+        const con = (v.concepto || '').toLowerCase();
+        const op = (v.operaria || '').toLowerCase();
+        const met = (v.metodo || '').toLowerCase();
+        return cli.includes(q) || con.includes(q) || op.includes(q) || met.includes(q);
+      });
+
+      if (ventas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-brand-gray">No se encontraron ventas para los criterios seleccionados.</td></tr>`;
+        if (lblSum) lblSum.innerText = 'Total listado: $0 (0 ventas)';
+        return;
+      }
+
+      let suma = 0;
+      tbody.innerHTML = ventas.map(v => {
+        suma += (v.valor || 0);
+        let badgeMetodo = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 text-neutral-800">Efectivo</span>';
+        const m = v.metodo || '';
+        if (m.includes('Addi')) {
+          badgeMetodo = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-900 border border-purple-200">Crédito Addi</span>';
+        } else if (m.includes('Tarjeta') || m.includes('Datáfono')) {
+          badgeMetodo = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-200">Tarjeta</span>';
+        } else if (m.includes('Mixto')) {
+          badgeMetodo = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">Pago Mixto</span>';
+        } else if (m.includes('Transferencia') || m.includes('Bancolombia') || m.includes('Nequi') || m.includes('Daviplata')) {
+          badgeMetodo = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">Transferencia</span>';
+        }
+
+        return `
+          <tr class="hover:bg-neutral-50 transition">
+            <td class="p-3 font-mono font-medium whitespace-nowrap">
+              ${v.fecha || '—'} <span class="text-brand-gray text-[10px]">${v.hora || ''}</span>
+            </td>
+            <td class="p-3 font-bold text-neutral-900">${v.cliente || 'Cliente General'}</td>
+            <td class="p-3 text-neutral-800">${v.concepto || 'Venta'}</td>
+            <td class="p-3 text-neutral-700">${v.operaria || '—'}</td>
+            <td class="p-3">${badgeMetodo} <span class="text-[10px] text-neutral-500 block truncate max-w-xs">${m}</span></td>
+            <td class="p-3 text-right font-black font-mono text-emerald-900">${formatMoney(v.valor)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      if (lblSum) lblSum.innerText = `Total listado: ${formatMoney(suma)} (${ventas.length} ventas)`;
+    }
+
+    function filtrarGastosInforme() {
+      const q = (document.getElementById('filtroBuscadorGastosInf')?.value || '').trim().toLowerCase();
+      const tbody = document.getElementById('tablaInfGastosBody');
+      const lblSum = document.getElementById('lblInfGastosSumatoria');
+      if (!tbody) return;
+
+      const gastos = (cacheInformeActual.gastos || []).filter(g => {
+        if (!q) return true;
+        const con = (g.concepto || '').toLowerCase();
+        const cat = (g.categoria || '').toLowerCase();
+        const resp = (g.responsable || '').toLowerCase();
+        const met = (g.metodo || '').toLowerCase();
+        return con.includes(q) || cat.includes(q) || resp.includes(q) || met.includes(q);
+      });
+
+      if (gastos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-brand-gray">No se encontraron egresos ni retiros en este período.</td></tr>`;
+        if (lblSum) lblSum.innerText = 'Total listado: $0 (0 egresos)';
+        return;
+      }
+
+      let suma = 0;
+      tbody.innerHTML = gastos.map(g => {
+        suma += (g.valor || 0);
+        const esRetiro = g.categoria === 'Retiro de Efectivo' || (g.concepto && g.concepto.toLowerCase().includes('retiro'));
+        let badgeCat = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 text-neutral-800">${g.categoria || 'Gasto'}</span>`;
+        if (esRetiro) {
+          badgeCat = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-950 border border-amber-300">💸 Retiro Socio</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-neutral-50 transition">
+            <td class="p-3 font-mono font-medium whitespace-nowrap">
+              ${g.fecha || '—'} <span class="text-brand-gray text-[10px]">${g.hora || ''}</span>
+            </td>
+            <td class="p-3 font-semibold text-neutral-900">${g.concepto || 'Egreso'}</td>
+            <td class="p-3">${badgeCat}</td>
+            <td class="p-3 text-neutral-700 font-medium">${g.responsable || '—'}</td>
+            <td class="p-3 font-mono text-[11px] text-neutral-600">${g.metodo || 'Efectivo'}</td>
+            <td class="p-3 text-right font-black font-mono text-rose-700">-${formatMoney(g.valor)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      if (lblSum) lblSum.innerText = `Total listado: -${formatMoney(suma)} (${gastos.length} egresos)`;
+    }
+
+    function imprimirInformeFinanciero() {
+      window.print();
     }
 
     // ================= CABINA DE ATENCIÓN DE OPERARIA =================
