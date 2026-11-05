@@ -1101,7 +1101,7 @@
           <select id="citaServicio" onchange="onCambioServicio()" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-medium"></select>
         </div>
 
-        <!-- Selector de Zonas para Depilación Láser (14 Zonas @ $50.000 COP c/u) -->
+        <!-- Selector de Zonas para Depilación Láser ($50.000 COP c/u) -->
         <div id="bloqueZonasLaser" class="hidden border border-brand-border bg-neutral-50 p-3 rounded-sm space-y-2.5">
           <div class="flex flex-wrap justify-between items-center border-b border-brand-border/60 pb-2 gap-2">
             <div class="flex items-center gap-1.5">
@@ -1117,8 +1117,8 @@
 
           <p class="text-[11px] text-brand-gray">Toca las zonas que se realizará la clienta. Cada zona suma automáticamente <strong>$50.000 COP</strong> (o <strong>$0 COP</strong> si está en paquete prepago):</p>
 
-          <div class="grid grid-cols-2 gap-2 pt-1 max-h-52 overflow-y-auto pr-1" id="gridZonasLaser">
-            <!-- 14 Zonas generadas dinámicamente con interacción táctil -->
+          <div class="grid grid-cols-2 gap-2 pt-1 max-h-64 overflow-y-auto pr-1" id="gridZonasLaser">
+            <!-- Zonas generadas dinámicamente con interacción táctil -->
           </div>
 
           <!-- Opción: Adquirir Paquete Prepago al Agendar -->
@@ -2066,7 +2066,7 @@
         </div>
       </div>
 
-      <!-- Selector de Zonas (14 Zonas) -->
+      <!-- Selector de Zonas -->
       <div class="space-y-2">
         <div class="flex justify-between items-center">
           <label class="block uppercase tracking-wider text-brand-gray font-semibold">Toca las zonas que se realizará la paciente:</label>
@@ -2076,8 +2076,8 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 pt-1 max-h-56 overflow-y-auto pr-1" id="gridEditarZonasCabina">
-          <!-- 14 Zonas renderizadas dinámicamente -->
+        <div class="grid grid-cols-2 gap-2 pt-1 max-h-64 overflow-y-auto pr-1" id="gridEditarZonasCabina">
+          <!-- Zonas renderizadas dinámicamente -->
         </div>
       </div>
 
@@ -2410,22 +2410,32 @@
       };
     }
 
-    // Las 14 zonas oficiales de Depilación Láser ($50.000 COP c/u)
+    // Zonas corporales oficiales de Depilación Láser ($50.000 COP c/u)
     const ZONAS_LASER = [
       'Bikini',
       'Axilas',
       'Perianal',
       'Intergluteo',
       'Gluteo',
+      'Entrepierna',
+      'Pierna Completa',
       'Media Pierna Arriba',
       'Media Pierna Abajo',
       'Pies',
-      'Abdomen',
-      'Pecho',
-      'Espalda',
+      'Dedos de Pies',
+      'Brazo Medio',
       'Medio Brazo Arriba',
       'Medio Brazo Abajo',
-      'Rostro'
+      'Abdomen',
+      'Línea del Alba',
+      'Pecho',
+      'Aureolas',
+      'Espalda',
+      'Rostro',
+      'Bigote',
+      'Pómulos',
+      'Mentón',
+      'Cuello'
     ];
 
     function formatMoney(amount) {
@@ -2739,7 +2749,7 @@
         selectTaOp.innerHTML = appState.config.operarias.map(o => `<option value="${o.nombre}">${o.nombre}</option>`).join('');
       }
 
-      // Renderizar los 14 botones/checkboxes táctiles de Zonas Láser (@ $50.000 COP c/u)
+      // Renderizar los botones/checkboxes táctiles de Zonas Láser (@ $50.000 COP c/u)
       const contZonas = document.getElementById('gridZonasLaser');
       if (contZonas) {
         contZonas.innerHTML = ZONAS_LASER.map((z, idx) => `
