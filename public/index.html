@@ -1101,7 +1101,7 @@
           <select id="citaServicio" onchange="onCambioServicio()" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white font-medium"></select>
         </div>
 
-        <!-- Selector de Zonas para Depilación Láser ($50.000 COP c/u) -->
+        <!-- Selector de Zonas para Depilación Láser -->
         <div id="bloqueZonasLaser" class="hidden border border-brand-border bg-neutral-50 p-3 rounded-sm space-y-2.5">
           <div class="flex flex-wrap justify-between items-center border-b border-brand-border/60 pb-2 gap-2">
             <div class="flex items-center gap-1.5">
@@ -1109,70 +1109,25 @@
               <span class="font-bold text-xs uppercase tracking-wider text-brand-black">Zonas de Depilación Láser</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-bold bg-black text-white px-2 py-0.5 rounded-full">$50.000 COP / zona</span>
               <button type="button" onclick="limpiarZonasLaser()" class="text-[10px] text-brand-gray hover:text-black underline">Limpiar</button>
               <button type="button" onclick="seleccionarZonasPopulares()" class="text-[10px] text-black font-semibold hover:underline">Bikini + Axilas</button>
             </div>
           </div>
 
-          <p class="text-[11px] text-brand-gray">Toca las zonas que se realizará la clienta. Cada zona suma automáticamente <strong>$50.000 COP</strong> (o <strong>$0 COP</strong> si está en paquete prepago):</p>
+          <p class="text-[11px] text-brand-gray">Marca las zonas que se realizará la clienta (se enviarán automáticamente a la operaria en cabina):</p>
 
           <div class="grid grid-cols-2 gap-2 pt-1 max-h-64 overflow-y-auto pr-1" id="gridZonasLaser">
             <!-- Zonas generadas dinámicamente con interacción táctil -->
           </div>
 
-          <!-- Opción: Adquirir Paquete Prepago al Agendar -->
-          <div id="bloqueCompraPaqueteCita" class="p-3 border border-purple-200 bg-purple-50/70 rounded-sm space-y-2 mt-2">
-            <label class="flex items-start gap-2.5 cursor-pointer">
-              <input type="checkbox" id="chkAdquirirPaqueteCita" onchange="onToggleAdquirirPaqueteCita()" class="w-4 h-4 accent-purple-600 mt-0.5 rounded-xs cursor-pointer">
-              <div class="space-y-0.5 flex-1">
-                <span class="text-xs font-bold text-purple-950 uppercase tracking-wider flex items-center gap-1.5">
-                  <i data-lucide="package" class="w-3.5 h-3.5 text-purple-600"></i>
-                  ¿Adquiere Paquete de Sesiones Prepago hoy?
-                </span>
-                <p class="text-[11px] text-purple-900 leading-tight">
-                  Las zonas marcadas quedarán cubiertas por varias sesiones. Hoy se cobra el paquete en caja y las próximas citas saldrán a <strong>$0 COP</strong>.
-                </p>
-              </div>
-            </label>
-
-            <div id="camposCompraPaqueteCita" class="hidden pt-2 border-t border-purple-200 space-y-2.5">
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-semibold text-purple-950">Número de sesiones pagadas:</span>
-                <div class="flex items-center gap-1.5">
-                  <button type="button" onclick="ajustarSesionesPaqueteCita(-1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">-</button>
-                  <input type="number" id="numSesionesPaqueteCita" value="6" min="1" max="30" class="w-12 text-center border border-purple-300 p-1 rounded-sm font-bold text-xs" onchange="onInputSesionesPaqueteCita()">
-                  <button type="button" onclick="ajustarSesionesPaqueteCita(1)" class="w-7 h-7 bg-white border border-purple-300 text-purple-950 rounded-sm font-bold flex items-center justify-center hover:bg-purple-100 transition">+</button>
-                </div>
-              </div>
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[10px] text-purple-800 font-medium">Accesos rápidos:</span>
-                <button type="button" onclick="setSesionesPaqueteCita(1)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">1 sesión</button>
-                <button type="button" onclick="setSesionesPaqueteCita(3)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">3 sesiones</button>
-                <button type="button" onclick="setSesionesPaqueteCita(6)" class="px-2 py-0.5 bg-purple-700 text-white border border-purple-700 text-[10px] font-bold rounded-xs shadow-2xs">6 sesiones</button>
-                <button type="button" onclick="setSesionesPaqueteCita(8)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">8 sesiones</button>
-                <button type="button" onclick="setSesionesPaqueteCita(10)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">10 sesiones</button>
-              </div>
-              <div>
-                <div class="flex justify-between items-center mb-0.5">
-                  <label class="block text-[10px] uppercase font-bold text-purple-900">Valor Total a Cobrar por el Paquete ($ COP) *</label>
-                  <span class="text-[10px] text-purple-700 italic">Editable (puedes aplicar descuento)</span>
-                </div>
-                <input type="number" id="valorTotalPaqueteCita" placeholder="Ej: 250000" class="w-full border border-purple-300 p-2 rounded-sm bg-white font-bold text-xs focus:border-purple-600 outline-none font-mono" oninput="actualizarCalculoZonas()">
-              </div>
-            </div>
-          </div>
-
           <div class="pt-2 border-t border-brand-border flex justify-between items-center bg-white p-2.5 rounded-sm border">
             <span class="text-xs text-brand-gray font-medium">Zonas elegidas: <strong id="lblCantZonas" class="text-black text-sm">0</strong></span>
-            <span class="text-xs font-bold text-black">Total Láser: <strong id="lblTotalLaser" class="text-sm font-extrabold">$0</strong></span>
+            <span class="text-[11px] text-brand-gray italic">Los cobros y paquetes se definen al facturar en caja</span>
           </div>
         </div>
 
-        <div class="flex justify-between items-center bg-brand-lightGray p-3 rounded-sm border border-brand-border">
-          <span class="text-xs uppercase tracking-wider text-brand-gray font-semibold">Valor Estimado del Servicio:</span>
-          <span class="text-base font-black text-black" id="citaPrecioDisplay">$0</span>
-        </div>
+        <input type="hidden" id="citaPrecioDisplay" value="0">
+        <input type="hidden" id="lblTotalLaser" value="0">
 
         <div>
           <div class="flex justify-between items-center mb-1">
@@ -1223,81 +1178,79 @@
         </button>
       </div>
 
-      <form id="formNuevoCliente" onsubmit="guardarNuevoCliente(event, false)" class="space-y-4">
-        <!-- Datos Básicos -->
+      <form id="formNuevoCliente" onsubmit="guardarNuevoCliente(event, false)" class="space-y-3.5">
+        <!-- Campos Principales -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Nombre Completo *</label>
-            <input type="text" id="clienteNombre" required placeholder="Ej: Camila Restrepo" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none font-semibold">
+            <input type="text" id="clienteNombre" required placeholder="Ej: Camila Restrepo" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none font-semibold text-xs">
           </div>
           <div>
-            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Teléfono Celular / WhatsApp *</label>
-            <input type="tel" id="clienteTelefono" required placeholder="Ej: 3001234567" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none font-mono">
+            <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Número de Celular / WhatsApp *</label>
+            <input type="tel" id="clienteTelefono" required placeholder="Ej: 3001234567" class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none font-mono text-xs">
           </div>
         </div>
 
         <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Notas Estéticas / Preferencias</label>
-          <input type="text" id="clienteNotas" placeholder="Piel sensible, prefiere hielo, primera vez en láser..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none">
+          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Descripción / Observaciones</label>
+          <textarea id="clienteNotas" rows="2" placeholder="Notas estéticas, piel sensible, observaciones iniciales..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none text-xs"></textarea>
         </div>
 
-        <!-- Tipo de Cliente: Publicidad / Cortesía ($0) -->
-        <div class="p-3 border border-amber-300 bg-amber-50/70 rounded-sm space-y-1.5">
-          <label class="flex items-start gap-2.5 cursor-pointer">
-            <input type="checkbox" id="clienteEsPublicidad" class="w-4 h-4 accent-amber-600 mt-0.5 rounded-xs cursor-pointer">
-            <div class="space-y-0.5">
-              <span class="text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
-                <i data-lucide="megaphone" class="w-3.5 h-3.5 text-amber-600"></i>
-                Cliente por Publicidad / Pauta / Cortesía (Tarifa $0)
-              </span>
-              <p class="text-[11px] text-amber-900 leading-tight">
-                Al marcar esta opción, todas sus citas y zonas se agendarán automáticamente a <strong>$0 COP</strong>, pero el sistema registrará con total normalidad el <strong>conteo de sesiones por zona</strong> (Bikini, Axilas, Piernas, etc.) y su historial clínico.
-              </p>
+        <!-- Sección Historia Clínica (Opcional - Puede dejarse pendiente) -->
+        <details class="border border-brand-border rounded-sm bg-neutral-50/80 p-3 group">
+          <summary class="font-bold text-xs uppercase tracking-wider text-black flex items-center justify-between cursor-pointer select-none">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="clipboard-check" class="w-4 h-4 text-purple-600"></i>
+              Historia Clínica & Aptitud (Opcional — Llenar ahora o dejar pendiente)
+            </span>
+            <span class="text-[10px] text-brand-gray bg-white border border-brand-border px-2 py-0.5 rounded-xs font-semibold">
+              ▼ Desplegar
+            </span>
+          </summary>
+
+          <div class="pt-3 space-y-3 border-t border-brand-border/60 mt-3">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <p class="text-[11px] text-brand-gray">Cuestionario clínico de seguridad para depilación láser:</p>
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="marcarTodasPreguntasNuevoCliente('NO')" class="px-2.5 py-1 text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-300 rounded-sm transition flex items-center gap-1">
+                  <i data-lucide="check" class="w-3 h-3 text-emerald-700"></i> Todas NO
+                </button>
+                <button type="button" onclick="limpiarPreguntasNuevoCliente()" class="px-2 py-1 text-[11px] font-medium text-brand-gray hover:text-black border border-brand-border rounded-sm bg-white transition">
+                  Limpiar
+                </button>
+              </div>
             </div>
-          </label>
-        </div>
 
-        <!-- Sección Historia Clínica Láser -->
-        <div class="border border-brand-border rounded-sm bg-neutral-50/80 p-3.5 space-y-3">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-brand-border/70 pb-2">
+            <!-- Banner dinámico del estado de aptitud -->
+            <div id="bannerAptitudNC" class="p-2.5 rounded-sm text-xs font-semibold flex items-center justify-between border bg-neutral-100 text-neutral-700 border-neutral-300 transition-colors">
+              <span id="bannerAptitudTextoNC" class="flex items-center gap-1.5 font-medium">
+                <i data-lucide="help-circle" class="w-4 h-4"></i> Marca las respuestas si deseas evaluar aptitud ahora.
+              </span>
+              <span id="badgeAptitudEstadoNC" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white border border-neutral-300">
+                Pendiente
+              </span>
+            </div>
+
+            <!-- Contenedor con las preguntas -->
+            <div class="space-y-2 max-h-56 overflow-y-auto pr-1 text-xs" id="contenedorPreguntasNC">
+              <!-- Renderizado dinámicamente -->
+            </div>
+
+            <!-- Observaciones clínicas adicionales -->
             <div>
-              <span class="font-bold text-xs uppercase tracking-wider text-black flex items-center gap-1.5">
-                <i data-lucide="clipboard-check" class="w-4 h-4 text-purple-600"></i>
-                Historia Clínica & Aptitud para Depilación Láser
-              </span>
-              <p class="text-[11px] text-brand-gray">Cuestionario clínico de 14 preguntas de seguridad</p>
+              <label class="block uppercase tracking-wider text-brand-gray font-semibold text-[10px] mb-1">Observaciones Médicas Adicionales</label>
+              <input type="text" id="clienteHistoriaObservaciones" placeholder="Ej: Trae aval médico, tatuaje en zona..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white text-xs">
             </div>
-            <div class="flex items-center gap-1.5">
-              <button type="button" onclick="marcarTodasPreguntasNuevoCliente('NO')" class="px-2.5 py-1 text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-300 rounded-sm transition flex items-center gap-1">
-                <i data-lucide="check" class="w-3 h-3 text-emerald-700"></i> Todas NO
-              </button>
-              <button type="button" onclick="limpiarPreguntasNuevoCliente()" class="px-2 py-1 text-[11px] font-medium text-brand-gray hover:text-black border border-brand-border rounded-sm bg-white transition">
-                Limpiar
-              </button>
+
+            <!-- Cliente de Cortesía / Publicidad -->
+            <div class="pt-2 border-t border-brand-border/40">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="clienteEsPublicidad" class="w-3.5 h-3.5 accent-amber-600 rounded-xs">
+                <span class="text-xs font-medium text-amber-950">Cliente por Publicidad / Pauta / Cortesía (Tarifa $0)</span>
+              </label>
             </div>
           </div>
-
-          <!-- Banner dinámico del estado de aptitud -->
-          <div id="bannerAptitudNC" class="p-2.5 rounded-sm text-xs font-semibold flex items-center justify-between border bg-neutral-100 text-neutral-700 border-neutral-300 transition-colors">
-            <span id="bannerAptitudTextoNC" class="flex items-center gap-1.5 font-medium">
-              <i data-lucide="help-circle" class="w-4 h-4"></i> Marca las respuestas para evaluar si la clienta es apta.
-            </span>
-            <span id="badgeAptitudEstadoNC" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white border border-neutral-300">
-              Pendiente
-            </span>
-          </div>
-
-          <!-- Contenedor con las 14 preguntas -->
-          <div class="space-y-2 max-h-64 overflow-y-auto pr-1 text-xs" id="contenedorPreguntasNC">
-            <!-- Renderizado dinámicamente -->
-          </div>
-
-          <!-- Observaciones clínicas adicionales -->
-          <div>
-            <label class="block uppercase tracking-wider text-brand-gray font-semibold text-[10px] mb-1">Observaciones Médicas / Detalles Clínicos</label>
-            <input type="text" id="clienteHistoriaObservaciones" placeholder="Ej: Trae autorización de su dermatólogo, no tratar zona con tatuaje..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white text-xs">
-          </div>
-        </div>
+        </details>
 
         <div class="pt-3 border-t border-brand-border flex flex-col sm:flex-row justify-end gap-2">
           <button type="button" onclick="closeModal('modalNuevoCliente')" class="px-4 py-2.5 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm text-center">
@@ -1534,9 +1487,9 @@
     </div>
   </div>
 
-  <!-- Modal: Cobrar Cita -->
+  <!-- Modal: Cobrar Cita & Facturación en Caja -->
   <div id="modalCobrarCita" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
-    <div class="bg-white max-w-md w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+    <div class="bg-white max-w-xl w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-brand-border pb-3">
         <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
           <i data-lucide="receipt" class="w-4 h-4"></i> Cobrar Cita & Registrar en Caja
@@ -1547,11 +1500,12 @@
       </div>
 
       <div class="bg-brand-lightGray p-3 rounded-sm text-xs space-y-1.5 border border-brand-border">
-        <p><strong>Cliente:</strong> <span id="cobroClienteNombre">-</span></p>
+        <div class="flex justify-between items-center flex-wrap gap-1">
+          <p><strong>Cliente:</strong> <span id="cobroClienteNombre" class="font-bold text-black">-</span></p>
+          <p><strong>Operaria:</strong> <span id="cobroOperariaNombre" class="font-bold text-black">-</span></p>
+        </div>
         <p><strong>Servicio:</strong> <span id="cobroServicioNombre">-</span></p>
-        <p id="cobroZonasContainer" class="hidden"><strong>Zonas:</strong> <span id="cobroZonasTexto" class="font-semibold text-black">-</span></p>
         <p id="cobroAdicionalesContainer" class="hidden text-purple-950"><strong>Tratamientos Adicionales:</strong> <span id="cobroAdicionalesTexto" class="font-bold text-purple-900">-</span></p>
-        <p><strong>Operaria:</strong> <span id="cobroOperariaNombre">-</span></p>
       </div>
 
       <form onsubmit="procesarCobro(event)" class="space-y-4 text-xs">
@@ -1568,10 +1522,40 @@
             <i data-lucide="package" class="w-4 h-4 text-purple-700 flex-shrink-0"></i>
             <div>
               <span class="block text-xs font-bold text-purple-950" id="cobroPaqueteTitulo">📦 Sesión de Paquete Prepago</span>
-              <span class="block text-[11px] text-purple-800 font-normal" id="cobroPaqueteDetalle">Tarifa $0 COP. Esta sesión descuenta 1 del paquete y suma normalmente a su contador sin cobrar en caja.</span>
+              <span class="block text-[11px] text-purple-800 font-normal" id="cobroPaqueteDetalle">Esta cita descuenta 1 sesión del paquete y suma normalmente a su contador sin cobrar en caja.</span>
             </div>
           </div>
           <span id="cobroPaqueteBadge" class="text-[10px] font-bold bg-purple-700 text-white px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">Restan 5</span>
+        </div>
+
+        <!-- SECCIÓN: Zonas a Facturar en esta Cita (Normal / Paquete / Retoque) -->
+        <div id="bloqueZonasFacturarCobro" class="border border-brand-border rounded-sm p-3 bg-neutral-50/70 space-y-2.5">
+          <div class="flex justify-between items-center border-b border-brand-border/60 pb-2">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-black"></i>
+              <span class="font-bold text-xs uppercase tracking-wider text-brand-black">Zonas de la Cita & Condición</span>
+            </div>
+            <span class="text-[10px] font-bold bg-black text-white px-2 py-0.5 rounded-full" id="lblCobroResumenZonas">0 zonas</span>
+          </div>
+
+          <p class="text-[11px] text-brand-gray">
+            Clasifica cada zona: <strong>Normal</strong> ($50.000 COP), <strong>Paquete</strong> ($0 COP) o <strong>Retoque</strong>. Todas contarán normalmente en el historial de la paciente:
+          </p>
+
+          <!-- Listado interactivo de zonas en la cita -->
+          <div id="contenedorZonasCobro" class="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+            <!-- Renderizado dinámicamente -->
+          </div>
+
+          <!-- Selector para Adicionar Zonas en Caja -->
+          <div class="pt-2 border-t border-brand-border/60 flex items-center gap-2">
+            <select id="selectAdicionarZonaCobro" class="flex-1 border border-brand-border p-2 rounded-xs text-xs bg-white font-medium outline-none focus:border-black">
+              <option value="">+ Seleccionar zona adicional realizada...</option>
+            </select>
+            <button type="button" onclick="adicionarZonaEnCobro()" class="bg-black hover:bg-neutral-800 text-white px-3 py-2 rounded-xs text-xs font-bold uppercase tracking-wider flex items-center gap-1 whitespace-nowrap transition shadow-2xs">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Adicionar
+            </button>
+          </div>
         </div>
 
         <!-- Opción: Activar Paquete al Facturar en Caja -->
@@ -1581,15 +1565,15 @@
             <div class="space-y-0.5 flex-1">
               <span class="text-xs font-bold text-purple-950 uppercase tracking-wider flex items-center gap-1.5">
                 <i data-lucide="package" class="w-3.5 h-3.5 text-purple-600"></i>
-                ¿La clienta está pagando un Paquete Prepago hoy?
+                ¿La clienta está adquiriendo un Paquete de Sesiones hoy?
               </span>
               <p class="text-[11px] text-purple-900 leading-tight">
-                Registra el pago total del paquete en caja hoy. Se consumirá la 1ra sesión y las siguientes citas saldrán a <strong>$0 COP</strong>.
+                Registra el pago del paquete en caja hoy. Se consumirá la 1ra sesión y las siguientes citas saldrán a <strong>$0 COP</strong>.
               </p>
             </div>
           </label>
 
-          <div id="camposActivarPaqueteCobro" class="hidden pt-2 border-t border-purple-200 space-y-2">
+          <div id="camposActivarPaqueteCobro" class="hidden pt-2 border-t border-purple-200 space-y-2.5">
             <div class="flex items-center justify-between gap-2">
               <span class="text-xs font-semibold text-purple-950">Total de sesiones compradas:</span>
               <div class="flex items-center gap-1.5">
@@ -1605,67 +1589,96 @@
               <button type="button" onclick="setSesionesCobro(8)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">8 sesiones</button>
               <button type="button" onclick="setSesionesCobro(10)" class="px-2 py-0.5 bg-white border border-purple-300 text-purple-900 text-[10px] font-semibold rounded-xs hover:bg-purple-100">10 sesiones</button>
             </div>
+            <div>
+              <div class="flex justify-between items-center mb-0.5">
+                <label class="block text-[10px] uppercase font-bold text-purple-900">Valor Total a Cobrar por el Paquete ($ COP) *</label>
+                <span class="text-[10px] text-purple-700 italic">Editable</span>
+              </div>
+              <input type="number" id="valorTotalPaqueteCobro" placeholder="Ej: 250000" class="w-full border border-purple-300 p-2 rounded-sm bg-white font-bold text-xs focus:border-purple-600 outline-none font-mono" oninput="calcularTotalesCobro()">
+            </div>
           </div>
         </div>
 
-        <div>
-          <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Valor Total a Cobrar ($ COP) *</label>
-          <input type="number" id="cobroMonto" required oninput="actualizarCalculoPagoMixto()" class="w-full border border-brand-border p-2.5 text-base font-bold rounded-sm focus:border-black outline-none bg-white font-mono">
-        </div>
-
-        <!-- Opción Pago Mixto / Múltiples Medios -->
-        <div id="bloqueTogglePagoMixto" class="border border-brand-border rounded-sm p-3 bg-neutral-50/80 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" id="chkPagoMixto" onchange="togglePagoMixto()" class="w-4 h-4 accent-black rounded-xs cursor-pointer">
-              <span class="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
-                <i data-lucide="split" class="w-3.5 h-3.5 text-purple-700"></i>
-                Dividir en Varios Medios de Pago (Mixto)
-              </span>
-            </label>
-            <span class="text-[10px] text-brand-gray hidden sm:inline">Ej: Addi + Transferencia</span>
+        <!-- Forma de Pago & Regla de IVA (19% en medios no-efectivo) -->
+        <div class="border border-brand-border rounded-sm p-3.5 bg-white space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold uppercase tracking-wider text-black">Forma de Pago</span>
+            <span class="text-[10px] text-brand-gray font-medium">Efectivo 0% IVA — Otros medios +19% IVA</span>
           </div>
 
           <!-- Selector simple (cuando NO es mixto) -->
           <div id="bloqueMedioPagoSimple">
-            <select id="cobroMetodo" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white text-xs font-semibold">
-              <option value="Efectivo">Efectivo</option>
-              <option value="Tarjeta Débito">Tarjeta Débito</option>
-              <option value="Tarjeta Crédito">Tarjeta Crédito</option>
-              <option value="Transferencia">Transferencia (Nequi / Daviplata / Bancolombia)</option>
-              <option value="Crédito Addi">Crédito Addi</option>
+            <select id="cobroMetodo" onchange="onCambioMetodoCobroSimple()" required class="w-full border border-brand-border p-2.5 rounded-sm focus:border-black outline-none bg-white text-xs font-semibold">
+              <option value="Efectivo">Efectivo (0% IVA — Tarifa exacta en billetes)</option>
+              <option value="Transferencia">Transferencia (Nequi / Daviplata / Bancolombia) (+19% IVA)</option>
+              <option value="Crédito Addi">Crédito Addi (+19% IVA)</option>
+              <option value="Tarjeta Débito">Tarjeta Débito (+19% IVA)</option>
+              <option value="Tarjeta Crédito">Tarjeta Crédito (+19% IVA)</option>
               <option value="Sesión de Paquete Prepago ($0)">Sesión de Paquete Prepago ($0)</option>
               <option value="Cortesía / Publicidad">Cortesía / Publicidad ($0)</option>
             </select>
           </div>
 
-          <!-- Filas de Pago Mixto (cuando SÍ es mixto) -->
-          <div id="bloqueMedioPagoMixto" class="hidden space-y-2 pt-1 border-t border-brand-border/60">
-            <div id="contenedorFilasPagoMixto" class="space-y-2">
-              <!-- Renderizado dinámico de filas de métodos y montos -->
-            </div>
+          <!-- Opción Pago Mixto / Múltiples Medios -->
+          <div id="bloqueTogglePagoMixto" class="pt-2 border-t border-brand-border/60">
+            <label class="flex items-center justify-between cursor-pointer select-none">
+              <span class="flex items-center gap-2">
+                <input type="checkbox" id="chkPagoMixto" onchange="togglePagoMixto()" class="w-4 h-4 accent-black rounded-xs cursor-pointer">
+                <span class="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
+                  <i data-lucide="split" class="w-3.5 h-3.5 text-purple-700"></i>
+                  Dividir en Varios Medios de Pago (Mixto)
+                </span>
+              </span>
+              <span class="text-[10px] text-brand-gray hidden sm:inline">Ej: Addi + Efectivo</span>
+            </label>
 
-            <div class="flex justify-between items-center pt-1">
-              <button type="button" onclick="agregarFilaPagoMixto()" class="text-[11px] font-bold text-purple-800 hover:text-black flex items-center gap-1">
-                <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-purple-600"></i> + Agregar otro medio de pago
-              </button>
-              <button type="button" onclick="repartirEquitativoPagoMixto()" class="text-[10px] text-brand-gray hover:text-black underline">
-                Repartir 50% y 50%
-              </button>
-            </div>
+            <!-- Filas de Pago Mixto -->
+            <div id="bloqueMedioPagoMixto" class="hidden space-y-2 pt-2 mt-2 border-t border-brand-border/40">
+              <div id="contenedorFilasPagoMixto" class="space-y-2">
+                <!-- Renderizado dinámico de filas de métodos y montos -->
+              </div>
 
-            <!-- Resumen y validador de cuadre -->
-            <div id="alertaCuadrePagoMixto" class="p-2.5 rounded-sm text-xs flex justify-between items-center border bg-neutral-100 border-brand-border font-semibold">
-              <span id="txtEstadoCuadreMixto">Suma de pagos: $0</span>
-              <span id="badgeEstadoCuadreMixto" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-neutral-200">Falta asignar</span>
+              <div class="flex justify-between items-center pt-1">
+                <button type="button" onclick="agregarFilaPagoMixto()" class="text-[11px] font-bold text-purple-800 hover:text-black flex items-center gap-1">
+                  <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-purple-600"></i> + Agregar otro medio
+                </button>
+                <button type="button" onclick="repartirEquitativoPagoMixto()" class="text-[10px] text-brand-gray hover:text-black underline">
+                  Repartir 50% y 50%
+                </button>
+              </div>
+
+              <div id="alertaCuadrePagoMixto" class="p-2.5 rounded-sm text-xs flex justify-between items-center border bg-neutral-100 border-brand-border font-semibold">
+                <span id="txtEstadoCuadreMixto">Suma de pagos: $0</span>
+                <span id="badgeEstadoCuadreMixto" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-neutral-200">Falta asignar</span>
+              </div>
             </div>
           </div>
+
+          <!-- Cuadro Resumen Financiero: Siempre muestra Base Bruta, IVA (19%) y Total Neto -->
+          <div class="p-3 bg-neutral-50 rounded-sm border border-brand-border space-y-2 text-xs font-mono">
+            <div class="flex justify-between items-center text-neutral-800">
+              <span class="font-sans uppercase text-[10px] tracking-wider font-bold text-brand-gray">Valor Total en Bruto (Base sin IVA):</span>
+              <span id="lblCobroDisplayBruto" class="font-extrabold text-sm text-black">$0</span>
+            </div>
+            <div class="flex justify-between items-center" id="filaIvaCobro">
+              <span class="font-sans uppercase text-[10px] tracking-wider font-bold text-brand-gray">IVA (19% no efectivo):</span>
+              <span id="lblCobroDisplayIva" class="font-bold text-xs text-purple-900">$0</span>
+            </div>
+            <div class="pt-2 border-t border-brand-border flex justify-between items-center">
+              <span class="font-sans uppercase text-[11px] tracking-wider font-black text-black">Total Neto a Cobrar:</span>
+              <span id="lblCobroDisplayTotal" class="font-black text-base text-black">$0</span>
+            </div>
+          </div>
+
+          <input type="hidden" id="cobroMonto" value="0">
+          <input type="hidden" id="cobroValorBruto" value="0">
+          <input type="hidden" id="cobroValorIva" value="0">
         </div>
 
         <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
           <button type="button" onclick="closeModal('modalCobrarCita')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
           <button type="submit" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-semibold rounded-sm flex items-center gap-2">
-            <i data-lucide="check" class="w-4 h-4"></i> Confirmar Cobro (+1 al Contador)
+            <i data-lucide="check" class="w-4 h-4"></i> Confirmar Cobro & Registrar Venta
           </button>
         </div>
       </form>
@@ -1844,7 +1857,7 @@
         </div>
         <div>
           <label class="block uppercase tracking-wider text-brand-gray font-semibold mb-1">Responsable / Entregado a</label>
-          <input type="text" id="gastoResponsable" placeholder="Ej: Recepción, Domiciliario, Gloria..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-medium">
+          <input type="text" id="gastoResponsable" placeholder="Ej: Recepción, Domiciliario, Operaria..." class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-medium">
         </div>
         <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
           <button type="button" onclick="closeModal('modalNuevoGasto')" class="px-4 py-2 border border-brand-border text-brand-gray uppercase tracking-wider font-semibold rounded-sm">Cancelar</button>
@@ -2061,8 +2074,8 @@
           <span id="lblEditarZonasHora" class="text-xs text-brand-gray block mt-0.5">-</span>
         </div>
         <div class="text-right">
-          <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block">Tarifa por Zona:</span>
-          <span class="text-xs font-bold text-black font-mono">$50.000 COP</span>
+          <span class="text-[10px] uppercase tracking-wider text-brand-gray font-bold block">Liquidación:</span>
+          <span class="text-xs font-bold text-black font-mono">En Caja</span>
         </div>
       </div>
 
@@ -2084,7 +2097,7 @@
       <!-- Resumen Calculado -->
       <div class="pt-2 border-t border-brand-border flex justify-between items-center bg-brand-lightGray p-3 rounded-sm border">
         <span class="text-xs text-brand-gray font-medium">Zonas seleccionadas: <strong id="lblEditarCantZonas" class="text-black text-sm">0</strong></span>
-        <span class="text-xs font-bold text-black">Nuevo Total: <strong id="lblEditarTotalLaser" class="text-base font-extrabold text-black font-mono">$0</strong></span>
+        <span class="text-xs font-bold text-black">Cobro: <strong class="text-xs font-bold text-black font-mono">Se factura en Recepción</strong></span>
       </div>
 
       <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
@@ -2714,8 +2727,8 @@
       if (selectServicio && appState.config && appState.config.servicios) {
         selectServicio.innerHTML = appState.config.servicios.map(s => {
           const isLaser = s.nombre.toLowerCase().includes('laser') || s.nombre.toLowerCase().includes('láser');
-          const labelPrecio = isLaser ? '$50.000 / zona' : formatMoney(s.precio);
-          return `<option value="${s.nombre}" data-precio="${s.precio}" data-duracion="${s.duracion}">${s.nombre} - ${labelPrecio}</option>`;
+          const labelPrecio = isLaser ? 'Facturación en Caja' : formatMoney(s.precio);
+          return `<option value="${s.nombre}" data-precio="${s.precio}" data-duracion="${s.duracion}">${s.nombre} (${labelPrecio})</option>`;
         }).join('');
       }
 
@@ -2739,7 +2752,7 @@
         selectTaServ.innerHTML = appState.config.servicios.map(s => {
           const isLaser = s.nombre.toLowerCase().includes('laser') || s.nombre.toLowerCase().includes('láser');
           const precio = isLaser ? 50000 : (s.precio || 0);
-          const labelPrecio = isLaser ? '$50.000 (1 zona)' : formatMoney(s.precio);
+          const labelPrecio = isLaser ? 'Láser (1 zona)' : formatMoney(s.precio);
           return `<option value="${s.nombre}" data-precio="${precio}">${s.nombre} - ${labelPrecio}</option>`;
         }).join('') + `<option value="__custom__" data-precio="0">➕ Otro Tratamiento Personalizado...</option>`;
       }
@@ -2749,7 +2762,7 @@
         selectTaOp.innerHTML = appState.config.operarias.map(o => `<option value="${o.nombre}">${o.nombre}</option>`).join('');
       }
 
-      // Renderizar los botones/checkboxes táctiles de Zonas Láser (@ $50.000 COP c/u)
+      // Renderizar los botones/checkboxes táctiles de Zonas Láser (sin precios en agendamiento)
       const contZonas = document.getElementById('gridZonasLaser');
       if (contZonas) {
         contZonas.innerHTML = ZONAS_LASER.map((z, idx) => `
@@ -2758,7 +2771,7 @@
               <input type="checkbox" id="chk-zona-${idx}" value="${z}" class="chk-zona-laser accent-black w-4 h-4 cursor-pointer" onclick="event.stopPropagation()" onchange="actualizarCalculoZonas()">
               <span class="font-medium">${z}</span>
             </div>
-            <span class="zona-price text-[10px] font-bold text-brand-gray font-mono">+$50k</span>
+            <span class="zona-check-indicator text-[10px] font-bold text-brand-gray uppercase">Elegir</span>
           </div>
         `).join('');
       }
@@ -2906,66 +2919,41 @@
     function actualizarCalculoZonas() {
       const checkboxes = document.querySelectorAll('.chk-zona-laser');
       let cant = 0;
-      const zonasElegidas = [];
       checkboxes.forEach(chk => {
         const card = chk.closest('.zona-card');
         if (chk.checked) {
           cant++;
-          zonasElegidas.push(chk.value);
           if (card) {
             card.classList.add('bg-black', 'text-white', 'border-black');
             card.classList.remove('bg-white', 'text-brand-black', 'border-brand-border');
-            const priceTag = card.querySelector('.zona-price');
-            if (priceTag) priceTag.classList.add('text-neutral-300');
+            const ind = card.querySelector('.zona-check-indicator');
+            if (ind) {
+              ind.innerText = '✓ Elegida';
+              ind.classList.add('text-white');
+              ind.classList.remove('text-brand-gray');
+            }
           }
         } else {
           if (card) {
             card.classList.remove('bg-black', 'text-white', 'border-black');
             card.classList.add('bg-white', 'text-brand-black', 'border-brand-border');
-            const priceTag = card.querySelector('.zona-price');
-            if (priceTag) priceTag.classList.remove('text-neutral-300');
+            const ind = card.querySelector('.zona-check-indicator');
+            if (ind) {
+              ind.innerText = 'Elegir';
+              ind.classList.remove('text-white');
+              ind.classList.add('text-brand-gray');
+            }
           }
         }
       });
-
-      const selectCliente = document.getElementById('citaCliente');
-      const cliente = selectCliente ? appState.clientes.find(c => c._id == selectCliente.value) : null;
-      const esPub = Boolean(cliente && cliente.esPublicidad);
-      const chkCompraPaq = document.getElementById('chkAdquirirPaqueteCita');
-      const estaComprandoPaquete = Boolean(chkCompraPaq && chkCompraPaq.checked && !esPub);
 
       const lblCant = document.getElementById('lblCantZonas');
       const lblTotal = document.getElementById('lblTotalLaser');
       const display = document.getElementById('citaPrecioDisplay');
 
       if (lblCant) lblCant.innerText = cant;
-
-      if (esPub) {
-        if (lblTotal) lblTotal.innerText = '$0 (Publicidad)';
-        if (display) display.innerText = '$0 (Cortesía Publicidad)';
-      } else if (estaComprandoPaquete) {
-        const valPaq = Number(document.getElementById('valorTotalPaqueteCita').value || 0);
-        const numSes = Number(document.getElementById('numSesionesPaqueteCita').value || 6);
-        if (lblTotal) lblTotal.innerText = `${formatMoney(valPaq)} (Paquete ${numSes} ses.)`;
-        if (display) display.innerText = `${formatMoney(valPaq)} (Compra Paquete)`;
-      } else if (cliente && cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0) {
-        const paqZonas = cliente.paqueteActivo.zonas || [];
-        const zonasCubiertas = zonasElegidas.filter(z => paqZonas.includes(z));
-        const zonasExtra = zonasElegidas.filter(z => !paqZonas.includes(z));
-        const total = zonasExtra.length * 50000;
-
-        if (zonasExtra.length === 0) {
-          if (lblTotal) lblTotal.innerText = '$0 (Cubierto por Paquete)';
-          if (display) display.innerText = '$0 (Sesión de Paquete Prepago)';
-        } else {
-          if (lblTotal) lblTotal.innerText = `${formatMoney(total)} (${zonasCubiertas.length} cubiertas + ${zonasExtra.length} extras)`;
-          if (display) display.innerText = `${formatMoney(total)} (+${zonasExtra.length} zonas extras)`;
-        }
-      } else {
-        const total = cant * 50000;
-        if (lblTotal) lblTotal.innerText = formatMoney(total);
-        if (display) display.innerText = formatMoney(total);
-      }
+      if (lblTotal) lblTotal.innerText = 'Se factura en Caja';
+      if (display) display.innerText = 'Se factura en Caja';
     }
 
     function limpiarZonasLaser(actualizar = true) {
@@ -3155,11 +3143,11 @@
                       `;
                     }).join('')}
                   </div>
-                  <span class="text-xs text-brand-gray mt-1.5 block">Subtotal Láser: <strong class="text-black font-bold font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : `${formatMoney(cita.zonas.length * 50000)} ($50.000 c/u)`}</strong></span>
+                  <span class="text-xs text-brand-gray mt-1.5 block">Liquidación: <strong class="text-black font-bold font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : (cita.estado === 'Completada' ? formatMoney(cita.valor) : 'Se define en Caja')}</strong></span>
                 </div>
               ` : `
                 <div class="mt-2.5 pt-2 border-t border-brand-border/60">
-                  <span class="text-xs text-brand-gray block">Subtotal Tratamiento: <strong class="text-black font-bold font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : formatMoney(cita.valor - ((cita.tratamientosAdicionales || []).reduce((acc, t) => acc + (t.precio || 0), 0)))}</strong></span>
+                  <span class="text-xs text-brand-gray block">Liquidación: <strong class="text-black font-bold font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : (cita.estado === 'Completada' ? formatMoney(cita.valor) : 'Se define en Caja')}</strong></span>
                 </div>
               `}
 
@@ -3193,8 +3181,8 @@
               ` : ''}
 
               <div class="mt-2.5 pt-2 border-t border-brand-border/60 flex justify-between items-center bg-neutral-50 px-2.5 py-1.5 rounded-xs">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-brand-black">Total a Facturar:</span>
-                <span class="text-sm font-black text-black font-mono">${(cliente && cliente.esPublicidad) || cita.valor === 0 ? '$0 (Cortesía Publicidad)' : formatMoney(cita.valor)}</span>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-brand-black">Facturación en Caja:</span>
+                <span class="text-sm font-black text-black font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : (cita.estado === 'Completada' ? formatMoney(cita.valor) : 'Se liquida al cobrar')}</span>
               </div>
 
               ${cita.notasOperaria ? `
@@ -3221,7 +3209,7 @@
               ${esFacturar ? `
                 <div class="flex gap-2">
                   <button onclick="iniciarCobroCita('${cita._id}')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-black py-2.5 text-xs font-black uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 shadow-md transition animate-pulse">
-                    <i data-lucide="receipt" class="w-4 h-4"></i> ¡Cobrar en Caja Ahora! (${(cliente && cliente.esPublicidad) || cita.valor === 0 ? '$0 Cortesía' : formatMoney(cita.valor)})
+                    <i data-lucide="receipt" class="w-4 h-4"></i> ¡Cobrar en Caja Ahora!
                   </button>
                   <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition" title="Reprogramar Cita">
                     <i data-lucide="clock" class="w-3.5 h-3.5"></i>
@@ -3236,7 +3224,7 @@
               ` : cita.estado !== 'Completada' ? `
                 <div class="flex gap-2">
                   <button onclick="iniciarCobroCita('${cita._id}')" class="flex-1 bg-black hover:bg-neutral-800 text-white py-2 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition">
-                    <i data-lucide="check" class="w-3.5 h-3.5"></i> Cobrar / Completar (${(cliente && cliente.esPublicidad) || cita.valor === 0 ? '$0' : formatMoney(cita.valor)})
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i> Facturar / Cobrar en Caja
                   </button>
                   <button onclick="abrirReprogramar('${cita._id}')" class="px-3 border border-brand-border text-brand-gray hover:text-black py-2 text-xs rounded-sm transition" title="Reprogramar Cita">
                     <i data-lucide="clock" class="w-3.5 h-3.5"></i>
@@ -3351,7 +3339,7 @@
                 <input type="checkbox" id="chk-sig-zona-${idx}" value="${z}" ${checked ? 'checked' : ''} class="chk-sig-zona accent-black w-4 h-4 cursor-pointer" onclick="event.stopPropagation()" onchange="actualizarCalculoSigZonas()">
                 <span class="font-medium">${z}</span>
               </div>
-              <span class="sig-zona-price text-[10px] font-bold ${checked ? 'text-neutral-300' : 'text-brand-gray'} font-mono">+$50k</span>
+              <span class="sig-zona-ind text-[10px] font-bold ${checked ? 'text-white' : 'text-brand-gray'} uppercase">${checked ? '✓ Elegida' : 'Elegir'}</span>
             </div>
           `;
         }).join('');
@@ -3391,48 +3379,31 @@
           if (card) {
             card.classList.add('bg-black', 'text-white', 'border-black');
             card.classList.remove('bg-white', 'text-black', 'border-brand-border');
-            const p = card.querySelector('.sig-zona-price');
-            if (p) p.classList.add('text-neutral-300');
+            const ind = card.querySelector('.sig-zona-ind');
+            if (ind) {
+              ind.innerText = '✓ Elegida';
+              ind.classList.add('text-white');
+              ind.classList.remove('text-brand-gray');
+            }
           }
         } else {
           if (card) {
             card.classList.remove('bg-black', 'text-white', 'border-black');
             card.classList.add('bg-white', 'text-black', 'border-brand-border');
-            const p = card.querySelector('.sig-zona-price');
-            if (p) p.classList.remove('text-neutral-300');
+            const ind = card.querySelector('.sig-zona-ind');
+            if (ind) {
+              ind.innerText = 'Elegir';
+              ind.classList.remove('text-white');
+              ind.classList.add('text-brand-gray');
+            }
           }
         }
       });
 
-      const clienteId = document.getElementById('sigClienteId').value;
-      const clienteObj = appState.clientes.find(c => c._id == clienteId);
-      const esPub = Boolean(clienteObj && clienteObj.esPublicidad);
-      const tienePaq = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
-
-      let total = 0;
-      let textoTotal = '';
-
-      if (esPub) {
-        total = 0;
-        textoTotal = '$0 (Publicidad)';
-      } else if (tienePaq) {
-        const paqZonas = clienteObj.paqueteActivo.zonas || [];
-        const zonasElegidas = Array.from(document.querySelectorAll('.chk-sig-zona:checked')).map(chk => chk.value);
-        const zonasExtra = zonasElegidas.filter(z => !paqZonas.includes(z));
-        const zonasCubiertas = zonasElegidas.filter(z => paqZonas.includes(z));
-        total = zonasExtra.length * 50000;
-        if (zonasExtra.length === 0) {
-          textoTotal = '$0 (Cubierto por Paquete)';
-        } else {
-          textoTotal = `${formatMoney(total)} (${zonasCubiertas.length} cubiertas + ${zonasExtra.length} extras)`;
-        }
-      } else {
-        total = cant * 50000;
-        textoTotal = formatMoney(total);
-      }
-
-      document.getElementById('sigLblCantZonas').innerText = cant;
-      document.getElementById('sigLblTotal').innerText = textoTotal;
+      const lblCant = document.getElementById('sigLblCantZonas');
+      const lblTot = document.getElementById('sigLblTotal');
+      if (lblCant) lblCant.innerText = cant;
+      if (lblTot) lblTot.innerText = 'Facturación en Caja';
       actualizarPreviewWhatsApp();
     }
 
@@ -3814,7 +3785,9 @@
       }
     }
 
-    // --- COBRAR CITA ---
+    // ── GESTIÓN DE ZONAS, PAQUETES, RETOQUES E IVA EN COBRAR CITA ──
+    let cobroZonasLista = []; // [{ nombre: 'Zona', modo: 'normal' | 'paquete' | 'retoque' }]
+
     function iniciarCobroCita(citaId) {
       if (!verificarCajaAbierta('facturar citas')) return;
       const cita = appState.citas.find(c => c._id == citaId);
@@ -3828,8 +3801,26 @@
       const clienteObj = appState.clientes.find(c => c._id == cita.clienteId);
       const esPublicidad = Boolean(clienteObj && clienteObj.esPublicidad);
       const tienePaqueteActivo = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
-      const esSesionPaquete = Boolean(cita.esPaquete || (tienePaqueteActivo && Number(cita.valor) === 0));
+      const paqZonas = tienePaqueteActivo ? (clienteObj.paqueteActivo.zonas || []) : [];
 
+      // Inicializar cobroZonasLista a partir de las zonas registradas en la cita
+      const zonasBase = Array.isArray(cita.zonas) ? [...cita.zonas] : [];
+      cobroZonasLista = zonasBase.map(z => {
+        let modo = 'normal';
+        if (tienePaqueteActivo && paqZonas.includes(z)) {
+          modo = 'paquete';
+        }
+        return { nombre: z, modo: modo };
+      });
+
+      // Poblar selector de adicionar zona adicional en cobro
+      const selAdd = document.getElementById('selectAdicionarZonaCobro');
+      if (selAdd) {
+        selAdd.innerHTML = `<option value="">+ Seleccionar zona adicional realizada...</option>` +
+          ZONAS_LASER.map(z => `<option value="${z}">${z}</option>`).join('');
+      }
+
+      // Banners
       const bannerPub = document.getElementById('cobroPublicidadBanner');
       if (bannerPub) {
         if (esPublicidad) bannerPub.classList.remove('hidden');
@@ -3845,46 +3836,24 @@
       if (camposActivar) camposActivar.classList.add('hidden');
 
       if (bannerPaq) {
-        if (esSesionPaquete && !esPublicidad) {
+        if (tienePaqueteActivo && !esPublicidad) {
           bannerPaq.classList.remove('hidden');
           const badge = document.getElementById('cobroPaqueteBadge');
           const det = document.getElementById('cobroPaqueteDetalle');
           const paq = clienteObj?.paqueteActivo;
           if (badge && paq) badge.innerText = `${paq.sesionesRestantes} restantes`;
-          if (det && paq) det.innerText = `Esta cita descuenta 1 sesión del paquete (${paq.zonas.join(' + ')}). No sumará dinero a la caja diaria.`;
+          if (det && paq) det.innerText = `Paquete activo: ${paq.zonas.join(' + ')}. Las zonas cubiertas están preseleccionadas a $0 COP.`;
           if (bloqueActivar) bloqueActivar.classList.add('hidden');
         } else {
           bannerPaq.classList.add('hidden');
           if (bloqueActivar) {
-            if (tienePaqueteActivo || esPublicidad) bloqueActivar.classList.add('hidden');
+            if (esPublicidad) bloqueActivar.classList.add('hidden');
             else bloqueActivar.classList.remove('hidden');
           }
         }
       }
 
-      if (esPublicidad) {
-        document.getElementById('cobroMonto').value = 0;
-        document.getElementById('cobroMetodo').value = 'Cortesía / Publicidad';
-      } else if (esSesionPaquete) {
-        document.getElementById('cobroMonto').value = cita.valor || 0;
-        document.getElementById('cobroMetodo').value = 'Sesión de Paquete Prepago ($0)';
-      } else {
-        document.getElementById('cobroMonto').value = cita.valor;
-        if (document.getElementById('cobroMetodo').value === 'Cortesía / Publicidad' || document.getElementById('cobroMetodo').value === 'Sesión de Paquete Prepago ($0)') {
-          document.getElementById('cobroMetodo').value = 'Efectivo';
-        }
-      }
-
-      const contZonas = document.getElementById('cobroZonasContainer');
-      const txtZonas = document.getElementById('cobroZonasTexto');
-      if (cita.zonas && cita.zonas.length > 0) {
-        contZonas.classList.remove('hidden');
-        const extraLabel = esPublicidad ? ' - Cortesía $0' : (esSesionPaquete ? ' - Cubierto por Paquete' : ' @ $50.000 c/u');
-        txtZonas.innerText = `${cita.zonas.join(', ')} (${cita.zonas.length} zonas${extraLabel})`;
-      } else {
-        contZonas.classList.add('hidden');
-      }
-
+      // Tratamientos adicionales informativos
       const contAdic = document.getElementById('cobroAdicionalesContainer');
       const txtAdic = document.getElementById('cobroAdicionalesTexto');
       if (contAdic && txtAdic) {
@@ -3906,14 +3875,98 @@
       if (bloqueSimple) bloqueSimple.classList.remove('hidden');
       if (bloqueMixto) bloqueMixto.classList.add('hidden');
       if (bloqueToggleMixto) {
-        if (esPublicidad || (esSesionPaquete && Number(cita.valor) === 0)) {
-          bloqueToggleMixto.classList.add('hidden');
-        } else {
-          bloqueToggleMixto.classList.remove('hidden');
-        }
+        if (esPublicidad) bloqueToggleMixto.classList.add('hidden');
+        else bloqueToggleMixto.classList.remove('hidden');
       }
 
+      const selMetodo = document.getElementById('cobroMetodo');
+      if (selMetodo) {
+        if (esPublicidad) selMetodo.value = 'Cortesía / Publicidad';
+        else selMetodo.value = 'Efectivo';
+      }
+
+      renderizarZonasEnCobro();
+      calcularTotalesCobro();
       openModal('modalCobrarCita');
+    }
+
+    function renderizarZonasEnCobro() {
+      const cont = document.getElementById('contenedorZonasCobro');
+      if (!cont) return;
+
+      if (cobroZonasLista.length === 0) {
+        cont.innerHTML = `
+          <div class="p-3 bg-amber-50 border border-amber-200 rounded-sm text-center text-xs text-amber-900 font-medium">
+            No hay zonas registradas para esta cita aún. Puedes adicionar zonas abajo o cobrar el servicio principal.
+          </div>
+        `;
+        return;
+      }
+
+      cont.innerHTML = cobroZonasLista.map((z, idx) => {
+        const modo = z.modo || 'normal';
+        return `
+          <div class="flex items-center justify-between p-2.5 bg-white border border-brand-border rounded-sm text-xs gap-2 shadow-2xs">
+            <div class="flex items-center gap-1.5 flex-1 min-w-0">
+              <span class="w-2.5 h-2.5 rounded-full ${modo === 'normal' ? 'bg-black' : (modo === 'paquete' ? 'bg-purple-600' : 'bg-emerald-600')}"></span>
+              <span class="font-bold text-black truncate">${z.nombre}</span>
+            </div>
+
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <!-- Selector de modo de zona -->
+              <div class="inline-flex rounded-xs border border-brand-border p-0.5 bg-neutral-100 text-[10px]">
+                <button type="button" onclick="cambiarModoZonaCobro(${idx}, 'normal')" class="px-2 py-0.5 rounded-xs font-bold transition ${modo === 'normal' ? 'bg-black text-white shadow-2xs' : 'text-neutral-700 hover:text-black'}">
+                  Normal ($50k)
+                </button>
+                <button type="button" onclick="cambiarModoZonaCobro(${idx}, 'paquete')" class="px-2 py-0.5 rounded-xs font-bold transition ${modo === 'paquete' ? 'bg-purple-700 text-white shadow-2xs' : 'text-neutral-700 hover:text-black'}">
+                  En Paquete ($0)
+                </button>
+                <button type="button" onclick="cambiarModoZonaCobro(${idx}, 'retoque')" class="px-2 py-0.5 rounded-xs font-bold transition ${modo === 'retoque' ? 'bg-emerald-700 text-white shadow-2xs' : 'text-neutral-700 hover:text-black'}">
+                  Retoque ($0)
+                </button>
+              </div>
+
+              <button type="button" onclick="eliminarZonaEnCobro(${idx})" class="p-1 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-xs transition" title="Quitar zona de la cita">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function cambiarModoZonaCobro(idx, modo) {
+      if (cobroZonasLista[idx]) {
+        cobroZonasLista[idx].modo = modo;
+        renderizarZonasEnCobro();
+        calcularTotalesCobro();
+      }
+    }
+
+    function eliminarZonaEnCobro(idx) {
+      cobroZonasLista.splice(idx, 1);
+      renderizarZonasEnCobro();
+      calcularTotalesCobro();
+    }
+
+    function adicionarZonaEnCobro() {
+      const sel = document.getElementById('selectAdicionarZonaCobro');
+      if (!sel || !sel.value) return;
+      const zona = sel.value;
+      if (cobroZonasLista.some(z => z.nombre === zona)) {
+        alert(`La zona "${zona}" ya se encuentra agregada a la lista.`);
+        return;
+      }
+      cobroZonasLista.push({ nombre: zona, modo: 'normal' });
+      sel.value = '';
+      renderizarZonasEnCobro();
+      calcularTotalesCobro();
+    }
+
+    function onCambioMetodoCobroSimple() {
+      calcularTotalesCobro();
     }
 
     function onToggleActivarPaqueteCobro() {
@@ -3922,18 +3975,17 @@
       if (chk && campos) {
         if (chk.checked) {
           campos.classList.remove('hidden');
-          const montoInput = document.getElementById('cobroMonto');
-          const citaId = document.getElementById('cobroCitaId').value;
-          const cita = appState.citas.find(c => c._id == citaId);
-          const numSes = Number(document.getElementById('numSesionesCobro').value || 6);
-          const cantZonas = (cita && cita.zonas && cita.zonas.length > 0) ? cita.zonas.length : 2;
-          if (montoInput && Number(montoInput.value) <= 50000) {
-            montoInput.value = cantZonas * numSes * 40000;
+          const valInput = document.getElementById('valorTotalPaqueteCobro');
+          const numSes = Number(document.getElementById('numSesionesCobro')?.value || 6);
+          const cantZonas = cobroZonasLista.length > 0 ? cobroZonasLista.length : 1;
+          if (valInput && !valInput.value) {
+            valInput.value = cantZonas * numSes * 40000;
           }
         } else {
           campos.classList.add('hidden');
         }
       }
+      calcularTotalesCobro();
     }
 
     function ajustarSesionesCobro(delta) {
@@ -3944,28 +3996,140 @@
       if (val > 30) val = 30;
       input.value = val;
       actualizarPrecioSugeridoCobroPaquete();
+      calcularTotalesCobro();
     }
 
     function setSesionesCobro(num) {
       const input = document.getElementById('numSesionesCobro');
       if (input) input.value = Math.max(1, num);
       actualizarPrecioSugeridoCobroPaquete();
+      calcularTotalesCobro();
     }
 
     function onCambioSesionesCobro() {
       const input = document.getElementById('numSesionesCobro');
       if (input && Number(input.value) < 1) input.value = 1;
       actualizarPrecioSugeridoCobroPaquete();
+      calcularTotalesCobro();
     }
 
     function actualizarPrecioSugeridoCobroPaquete() {
-      const montoInput = document.getElementById('cobroMonto');
+      const valInput = document.getElementById('valorTotalPaqueteCobro');
+      const numSes = Number(document.getElementById('numSesionesCobro')?.value || 6);
+      const cantZonas = cobroZonasLista.length > 0 ? cobroZonasLista.length : 1;
+      if (valInput) {
+        valInput.value = cantZonas * numSes * 40000;
+      }
+    }
+
+    function calcularTotalesCobro() {
       const citaId = document.getElementById('cobroCitaId').value;
       const cita = appState.citas.find(c => c._id == citaId);
-      const numSes = Number(document.getElementById('numSesionesCobro')?.value || 1);
-      const cantZonas = (cita && cita.zonas && cita.zonas.length > 0) ? cita.zonas.length : 1;
-      if (montoInput) {
-        montoInput.value = cantZonas * numSes * 40000;
+      const clienteObj = cita ? appState.clientes.find(c => c._id == cita.clienteId) : null;
+      const esPublicidad = Boolean(clienteObj && clienteObj.esPublicidad);
+
+      let baseBruta = 0;
+
+      if (!esPublicidad) {
+        // Sumar zonas normales ($50.000 COP c/u)
+        cobroZonasLista.forEach(z => {
+          if (z.modo === 'normal') {
+            baseBruta += 50000;
+          }
+        });
+
+        // Si es un servicio principal que no sea láser, sumar su costo
+        if (cita && cita.servicio) {
+          const esLaser = cita.servicio.toLowerCase().includes('laser') || cita.servicio.toLowerCase().includes('láser');
+          if (!esLaser && (!cita.zonas || cita.zonas.length === 0)) {
+            baseBruta += (Number(cita.valor) || 0);
+          }
+        }
+
+        // Tratamientos adicionales
+        if (cita && cita.tratamientosAdicionales && Array.isArray(cita.tratamientosAdicionales)) {
+          cita.tratamientosAdicionales.forEach(t => {
+            baseBruta += (Number(t.precio) || 0);
+          });
+        }
+
+        // Si activa compra de paquete
+        const chkActivar = document.getElementById('chkActivarPaqueteCobro');
+        if (chkActivar && chkActivar.checked) {
+          const valPaq = Number(document.getElementById('valorTotalPaqueteCobro')?.value) || 0;
+          baseBruta += valPaq;
+        }
+      }
+
+      // Regla de IVA: 19% en todos los medios excepto Efectivo (0% IVA)
+      let iva = 0;
+      let totalNeto = 0;
+
+      const chkMixto = document.getElementById('chkPagoMixto');
+      const esMixto = Boolean(chkMixto && chkMixto.checked);
+
+      if (esPublicidad) {
+        baseBruta = 0;
+        iva = 0;
+        totalNeto = 0;
+      } else if (!esMixto) {
+        const metodo = document.getElementById('cobroMetodo')?.value || 'Efectivo';
+        if (metodo.includes('Cortesía') || metodo.includes('Prepago ($0)')) {
+          baseBruta = 0;
+          iva = 0;
+          totalNeto = 0;
+        } else if (metodo.toLowerCase().includes('efectivo')) {
+          // Efectivo = 0% IVA
+          iva = 0;
+          totalNeto = baseBruta;
+        } else {
+          // Otros medios (Transferencia, Addi, Tarjetas) = +19% IVA
+          iva = Math.round(baseBruta * 0.19);
+          totalNeto = baseBruta + iva;
+        }
+      } else {
+        // En pago mixto, cada medio suma su IVA según sea efectivo o electrónico
+        let sumaBases = 0;
+        let sumaIvas = 0;
+        let sumaTotales = 0;
+
+        filasPagoMixto.forEach(f => {
+          const montoBase = Number(f.valor) || 0;
+          const esEf = (f.metodo || '').toLowerCase().includes('efectivo');
+          const ivaFila = esEf ? 0 : Math.round(montoBase * 0.19);
+          sumaBases += montoBase;
+          sumaIvas += ivaFila;
+          sumaTotales += (montoBase + ivaFila);
+        });
+
+        if (filasPagoMixto.length === 0) {
+          totalNeto = baseBruta;
+          iva = 0;
+        } else {
+          baseBruta = sumaBases;
+          iva = sumaIvas;
+          totalNeto = sumaTotales;
+        }
+      }
+
+      // Actualizar campos y etiquetas en pantalla
+      const lblBruto = document.getElementById('lblCobroDisplayBruto');
+      const lblIva = document.getElementById('lblCobroDisplayIva');
+      const lblTotal = document.getElementById('lblCobroDisplayTotal');
+      const inpMonto = document.getElementById('cobroMonto');
+      const inpBruto = document.getElementById('cobroValorBruto');
+      const inpIva = document.getElementById('cobroValorIva');
+
+      if (lblBruto) lblBruto.innerText = formatMoney(baseBruta);
+      if (lblIva) lblIva.innerText = iva > 0 ? `+${formatMoney(iva)}` : '$0 (0% IVA)';
+      if (lblTotal) lblTotal.innerText = formatMoney(totalNeto);
+
+      if (inpMonto) inpMonto.value = totalNeto;
+      if (inpBruto) inpBruto.value = baseBruta;
+      if (inpIva) inpIva.value = iva;
+
+      if (esMixto) {
+        actualizarCalculoPagoMixto();
       }
     }
 
@@ -3989,21 +4153,21 @@
       if (chk.checked) {
         if (bloqueSimple) bloqueSimple.classList.add('hidden');
         if (bloqueMixto) bloqueMixto.classList.remove('hidden');
-        
-        // Si no hay filas inicializadas, inicializar con 2 medios típicos: Addi y Transferencia
-        if (filasPagoMixto.length === 0) {
-          const totalCobro = Number(document.getElementById('cobroMonto')?.value || 0);
-          const mitad1 = Math.round(totalCobro / 2);
-          const mitad2 = totalCobro - mitad1;
-          filasPagoMixto = [
-            { metodo: 'Crédito Addi', valor: mitad1 },
-            { metodo: 'Transferencia', valor: mitad2 }
-          ];
-        }
+
+        // Inicializar filas de pago mixto repartiendo la base bruta
+        const baseActual = Number(document.getElementById('cobroValorBruto')?.value) || Number(document.getElementById('cobroMonto')?.value) || 0;
+        const mitad1 = Math.round(baseActual / 2);
+        const mitad2 = baseActual - mitad1;
+        filasPagoMixto = [
+          { metodo: 'Crédito Addi', valor: mitad1 },
+          { metodo: 'Efectivo', valor: mitad2 }
+        ];
         renderizarFilasPagoMixto();
       } else {
         if (bloqueSimple) bloqueSimple.classList.remove('hidden');
         if (bloqueMixto) bloqueMixto.classList.add('hidden');
+        filasPagoMixto = [];
+        calcularTotalesCobro();
       }
     }
 
@@ -4011,40 +4175,38 @@
       const cont = document.getElementById('contenedorFilasPagoMixto');
       if (!cont) return;
 
-      cont.innerHTML = filasPagoMixto.map((f, idx) => `
-        <div class="flex items-center gap-2 bg-white p-1.5 border border-brand-border rounded-xs">
-          <div class="w-1/2">
-            <select onchange="cambiarMetodoFilaPagoMixto(${idx}, this.value)" class="w-full border border-brand-border p-1.5 rounded-xs text-xs bg-white font-semibold outline-none focus:border-black">
-              ${MEDIOS_PAGO_OPCIONES.map(m => `
-                <option value="${m}" ${m === f.metodo ? 'selected' : ''}>${m}</option>
-              `).join('')}
-            </select>
+      cont.innerHTML = filasPagoMixto.map((f, idx) => {
+        const esEf = (f.metodo || '').toLowerCase().includes('efectivo');
+        const ivaTag = esEf ? '0% IVA' : '+19% IVA';
+        return `
+          <div class="flex items-center gap-2 bg-white p-2 border border-brand-border rounded-xs">
+            <div class="w-1/2">
+              <select onchange="cambiarMetodoFilaPagoMixto(${idx}, this.value)" class="w-full border border-brand-border p-1.5 rounded-xs text-xs bg-white font-semibold outline-none focus:border-black">
+                ${MEDIOS_PAGO_OPCIONES.map(m => `
+                  <option value="${m}" ${m === f.metodo ? 'selected' : ''}>${m} (${m === 'Efectivo' ? '0% IVA' : '+19% IVA'})</option>
+                `).join('')}
+              </select>
+            </div>
+            <div class="w-1/2 flex items-center gap-1.5">
+              <input type="number" value="${f.valor || 0}" min="0" oninput="cambiarMontoFilaPagoMixto(${idx}, this.value)" placeholder="Base sin IVA" class="w-full border border-brand-border p-1.5 rounded-xs text-xs font-mono font-bold outline-none focus:border-black text-right">
+              ${filasPagoMixto.length > 2 ? `
+                <button type="button" onclick="eliminarFilaPagoMixto(${idx})" class="p-1 text-neutral-400 hover:text-red-600 rounded-full" title="Quitar este medio">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : ''}
+            </div>
           </div>
-          <div class="w-1/2 flex items-center gap-1.5">
-            <input type="number" value="${f.valor || 0}" min="0" oninput="cambiarMontoFilaPagoMixto(${idx}, this.value)" placeholder="Monto" class="w-full border border-brand-border p-1.5 rounded-xs text-xs font-mono font-bold outline-none focus:border-black text-right">
-            ${filasPagoMixto.length > 2 ? `
-              <button type="button" onclick="eliminarFilaPagoMixto(${idx})" class="p-1 text-neutral-400 hover:text-red-600 rounded-full" title="Quitar este medio">
-                <i data-lucide="x" class="w-3.5 h-3.5"></i>
-              </button>
-            ` : ''}
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       if (window.lucide) lucide.createIcons();
-      actualizarCalculoPagoMixto();
+      calcularTotalesCobro();
     }
 
     function agregarFilaPagoMixto() {
-      const totalEsperado = Number(document.getElementById('cobroMonto')?.value || 0);
-      const sumaActual = filasPagoMixto.reduce((acc, f) => acc + (Number(f.valor) || 0), 0);
-      const faltante = Math.max(0, totalEsperado - sumaActual);
-      
-      // Escoger un método que no esté repetido si es posible
       const usados = filasPagoMixto.map(f => f.metodo);
       const disponible = MEDIOS_PAGO_OPCIONES.find(m => !usados.includes(m)) || 'Efectivo';
-
-      filasPagoMixto.push({ metodo: disponible, valor: faltante });
+      filasPagoMixto.push({ metodo: disponible, valor: 0 });
       renderizarFilasPagoMixto();
     }
 
@@ -4058,23 +4220,29 @@
       if (filasPagoMixto[index]) {
         filasPagoMixto[index].metodo = nuevoMetodo;
       }
-      actualizarCalculoPagoMixto();
+      renderizarFilasPagoMixto();
     }
 
     function cambiarMontoFilaPagoMixto(index, nuevoMonto) {
       if (filasPagoMixto[index]) {
         filasPagoMixto[index].valor = Number(nuevoMonto) || 0;
       }
-      actualizarCalculoPagoMixto();
+      calcularTotalesCobro();
     }
 
     function repartirEquitativoPagoMixto() {
-      const totalEsperado = Number(document.getElementById('cobroMonto')?.value || 0);
+      let baseEsperada = 0;
+      cobroZonasLista.forEach(z => { if (z.modo === 'normal') baseEsperada += 50000; });
+      const chkActivar = document.getElementById('chkActivarPaqueteCobro');
+      if (chkActivar && chkActivar.checked) {
+        baseEsperada += Number(document.getElementById('valorTotalPaqueteCobro')?.value) || 0;
+      }
+
       if (filasPagoMixto.length === 0) return;
       const partes = filasPagoMixto.length;
-      const base = Math.floor(totalEsperado / partes);
+      const base = Math.floor(baseEsperada / partes);
       filasPagoMixto.forEach((f, i) => {
-        f.valor = (i === partes - 1) ? (totalEsperado - base * (partes - 1)) : base;
+        f.valor = (i === partes - 1) ? (baseEsperada - base * (partes - 1)) : base;
       });
       renderizarFilasPagoMixto();
     }
@@ -4083,31 +4251,109 @@
       const chk = document.getElementById('chkPagoMixto');
       if (!chk || !chk.checked) return;
 
-      const totalEsperado = Number(document.getElementById('cobroMonto')?.value || 0);
-      const sumaActual = filasPagoMixto.reduce((acc, f) => acc + (Number(f.valor) || 0), 0);
-      const diff = totalEsperado - sumaActual;
-
       const txt = document.getElementById('txtEstadoCuadreMixto');
       const badge = document.getElementById('badgeEstadoCuadreMixto');
       const box = document.getElementById('alertaCuadrePagoMixto');
 
       if (!txt || !badge || !box) return;
 
-      if (diff === 0 && totalEsperado > 0) {
-        txt.innerHTML = `Suma de medios: <strong class="text-emerald-900 font-mono">${formatMoney(sumaActual)}</strong>`;
-        badge.textContent = '✓ Cuadrado Exacto';
-        badge.className = 'text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-emerald-600 text-white';
-        box.className = 'p-2.5 rounded-sm text-xs flex justify-between items-center border bg-emerald-50 border-emerald-300 font-semibold text-emerald-950';
-      } else if (diff > 0) {
-        txt.innerHTML = `Suma: <span class="font-mono">${formatMoney(sumaActual)}</span> de <span class="font-mono">${formatMoney(totalEsperado)}</span>`;
-        badge.textContent = `Faltan ${formatMoney(diff)}`;
-        badge.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-500 text-black animate-pulse';
-        box.className = 'p-2.5 rounded-sm text-xs flex justify-between items-center border bg-amber-50 border-amber-300 font-semibold text-amber-950';
-      } else {
-        txt.innerHTML = `Suma: <span class="font-mono">${formatMoney(sumaActual)}</span> de <span class="font-mono">${formatMoney(totalEsperado)}</span>`;
-        badge.textContent = `Sobra ${formatMoney(Math.abs(diff))}`;
-        badge.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white';
-        box.className = 'p-2.5 rounded-sm text-xs flex justify-between items-center border bg-rose-50 border-rose-300 font-semibold text-rose-950';
+      let sumaTotal = 0;
+      let desglose = [];
+      filasPagoMixto.forEach(f => {
+        const val = Number(f.valor) || 0;
+        const esEf = (f.metodo || '').toLowerCase().includes('efectivo');
+        const iva = esEf ? 0 : Math.round(val * 0.19);
+        const totalFila = val + iva;
+        sumaTotal += totalFila;
+        desglose.push(`${f.metodo}: ${formatMoney(totalFila)}`);
+      });
+
+      txt.innerHTML = `Total Mixto a cobrar: <strong class="text-black font-mono">${formatMoney(sumaTotal)}</strong> (${desglose.join(' + ')})`;
+      badge.textContent = '✓ Calculado con IVA';
+      badge.className = 'text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-black text-white';
+      box.className = 'p-2.5 rounded-sm text-xs flex justify-between items-center border bg-neutral-100 border-brand-border font-semibold text-black';
+    }
+
+    async function procesarCobro(e) {
+      e.preventDefault();
+      const citaId = document.getElementById('cobroCitaId').value;
+      const valor = Number(document.getElementById('cobroMonto').value) || 0;
+      const valorBruto = Number(document.getElementById('cobroValorBruto').value) || 0;
+      const valorIva = Number(document.getElementById('cobroValorIva').value) || 0;
+      let metodo = document.getElementById('cobroMetodo').value;
+
+      const cita = appState.citas.find(c => c._id == citaId);
+      const chkActivar = document.getElementById('chkActivarPaqueteCobro');
+      let activarPaquete = null;
+
+      if (chkActivar && chkActivar.checked) {
+        const sesiones = Number(document.getElementById('numSesionesCobro').value || 6);
+        const zonasPaq = cobroZonasLista.map(z => z.nombre);
+        activarPaquete = {
+          sesionesTotales: sesiones,
+          precioTotalPagado: valor,
+          zonas: zonasPaq.length > 0 ? zonasPaq : ['Bikini Completo', 'Axilas']
+        };
+      }
+
+      const chkMixto = document.getElementById('chkPagoMixto');
+      let pagos = [];
+
+      if (chkMixto && chkMixto.checked && valor > 0) {
+        pagos = filasPagoMixto.map(f => {
+          const valBase = Number(f.valor) || 0;
+          const esEf = (f.metodo || '').toLowerCase().includes('efectivo');
+          const valIva = esEf ? 0 : Math.round(valBase * 0.19);
+          const valNeto = valBase + valIva;
+          return {
+            metodo: f.metodo,
+            valor: valNeto,
+            valorBruto: valBase,
+            valorIva: valIva
+          };
+        }).filter(f => f.valor > 0);
+
+        if (pagos.length > 1) {
+          metodo = `Mixto (${pagos.map(p => `${p.metodo}: ${formatMoney(p.valor)}`).join(' + ')})`;
+        } else if (pagos.length === 1) {
+          metodo = pagos[0].metodo;
+        }
+      }
+
+      try {
+        const payload = {
+          valor,
+          valorBruto,
+          valorIva,
+          metodo,
+          zonas: cobroZonasLista.map(z => z.nombre),
+          zonasRetoque: cobroZonasLista.filter(z => z.modo === 'retoque').map(z => z.nombre),
+          zonasPaquete: cobroZonasLista.filter(z => z.modo === 'paquete').map(z => z.nombre)
+        };
+        if (pagos.length > 0) payload.pagos = pagos;
+        if (activarPaquete) payload.activarPaquete = activarPaquete;
+
+        const res = await fetch(`/api/citas/${citaId}/completar-cobro`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalCobrarCita');
+          await cargarDatosServidor();
+          if (activarPaquete) {
+            alert(`✓ ¡Paquete de ${activarPaquete.sesionesTotales} sesiones activado y pagado en caja! Se consumió la primera sesión.`);
+          } else if (metodo.includes('Paquete Prepago')) {
+            alert('✓ Sesión de paquete completada. Se descontó 1 sesión del paquete y se sumó al contador del cliente ($0 en caja).');
+          } else {
+            alert('✓ Cita cobrada exitosamente. Sesiones sumadas al contador del cliente e ingreso registrado en Caja con sus valores de base e IVA.');
+          }
+        } else {
+          alert('Error al procesar cobro: ' + (data.error || 'Ocurrió un error'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
       }
     }
 
@@ -6506,7 +6752,11 @@
         }
       }
 
-      const payload = { cliente, concepto, valor, metodo };
+      const esEf = (metodo || '').toLowerCase().includes('efectivo');
+      const valorBruto = esEf ? valor : Math.round(valor / 1.19);
+      const valorIva = esEf ? 0 : (valor - valorBruto);
+
+      const payload = { cliente, concepto, valor, valorBruto, valorIva, metodo };
       if (pagos.length > 0) payload.pagos = pagos;
 
       try {
@@ -7630,7 +7880,7 @@
                   <span class="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
                     <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-gray"></i> ${c.servicio}
                   </span>
-                  <span class="text-xs font-black text-black font-mono">${(clientObj && clientObj.esPublicidad) || c.valor === 0 ? '$0 (Cortesía Publicidad)' : formatMoney(c.valor)}</span>
+                  <span class="text-[11px] font-bold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-xs border border-brand-border">Facturación en Caja</span>
                 </div>
 
                 ${esLaser ? `
@@ -7743,7 +7993,7 @@
                   <p class="text-xs font-bold text-amber-900 flex items-center justify-center gap-1.5">
                     <i data-lucide="clock" class="w-4 h-4 animate-spin text-amber-600"></i> Esperando cobro en Recepción...
                   </p>
-                  <p class="text-[11px] text-amber-700">Recepción ya tiene la alerta para cobrar ${formatMoney(c.valor)}.</p>
+                  <p class="text-[11px] text-amber-700">Recepción ya tiene la cita lista para cobrar en caja.</p>
                   <button onclick="revertirEnvioCaja('${c._id}')" class="text-[10px] text-amber-800 hover:text-black underline mt-1">Revertir a Cabina</button>
                 </div>
               ` : c.estado === 'Completada' ? `
@@ -7904,14 +8154,12 @@
               <input type="checkbox" ${checked ? 'checked' : ''} class="accent-black w-4 h-4 cursor-pointer" onclick="event.stopPropagation(); toggleZonaEdicion('${z}')">
               <span class="font-medium">${z}</span>
             </div>
-            <span class="font-mono text-[10px] font-bold ${checked ? 'text-neutral-300' : 'text-brand-gray'}">+$50k</span>
+            <span class="text-[10px] font-bold uppercase ${checked ? 'text-white' : 'text-brand-gray'}">${checked ? '✓ Lista' : 'Agregar'}</span>
           </div>
         `;
       }).join('');
 
-      const total = zonasEnEdicion.length * 50000;
       document.getElementById('lblEditarCantZonas').textContent = zonasEnEdicion.length;
-      document.getElementById('lblEditarTotalLaser').textContent = formatMoney(total);
     }
 
     function toggleZonaEdicion(zona) {

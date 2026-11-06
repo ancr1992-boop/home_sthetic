@@ -125,9 +125,13 @@ const saleSchema = new mongoose.Schema({
   metodo: { type: String, default: 'Efectivo' },
   operaria: { type: String, default: 'General' },
   valor: { type: Number, required: true },
+  valorBruto: { type: Number, default: 0 },
+  valorIva: { type: Number, default: 0 },
   pagos: [{
     metodo: { type: String, required: true },
-    valor: { type: Number, required: true }
+    valor: { type: Number, required: true },
+    valorBruto: { type: Number, default: 0 },
+    valorIva: { type: Number, default: 0 }
   }]
 }, { timestamps: true });
 
@@ -302,16 +306,32 @@ async function initDatabaseDefaults() {
     console.log('✓ Usuario Administrador creado: admin / admin123');
   }
 
-  const recepcionExists = await User.findOne({ rol: 'recepcionista' });
+  const recepcionExists = await User.findOne({ username: 'recepcion' });
   if (!recepcionExists) {
     await User.create({
       username: 'recepcion',
-      password: 'recepcion123',
+      password: 'laura123*',
       nombre: 'Recepción & Caja',
       rol: 'recepcionista'
     });
-    console.log('✓ Usuario Recepcionista creado: recepcion / recepcion123');
+    console.log('✓ Usuario Recepcionista creado: recepcion / laura123*');
   }
+
+  // Asegurar usuario operaria
+  const operariaExists = await User.findOne({ username: 'operaria' });
+  if (!operariaExists) {
+    await User.create({
+      username: 'operaria',
+      password: 'operaria123*',
+      nombre: 'Operaria Cabina',
+      rol: 'operaria',
+      operariaNombre: 'Operaria'
+    });
+    console.log('✓ Usuario Operaria creado: operaria / operaria123*');
+  }
+
+  // Eliminar perfil gloria si existía
+  await User.deleteOne({ username: 'gloria' });
 
   const medicoExists = await User.findOne({ rol: 'medico' });
   if (!medicoExists) {
@@ -339,16 +359,17 @@ async function initDatabaseDefaults() {
   if (config.operarias && Array.isArray(config.operarias)) {
     for (const op of config.operarias) {
       const uname = op.nombre.split(' ')[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (uname === 'gloria') continue;
       const opUser = await User.findOne({ username: uname });
       if (!opUser) {
         await User.create({
           username: uname,
-          password: '123',
+          password: 'operaria123*',
           nombre: op.nombre,
           rol: 'operaria',
           operariaNombre: op.nombre
         });
-        console.log(`✓ Usuario Operaria creado: ${uname} / 123 (${op.nombre})`);
+        console.log(`✓ Usuario Operaria creado: ${uname} / operaria123* (${op.nombre})`);
       }
     }
   }
@@ -970,7 +991,7 @@ app.delete('/api/citas/:id/adicional/:adicionalId', async (req, res) => {
 app.post('/api/citas/:id/completar-cobro', async (req, res) => {
   try {
     const { id } = req.params;
-    const { valor, metodo, pagos, activarPaquete } = req.body;
+    const { valor, valorBruto, valorIva, metodo, pagos, activarPaquete, zonas } = req.body;
 
     const config = await getOrCreateConfig();
     if (!isCajaAbierta(config)) {
@@ -983,6 +1004,11 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
 
     const cita = await Appointment.findById(id);
     if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada' });
+
+    // Actualizar zonas si fueron modificadas o añadidas al momento de cobrar
+    if (zonas && Array.isArray(zonas)) {
+      cita.zonas = zonas;
+    }
 
     // Actualizar estado de cita
     cita.estado = 'Completada';
@@ -1126,6 +1152,9 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
       concepto += ` [Compra de Paquete: ${cantTot} sesiones]`;
     }
 
+    const vBrutoFinal = Number(valorBruto) !== undefined && !isNaN(Number(valorBruto)) ? Number(valorBruto) : (valorCobro > 0 ? (metodoCobro.toLowerCase().includes('efectivo') ? valorCobro : Math.round(valorCobro / 1.19)) : 0);
+    const vIvaFinal = Number(valorIva) !== undefined && !isNaN(Number(valorIva)) ? Number(valorIva) : Math.max(0, valorCobro - vBrutoFinal);
+
     const venta = await Sale.create({
       fecha: getFechaHoy(),
       hora: horaStr,
@@ -1134,6 +1163,8 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
       metodo: metodoCobro,
       operaria: cita.operaria,
       valor: valorCobro,
+      valorBruto: vBrutoFinal,
+      valorIva: vIvaFinal,
       pagos: listaPagos
     });
 
@@ -1201,7 +1232,7 @@ app.post('/api/caja/venta-rapida', async (req, res) => {
       });
     }
 
-    const { cliente, concepto, metodo, pagos, operaria, valor } = req.body;
+    const { cliente, concepto, metodo, pagos, operaria, valor, valorBruto, valorIva } = req.body;
     const horaStr = getHoraActual();
     const montoTotal = Number(valor) || 0;
 
@@ -1222,6 +1253,9 @@ app.post('/api/caja/venta-rapida', async (req, res) => {
       listaPagos = [{ metodo: metodoFinal, valor: montoTotal }];
     }
 
+    const vBrutoFinal = Number(valorBruto) !== undefined && !isNaN(Number(valorBruto)) ? Number(valorBruto) : (montoTotal > 0 ? (metodoFinal.toLowerCase().includes('efectivo') ? montoTotal : Math.round(montoTotal / 1.19)) : 0);
+    const vIvaFinal = Number(valorIva) !== undefined && !isNaN(Number(valorIva)) ? Number(valorIva) : Math.max(0, montoTotal - vBrutoFinal);
+
     const venta = await Sale.create({
       fecha: getFechaHoy(),
       hora: horaStr,
@@ -1230,6 +1264,8 @@ app.post('/api/caja/venta-rapida', async (req, res) => {
       metodo: metodoFinal,
       operaria: operaria || 'General',
       valor: montoTotal,
+      valorBruto: vBrutoFinal,
+      valorIva: vIvaFinal,
       pagos: listaPagos
     });
 
