@@ -278,7 +278,7 @@ async function getOrCreateConfig() {
         { nombre: 'Mariana Duque', rol: 'Masoterapeuta' }
       ],
       servicios: [
-        { nombre: 'Depilación Láser', duracion: 45, precio: 50000 },
+        { nombre: 'Depilación Láser', duracion: 45, precio: 0 },
         { nombre: 'Limpieza Facial Profunda', duracion: 60, precio: 95000 },
         { nombre: 'Masaje Reductor / Moldeador', duracion: 50, precio: 80000 },
         { nombre: 'Hydrafacial Glow', duracion: 60, precio: 150000 }
@@ -303,10 +303,10 @@ async function getOrCreateConfig() {
       );
       modificado = true;
     }
-    // Asegurar que exista 'Depilación Láser' con precio base por zona de 50.000
+    // Asegurar que exista 'Depilación Láser' con precio base de 0
     const tieneLaser = config.servicios.some(s => s.nombre && (s.nombre.toLowerCase().includes('laser') || s.nombre.toLowerCase().includes('láser')));
     if (!tieneLaser) {
-      config.servicios.unshift({ nombre: 'Depilación Láser', duracion: 45, precio: 50000 });
+      config.servicios.unshift({ nombre: 'Depilación Láser', duracion: 45, precio: 0 });
       modificado = true;
     }
     if (modificado) {
@@ -752,11 +752,11 @@ app.post('/api/citas', async (req, res) => {
         if (zonasPaquete.length > 0) {
           esPaquete = true;
         }
-        // Las zonas cubiertas por el paquete salen a $0; las zonas adicionales a $50.000 c/u
-        finalValor = zonasExtra.length * 50000;
-        console.log(`📦 Cita con paquete activo para ${cliente.nombre}: ${zonasPaquete.length} zonas cubiertas ($0), ${zonasExtra.length} zonas extra ($${finalValor})`);
+        // Las zonas salen a $0 por defecto; el valor real se asigna al facturar en caja
+        finalValor = 0;
+        console.log(`📦 Cita con paquete activo para ${cliente.nombre}: ${zonasPaquete.length} zonas cubiertas ($0), ${zonasExtra.length} zonas extra ($0 por defecto)`);
       } else {
-        finalValor = zonas.length * 50000;
+        finalValor = 0;
       }
     }
 
@@ -868,12 +868,12 @@ app.put('/api/citas/:id/enviar-a-facturar', async (req, res) => {
         } else if (cliente && cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0) {
           const pZonas = cliente.paqueteActivo.zonas || [];
           const extras = zonas.filter(z => !pZonas.includes(z));
-          costoZonas = extras.length * 50000;
+          costoZonas = 0;
           cita.esPaquete = true;
           cita.zonasPaquete = zonas.filter(z => pZonas.includes(z));
           cita.zonasExtra = extras;
         } else {
-          costoZonas = zonas.length * 50000;
+          costoZonas = 0;
         }
 
         if (sNorm.includes('laser') || sNorm.includes('láser')) {
@@ -923,12 +923,12 @@ app.put('/api/citas/:id/actualizar-zonas', async (req, res) => {
         } else if (cliente && cliente.paqueteActivo && cliente.paqueteActivo.activo && cliente.paqueteActivo.sesionesRestantes > 0) {
           const pZonas = cliente.paqueteActivo.zonas || [];
           const extras = zonas.filter(z => !pZonas.includes(z));
-          costoZonas = extras.length * 50000;
+          costoZonas = 0;
           cita.esPaquete = true;
           cita.zonasPaquete = zonas.filter(z => pZonas.includes(z));
           cita.zonasExtra = extras;
         } else {
-          costoZonas = zonas.length * 50000;
+          costoZonas = 0;
         }
 
         if (sNorm.includes('laser') || sNorm.includes('láser')) {
@@ -1858,7 +1858,7 @@ app.post('/api/servicios', async (req, res) => {
     const nuevoServ = {
       nombre: nombre.trim(),
       duracion: Number(duracion) || 45,
-      precio: Number(precio) || 50000
+      precio: Number(precio) >= 0 ? Number(precio) : 0
     };
     config.servicios.push(nuevoServ);
     await config.save();

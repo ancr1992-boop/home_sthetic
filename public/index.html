@@ -1577,7 +1577,7 @@
           </div>
 
           <p class="text-[11px] text-brand-gray">
-            Clasifica cada zona: <strong>Normal</strong> ($50.000 COP), <strong>Paquete</strong> ($0 COP) o <strong>Retoque</strong>. Todas contarán normalmente en el historial de la paciente:
+            Clasifica cada zona: <strong>Normal</strong>, <strong>En Paquete ($0)</strong> o <strong>Retoque ($0)</strong>. Todas contarán normalmente en el historial de la paciente:
           </p>
 
           <!-- Listado interactivo de zonas en la cita -->
@@ -1594,6 +1594,21 @@
               <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Adicionar
             </button>
           </div>
+        </div>
+
+        <!-- Valor a Cobrar por la Sesión / Zonas (Editable por Caja) -->
+        <div id="bloqueValorSesionCobro" class="p-3 bg-neutral-50/80 border border-brand-border rounded-sm space-y-1.5">
+          <div class="flex justify-between items-center">
+            <label class="block text-[10px] uppercase font-bold text-black flex items-center gap-1.5">
+              <i data-lucide="tag" class="w-3.5 h-3.5 text-black"></i>
+              Valor Acordado por la Sesión / Zonas ($ COP) *
+            </label>
+            <span class="text-[10px] text-brand-gray font-medium italic">Editable por Caja (Por defecto $0)</span>
+          </div>
+          <input type="number" id="valorSesionZonasCobro" value="0" min="0" placeholder="0" class="w-full border border-brand-border p-2 rounded-sm bg-white font-bold text-sm focus:border-black outline-none font-mono" oninput="calcularTotalesCobro()">
+          <p class="text-[10px] text-brand-gray leading-tight">
+            Ingresa el valor real pactado con la clienta por esta sesión (si todas las zonas están en paquete, cortesía o retoque déjalo en $0).
+          </p>
         </div>
 
         <!-- Opción: Activar Paquete al Facturar en Caja -->
@@ -2921,8 +2936,8 @@
       if (selectTaServ && appState.config && appState.config.servicios) {
         selectTaServ.innerHTML = appState.config.servicios.map(s => {
           const isLaser = s.nombre.toLowerCase().includes('laser') || s.nombre.toLowerCase().includes('láser');
-          const precio = isLaser ? 50000 : (s.precio || 0);
-          const labelPrecio = isLaser ? 'Láser (1 zona)' : formatMoney(s.precio);
+          const precio = isLaser ? 0 : (s.precio || 0);
+          const labelPrecio = isLaser ? 'Láser (Valor en Caja)' : formatMoney(s.precio);
           return `<option value="${s.nombre}" data-precio="${precio}">${s.nombre} - ${labelPrecio}</option>`;
         }).join('') + `<option value="__custom__" data-precio="0">➕ Otro Tratamiento Personalizado...</option>`;
       }
@@ -3670,15 +3685,6 @@
       const tienePaq = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
 
       let valor = 0;
-      if (esPub) {
-        valor = 0;
-      } else if (tienePaq) {
-        const paqZonas = clienteObj.paqueteActivo.zonas || [];
-        const extras = zonas.filter(z => !paqZonas.includes(z));
-        valor = extras.length * 50000;
-      } else {
-        valor = zonas.length * 50000;
-      }
 
       const mensaje = construirMensajeWhatsApp({
         nombre,
@@ -3717,15 +3723,6 @@
       const tienePaq = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
 
       let valor = 0;
-      if (esPub) {
-        valor = 0;
-      } else if (tienePaq) {
-        const paqZonas = clienteObj.paqueteActivo.zonas || [];
-        const extras = zonas.filter(z => !paqZonas.includes(z));
-        valor = extras.length * 50000;
-      } else {
-        valor = zonas.length * 50000;
-      }
 
       const payload = {
         clienteId,
@@ -3865,10 +3862,10 @@
       if (esLaser) {
         zonasSeleccionadas = Array.from(document.querySelectorAll('.chk-zona-laser:checked')).map(chk => chk.value);
         if (zonasSeleccionadas.length === 0) {
-          alert('⚠️ Por favor selecciona al menos una zona para la cita de Depilación Láser ($50.000 por zona).');
+          alert('⚠️ Por favor selecciona al menos una zona para la cita de Depilación Láser.');
           return;
         }
-        precioFinal = zonasSeleccionadas.length * 50000;
+        precioFinal = 0;
       }
 
       const clienteSelect = document.getElementById('citaCliente');
@@ -3912,9 +3909,7 @@
         };
         precioFinal = valPaq;
       } else if (clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0 && !clienteObj.esPublicidad) {
-        const zonasPaq = clienteObj.paqueteActivo.zonas || [];
-        const extras = zonasSeleccionadas.filter(z => !zonasPaq.includes(z));
-        precioFinal = extras.length * 50000;
+        precioFinal = 0;
       }
 
       const payload = {
@@ -4079,6 +4074,18 @@
         else selMetodo.value = 'Efectivo';
       }
 
+      // Inicializar valor de la sesión pactado con el cliente (por defecto $0 o valor acordado)
+      const inpValorSesion = document.getElementById('valorSesionZonasCobro');
+      const tieneSoloZonasGratis = cobroZonasLista.length > 0 && cobroZonasLista.every(z => z.modo === 'paquete' || z.modo === 'retoque');
+      if (inpValorSesion) {
+        if (esPublicidad || tieneSoloZonasGratis) {
+          inpValorSesion.value = 0;
+        } else {
+          const esLaser = (cita.servicio || '').toLowerCase().includes('laser') || (cita.servicio || '').toLowerCase().includes('láser');
+          inpValorSesion.value = esLaser ? 0 : (cita.valor || 0);
+        }
+      }
+
       renderizarZonasEnCobro();
       calcularTotalesCobro();
       openModal('modalCobrarCita');
@@ -4110,7 +4117,7 @@
               <!-- Selector de modo de zona -->
               <div class="inline-flex rounded-xs border border-brand-border p-0.5 bg-neutral-100 text-[10px]">
                 <button type="button" onclick="cambiarModoZonaCobro(${idx}, 'normal')" class="px-2 py-0.5 rounded-xs font-bold transition ${modo === 'normal' ? 'bg-black text-white shadow-2xs' : 'text-neutral-700 hover:text-black'}">
-                  Normal ($50k)
+                  Normal
                 </button>
                 <button type="button" onclick="cambiarModoZonaCobro(${idx}, 'paquete')" class="px-2 py-0.5 rounded-xs font-bold transition ${modo === 'paquete' ? 'bg-purple-700 text-white shadow-2xs' : 'text-neutral-700 hover:text-black'}">
                   En Paquete ($0)
@@ -4171,6 +4178,8 @@
           campos.classList.remove('hidden');
           // Al activar compra de paquete hoy, todas las zonas de la cita de hoy quedan cubiertas en el paquete (1ra sesión a $0 COP)
           cobroZonasLista.forEach(z => { z.modo = 'paquete'; });
+          const inpValSes = document.getElementById('valorSesionZonasCobro');
+          if (inpValSes) inpValSes.value = 0;
           renderizarZonasEnCobro();
           const valInput = document.getElementById('valorTotalPaqueteCobro');
           const numSes = Number(document.getElementById('numSesionesCobro')?.value || 6);
@@ -4237,14 +4246,11 @@
       let zonasBase = 0;
 
       if (!esPublicidad) {
-        // Sumar zonas normales ($50.000 COP c/u)
-        cobroZonasLista.forEach(z => {
-          if (z.modo === 'normal') {
-            zonasBase += 50000;
-          }
-        });
+        // Tomar el valor ingresado por la cajera para la sesión / zonas (por defecto $0 o lo acordado)
+        const valSesionInp = Number(document.getElementById('valorSesionZonasCobro')?.value) || 0;
+        zonasBase += valSesionInp;
 
-        // Si es un servicio principal que no sea láser, sumar su costo
+        // Si es un servicio principal que no sea láser y no tiene zonas, sumar su costo
         if (cita && cita.servicio) {
           const esLaser = cita.servicio.toLowerCase().includes('laser') || cita.servicio.toLowerCase().includes('láser');
           if (!esLaser && (!cita.zonas || cita.zonas.length === 0)) {
@@ -4450,11 +4456,15 @@
     }
 
     function repartirEquitativoPagoMixto() {
-      let baseEsperada = 0;
-      cobroZonasLista.forEach(z => { if (z.modo === 'normal') baseEsperada += 50000; });
+      let baseEsperada = Number(document.getElementById('valorSesionZonasCobro')?.value) || 0;
       const chkActivar = document.getElementById('chkActivarPaqueteCobro');
       if (chkActivar && chkActivar.checked) {
         baseEsperada += Number(document.getElementById('valorTotalPaqueteCobro')?.value) || 0;
+      }
+      const citaId = document.getElementById('cobroCitaId')?.value;
+      const cita = appState.citas.find(c => c._id == citaId);
+      if (cita && cita.tratamientosAdicionales && Array.isArray(cita.tratamientosAdicionales)) {
+        cita.tratamientosAdicionales.forEach(t => { baseEsperada += (Number(t.precio) || 0); });
       }
 
       if (filasPagoMixto.length === 0) return;
