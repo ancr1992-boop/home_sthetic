@@ -191,6 +191,32 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+// 6. Solicitudes de Modificación / Adición de Zonas (requiere autorización de Admin)
+const zoneChangeRequestSchema = new mongoose.Schema({
+  citaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment', required: true },
+  clienteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
+  clienteNombre: { type: String, required: true },
+  clienteTelefono: { type: String, default: '' },
+  servicio: { type: String, default: 'Depilación Láser' },
+  operaria: { type: String, default: 'Operaria' },
+  fechaCita: { type: String, default: '' },
+  horaCita: { type: String, default: '' },
+  estadoCita: { type: String, default: 'Pendiente' },
+  zonasAnteriores: { type: [String], default: [] },
+  zonasNuevas: { type: [String], default: [] },
+  zonasAgregadas: { type: [String], default: [] },
+  zonasRemovidas: { type: [String], default: [] },
+  motivo: { type: String, default: '' },
+  solicitadoPor: { type: String, default: 'Recepción' },
+  rolSolicitante: { type: String, default: 'recepcionista' },
+  estado: { type: String, enum: ['PENDIENTE', 'APROBADA', 'RECHAZADA'], default: 'PENDIENTE' },
+  revisadoPor: { type: String, default: '' },
+  fechaRevision: { type: String, default: '' },
+  notasRevision: { type: String, default: '' }
+}, { timestamps: true });
+
+const ZoneChangeRequest = mongoose.model('ZoneChangeRequest', zoneChangeRequestSchema);
+
 // Helper para verificar usuario autenticado en peticiones
 async function getAuthUser(req) {
   try {
@@ -390,12 +416,13 @@ app.get('/api/bootstrap', async (req, res) => {
       console.log(`⏰ Nuevo día (${hoy}): Caja del día anterior cerrada automáticamente para exigir apertura matutina.`);
     }
 
-    const [clientes, todasLasCitas, ventasHoy, gastosHoy, usuarios] = await Promise.all([
+    const [clientes, todasLasCitas, ventasHoy, gastosHoy, usuarios, solicitudesZonas] = await Promise.all([
       Client.find().sort({ nombre: 1 }),
       Appointment.find().sort({ fecha: 1, hora: 1 }),
       Sale.find({ fecha: hoy }).sort({ createdAt: -1 }),
       Expense.find({ fecha: hoy }).sort({ createdAt: -1 }),
-      User.find().select('-password').sort({ rol: 1, nombre: 1 })
+      User.find().select('-password').sort({ rol: 1, nombre: 1 }),
+      ZoneChangeRequest.find().sort({ createdAt: -1 }).limit(100)
     ]);
 
     res.json({
@@ -407,6 +434,7 @@ app.get('/api/bootstrap', async (req, res) => {
         ventas: ventasHoy,
         gastos: gastosHoy,
         usuarios,
+        solicitudesZonas: solicitudesZonas || [],
         fechaHoy: hoy
       }
     });
@@ -984,6 +1012,198 @@ app.delete('/api/citas/:id/adicional/:adicionalId', async (req, res) => {
   } catch (error) {
     console.error('Error al eliminar tratamiento adicional:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4.5 Solicitudes de Modificación / Adición de Zonas (Antes y Después de Facturar)
+app.get('/api/solicitudes-cambio-zonas', async (req, res) => {
+  try {
+    const solicitudes = await ZoneChangeRequest.find().sort({ createdAt: -1 }).limit(100);
+    res.json({ success: true, solicitudes });
+  } catch (err) {
+    console.error('Error al listar solicitudes de zonas:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/solicitudes-cambio-zonas', async (req, res) => {
+  try {
+    const { citaId, zonasNuevas, motivo } = req.body;
+    if (!citaId || !Array.isArray(zonasNuevas)) {
+      return res.status(400).json({ success: false, error: 'Cita y zonas son obligatorios.' });
+    }
+
+    const cita = await Appointment.findById(citaId);
+    if (!cita) return res.status(404).json({ success: false, error: 'Cita no encontrada.' });
+
+    const authUser = await getAuthUser(req);
+    const rol = authUser ? authUser.rol : 'recepcionista';
+    const solicitante = authUser ? authUser.nombre : 'Recepción';
+
+    const zonasAnteriores = Array.isArray(cita.zonas) ? [...cita.zonas] : [];
+    const zonasAgregadas = zonasNuevas.filter(z => !zonasAnteriores.includes(z));
+    const zonasRemovidas = zonasAnteriores.filter(z => !zonasNuevas.includes(z));
+
+    // Si quien hace el cambio es el Administrador, se autoriza y aplica directamente
+    if (rol === 'admin') {
+      cita.zonas = zonasNuevas;
+      await cita.save();
+
+      // Si la cita ya estaba Completada / Facturada, actualizar contador del cliente para las zonas añadidas
+      if (cita.estado === 'Completada' && zonasAgregadas.length > 0) {
+        const cliente = await Client.findById(cita.clienteId);
+        if (cliente) {
+          zonasAgregadas.forEach(z => {
+            const key = `Láser: ${z}`;
+            const actual = cliente.contadorServicios.get(key) || 0;
+            cliente.contadorServicios.set(key, actual + 1);
+          });
+          await cliente.save();
+        }
+      }
+
+      const regAuto = await ZoneChangeRequest.create({
+        citaId: cita._id,
+        clienteId: cita.clienteId,
+        clienteNombre: cita.clienteNombre,
+        clienteTelefono: cita.clienteTelefono,
+        servicio: cita.servicio,
+        operaria: cita.operaria,
+        fechaCita: cita.fecha,
+        horaCita: cita.hora,
+        estadoCita: cita.estado,
+        zonasAnteriores,
+        zonasNuevas,
+        zonasAgregadas,
+        zonasRemovidas,
+        motivo: motivo || 'Modificación autorizada directamente por Administrador',
+        solicitadoPor: solicitante,
+        rolSolicitante: rol,
+        estado: 'APROBADA',
+        revisadoPor: solicitante,
+        fechaRevision: new Date().toISOString()
+      });
+
+      return res.json({
+        success: true,
+        autoAprobado: true,
+        mensaje: '✓ Zonas actualizadas y autorizadas directamente por el Administrador.',
+        solicitud: regAuto
+      });
+    }
+
+    // Si es Recepción u Operaria, crear la solicitud en estado PENDIENTE para que le llegue al Admin
+    const nuevaSolicitud = await ZoneChangeRequest.create({
+      citaId: cita._id,
+      clienteId: cita.clienteId,
+      clienteNombre: cita.clienteNombre,
+      clienteTelefono: cita.clienteTelefono,
+      servicio: cita.servicio,
+      operaria: cita.operaria,
+      fechaCita: cita.fecha,
+      horaCita: cita.hora,
+      estadoCita: cita.estado,
+      zonasAnteriores,
+      zonasNuevas,
+      zonasAgregadas,
+      zonasRemovidas,
+      motivo: (motivo || '').trim(),
+      solicitadoPor: solicitante,
+      rolSolicitante: rol,
+      estado: 'PENDIENTE'
+    });
+
+    console.log(`🔔 Solicitud de cambio de zonas creada para cita ${cita.clienteNombre}: +${zonasAgregadas.join(', ')} (Solicitó: ${solicitante})`);
+
+    res.json({
+      success: true,
+      autoAprobado: false,
+      mensaje: '✓ Solicitud de cambio de zonas enviada exitosamente al Administrador. El Administrador recibirá una notificación para autorizarla.',
+      solicitud: nuevaSolicitud
+    });
+  } catch (err) {
+    console.error('Error al crear solicitud de cambio de zonas:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/solicitudes-cambio-zonas/:id/aprobar', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Acceso restringido: Solo el Administrador puede autorizar cambios de zonas.' });
+    }
+
+    const sol = await ZoneChangeRequest.findById(req.params.id);
+    if (!sol) return res.status(404).json({ success: false, error: 'Solicitud no encontrada.' });
+    if (sol.estado !== 'PENDIENTE') {
+      return res.status(400).json({ success: false, error: `Esta solicitud ya se encuentra ${sol.estado.toLowerCase()}.` });
+    }
+
+    const cita = await Appointment.findById(sol.citaId);
+    if (cita) {
+      cita.zonas = sol.zonasNuevas;
+      await cita.save();
+
+      // Si la cita ya está Completada / Facturada, sumar al contador del cliente las zonas agregadas
+      if (cita.estado === 'Completada' && sol.zonasAgregadas && sol.zonasAgregadas.length > 0) {
+        const cliente = await Client.findById(cita.clienteId);
+        if (cliente) {
+          sol.zonasAgregadas.forEach(z => {
+            const key = `Láser: ${z}`;
+            const actual = cliente.contadorServicios.get(key) || 0;
+            cliente.contadorServicios.set(key, actual + 1);
+          });
+          await cliente.save();
+        }
+      }
+    }
+
+    sol.estado = 'APROBADA';
+    sol.revisadoPor = authUser.nombre || 'Administrador';
+    sol.fechaRevision = new Date().toISOString();
+    sol.notasRevision = req.body.notasRevision || '';
+    await sol.save();
+
+    console.log(`✓ Solicitud de zonas APROBADA por Administrador para cita de ${sol.clienteNombre}`);
+
+    res.json({
+      success: true,
+      mensaje: `✓ Solicitud aprobada con éxito. Se actualizaron las zonas para la cita de ${sol.clienteNombre}.`,
+      solicitud: sol
+    });
+  } catch (err) {
+    console.error('Error al aprobar solicitud de zonas:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/solicitudes-cambio-zonas/:id/rechazar', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Acceso restringido: Solo el Administrador puede rechazar solicitudes.' });
+    }
+
+    const sol = await ZoneChangeRequest.findById(req.params.id);
+    if (!sol) return res.status(404).json({ success: false, error: 'Solicitud no encontrada.' });
+
+    sol.estado = 'RECHAZADA';
+    sol.revisadoPor = authUser.nombre || 'Administrador';
+    sol.fechaRevision = new Date().toISOString();
+    sol.notasRevision = req.body.motivoRechazo || 'Rechazado por Administrador';
+    await sol.save();
+
+    console.log(`✗ Solicitud de zonas RECHAZADA por Administrador para cita de ${sol.clienteNombre}`);
+
+    res.json({
+      success: true,
+      mensaje: 'Solicitud rechazada.',
+      solicitud: sol
+    });
+  } catch (err) {
+    console.error('Error al rechazar solicitud de zonas:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

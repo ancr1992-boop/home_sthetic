@@ -78,6 +78,13 @@
           <span id="navAlertaCobrosTexto">1 por cobrar</span>
         </button>
 
+        <!-- Campana de Notificaciones & Autorizaciones para el Administrador -->
+        <button id="navBtnNotificacionesAdmin" onclick="abrirModalNotificacionesAdmin()" class="hidden items-center gap-1.5 px-3 py-1.5 bg-purple-900 hover:bg-black text-white font-black rounded-full text-xs uppercase tracking-wider transition shadow-md border border-purple-500 animate-pulse" title="Solicitudes pendientes de autorización">
+          <span class="w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span>
+          <i data-lucide="bell" class="w-3.5 h-3.5 text-yellow-300"></i>
+          <span id="navTxtNotificacionesAdmin">0 Solicitudes</span>
+        </button>
+
         <button id="btnNavNuevaCita" onclick="openModal('modalNuevaCita')" class="bg-black hover:bg-neutral-800 text-white px-3 sm:px-4 py-2 rounded-sm text-xs font-semibold tracking-wider uppercase transition flex items-center gap-1.5 shadow-sm">
           <i data-lucide="plus" class="w-4 h-4"></i>
           <span class="hidden xs:inline">Nueva Cita</span>
@@ -165,6 +172,40 @@
       <!-- Tarjetas de Pacientes Esperando Cobro -->
       <div id="bannerListaCitasFacturar" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
         <!-- Renderizado dinámico -->
+      </div>
+    </div>
+
+    <!-- Banner Alerta: Solicitudes de Autorización de Zonas (Exclusivo Administrador) -->
+    <div id="bannerAlertaSolicitudesAdmin" class="hidden mb-6 border-2 border-purple-500 bg-gradient-to-r from-purple-900 via-purple-950 to-neutral-900 text-white rounded-sm p-4 sm:p-5 shadow-xl shadow-purple-900/20">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="relative flex-shrink-0">
+            <span class="flex h-11 w-11 items-center justify-center rounded-full bg-purple-700 text-yellow-300 shadow-md">
+              <i data-lucide="bell" class="w-5 h-5 animate-bounce"></i>
+            </span>
+            <span class="absolute -top-1 -right-1 flex h-4 w-4">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-4 w-4 bg-yellow-400 text-[9px] font-black text-black items-center justify-center" id="badgeBannerSolicitudesAdmin">1</span>
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm sm:text-base font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                🔔 SOLICITUD DE CAMBIO DE ZONAS PENDIENTE
+              </h3>
+              <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-yellow-400 text-black rounded-full">
+                Requiere tu Autorización
+              </span>
+            </div>
+            <p class="text-xs text-purple-200 mt-0.5" id="txtBannerSolicitudesAdmin">
+              Recepción u Operaria ha solicitado actualizar/agregar zonas a una cita (en curso o ya facturada).
+            </p>
+          </div>
+        </div>
+
+        <button onclick="abrirModalNotificacionesAdmin()" class="bg-yellow-400 hover:bg-yellow-300 text-black px-4 py-2 text-xs font-black uppercase tracking-wider rounded-sm transition whitespace-nowrap shadow-md flex items-center justify-center gap-1.5 self-start sm:self-center">
+          <i data-lucide="shield-check" class="w-4 h-4 text-black"></i> Revisar & Autorizar
+        </button>
       </div>
     </div>
 
@@ -2191,6 +2232,132 @@
     </div>
   </div>
 
+  <!-- Modal: Solicitar / Autorizar Cambio o Adición de Zonas -->
+  <div id="modalSolicitudCambioZonas" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-xl w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <h3 class="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-black">
+          <i data-lucide="layers" class="w-4 h-4 text-purple-700"></i> Actualizar / Agregar Otra Zona
+        </h3>
+        <button onclick="closeModal('modalSolicitudCambioZonas')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Resumen Paciente y Estado de la Cita -->
+      <div class="bg-neutral-50 p-3.5 rounded-sm border border-brand-border space-y-2">
+        <div class="flex justify-between items-start gap-2">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-brand-gray block">Paciente:</span>
+            <span id="solicitudModalCliente" class="text-sm font-extrabold text-black block">-</span>
+            <span id="solicitudModalDetalle" class="text-xs text-brand-gray block mt-0.5">-</span>
+          </div>
+          <div class="text-right">
+            <span id="solicitudModalEstadoBadge" class="inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full border">-</span>
+            <span id="solicitudModalFacturadoAviso" class="text-[10px] font-bold text-purple-700 block mt-1"></span>
+          </div>
+        </div>
+
+        <div id="solicitudModalRolAviso" class="p-2.5 rounded-xs text-[11px] leading-relaxed">
+          <!-- Dinámico: Explicación según si es Admin o Recepción/Operaria -->
+        </div>
+      </div>
+
+      <!-- Zonas Originales -->
+      <div class="p-2.5 bg-neutral-100/70 border border-neutral-200 rounded-sm">
+        <span class="text-[10px] uppercase tracking-wider font-bold text-neutral-600 block mb-1">Zonas Actuales de la Cita:</span>
+        <div id="solicitudModalZonasActuales" class="flex flex-wrap gap-1">
+          <!-- Renderizado dinámico -->
+        </div>
+      </div>
+
+      <!-- Selector de Zonas -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <label class="block uppercase tracking-wider text-brand-gray font-bold text-[11px]">Selecciona o agrega las zonas correspondientes:</label>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="limpiarZonasSolicitud()" class="text-[11px] text-brand-gray hover:text-black underline">Desmarcar Todas</button>
+            <button type="button" onclick="restaurarZonasSolicitudOriginales()" class="text-[11px] text-purple-700 font-semibold hover:underline">Restablecer Originales</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-56 overflow-y-auto pr-1 border border-brand-border p-2 rounded-sm bg-white" id="solicitudModalGridZonas">
+          <!-- ZONAS_LASER con checkboxes -->
+        </div>
+      </div>
+
+      <!-- Resumen de Cambios / Comparador -->
+      <div class="p-3 bg-purple-50/70 border border-purple-200 rounded-sm space-y-1.5">
+        <div class="flex justify-between items-center">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-purple-950">Resumen del Cambio:</span>
+          <span class="text-xs font-bold text-purple-900" id="solicitudModalConteoZonas">0 zonas</span>
+        </div>
+        <div id="solicitudModalDiffZonas" class="text-xs space-y-1">
+          <!-- Diff de zonas agregadas y removidas -->
+        </div>
+      </div>
+
+      <!-- Motivo o Justificación -->
+      <div>
+        <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Motivo o Justificación (Opcional):</label>
+        <textarea id="solicitudModalMotivo" rows="2" placeholder="Ej: La clienta solicitó agregar Cuello en la cabina; o la operaria realizó una zona adicional no contemplada inicialmente..." class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none bg-white"></textarea>
+      </div>
+
+      <div class="pt-3 border-t border-brand-border flex justify-end items-center gap-2">
+        <button type="button" onclick="closeModal('modalSolicitudCambioZonas')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">
+          Cancelar
+        </button>
+        <button type="button" id="solicitudModalBtnSubmit" onclick="enviarSolicitudCambioZonas()" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-bold rounded-sm shadow-sm transition flex items-center gap-1.5">
+          <i data-lucide="send" class="w-4 h-4"></i> <span id="solicitudModalBtnTxt">Enviar Solicitud al Admin</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Centro de Notificaciones & Autorizaciones del Administrador -->
+  <div id="modalNotificacionesAdmin" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-2xl w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <div class="flex items-center gap-2">
+          <span class="p-1.5 bg-purple-900 text-yellow-300 rounded-sm">
+            <i data-lucide="bell" class="w-4 h-4"></i>
+          </span>
+          <div>
+            <h3 class="text-sm font-black uppercase tracking-wider text-black">Centro de Notificaciones & Autorizaciones</h3>
+            <p class="text-[11px] text-brand-gray">Control de cambios y solicitudes de zonas de depilación láser</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modalNotificacionesAdmin')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Pestañas: Pendientes vs Historial -->
+      <div class="flex border-b border-brand-border gap-2">
+        <button type="button" id="tabNotifPendientes" onclick="cambiarTabNotificacionesAdmin('pendientes')" class="pb-2 px-3 font-bold uppercase tracking-wider text-xs border-b-2 border-black text-black flex items-center gap-1.5">
+          <span>Pendientes de Autorización</span>
+          <span id="badgeTabNotifPendientes" class="bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.2 rounded-full">0</span>
+        </button>
+        <button type="button" id="tabNotifHistorial" onclick="cambiarTabNotificacionesAdmin('historial')" class="pb-2 px-3 font-bold uppercase tracking-wider text-xs border-b-2 border-transparent text-brand-gray hover:text-black flex items-center gap-1.5">
+          <span>Historial / Todas</span>
+          <span id="badgeTabNotifHistorial" class="bg-neutral-200 text-neutral-800 text-[10px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+        </button>
+      </div>
+
+      <!-- Contenedor de Listado -->
+      <div id="contenedorSolicitudesAdmin" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+        <!-- Renderizado dinámico -->
+      </div>
+
+      <div class="pt-3 border-t border-brand-border flex justify-between items-center">
+        <span class="text-[11px] text-brand-gray">Las autorizaciones actualizan la cita y las sesiones del cliente en tiempo real.</span>
+        <button type="button" onclick="closeModal('modalNotificacionesAdmin')" class="px-4 py-2 bg-neutral-900 hover:bg-black text-white uppercase tracking-wider font-bold rounded-sm">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= JAVASCRIPT ================= -->
   <script>
     let appState = {
@@ -2232,6 +2399,7 @@
     //
     function aplicarRestriccionesPorRol(user) {
       const rol = user.rol;
+      actualizarBadgesNotificacionesAdmin();
 
       // ── Nombre y rol en navbar ──
       const navName = document.getElementById('navUserName');
@@ -2515,6 +2683,7 @@
           renderizarCabinaOperaria();
           renderizarPanelMedico();
           renderizarBannerCitasFacturar();
+          actualizarBadgesNotificacionesAdmin();
         } else {
           console.error('Error desde el servidor:', json.error);
         }
@@ -3078,6 +3247,8 @@
           cardClasses = 'border-2 border-amber-400 rounded-sm p-5 transition bg-gradient-to-b from-amber-50/80 to-white flex flex-col justify-between space-y-4 shadow-md shadow-amber-400/20 relative overflow-hidden';
         }
 
+        const solPendiente = (appState.solicitudesZonas || []).find(s => String(s.citaId) === String(cita._id) && s.estado === 'PENDIENTE');
+
         const esHoy = cita.fecha === appState.fechaHoy;
         const fechaBadge = !esHoy ? `<span class="text-[10px] font-bold bg-neutral-100 text-neutral-800 px-2 py-0.5 rounded-xs border border-brand-border">${cita.fecha}</span>` : '';
 
@@ -3088,6 +3259,21 @@
                 <div class="bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest px-3 py-1 -mt-5 -mx-5 mb-3 flex items-center justify-between shadow-xs">
                   <span class="flex items-center gap-1.5"><i data-lucide="bell-ring" class="w-3.5 h-3.5 animate-bounce"></i> ¡ENVIADA POR ${cita.operaria.toUpperCase()} A CAJA!</span>
                   <span class="bg-black text-white px-2 py-0.5 rounded-full text-[9px]">Listo para Cobrar</span>
+                </div>
+              ` : ''}
+
+              ${solPendiente ? `
+                <div class="bg-gradient-to-r from-purple-900 to-neutral-900 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 -mt-5 -mx-5 mb-3 flex items-center justify-between shadow-xs border-b-2 border-purple-400">
+                  <span class="flex items-center gap-1.5 text-yellow-300">
+                    <i data-lucide="bell" class="w-3.5 h-3.5 animate-bounce"></i> SOLICITUD DE ZONAS PENDIENTE (${solPendiente.solicitadoPor})
+                  </span>
+                  ${esAdmin ? `
+                    <button type="button" onclick="abrirModalNotificacionesAdmin()" class="bg-yellow-400 hover:bg-yellow-300 text-black px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider transition">
+                      Revisar & Autorizar
+                    </button>
+                  ` : `
+                    <span class="bg-purple-800 text-purple-200 px-2 py-0.5 rounded-full text-[9px]">Esperando Admin</span>
+                  `}
                 </div>
               ` : ''}
 
@@ -3204,6 +3390,9 @@
             <div class="pt-3 border-t border-brand-border flex flex-col gap-2">
               <button type="button" onclick="abrirModalTratamientoAdicional('${cita._id}')" class="w-full bg-purple-50 hover:bg-purple-100 text-purple-950 border border-purple-200 hover:border-purple-300 py-1.5 px-3 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition shadow-2xs">
                 <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-600"></i> + Tratamiento Adicional
+              </button>
+              <button type="button" onclick="abrirModalSolicitudCambioZonas('${cita._id}')" class="w-full bg-white hover:bg-neutral-100 text-black border border-brand-border py-1.5 px-3 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition shadow-2xs" title="Actualizar o agregar zonas a esta cita (incluso si ya fue finalizada o facturada)">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-purple-700"></i> Actualizar / Agregar Otra Zona
               </button>
 
               ${esFacturar ? `
@@ -7997,9 +8186,14 @@
                   <button onclick="revertirEnvioCaja('${c._id}')" class="text-[10px] text-amber-800 hover:text-black underline mt-1">Revertir a Cabina</button>
                 </div>
               ` : c.estado === 'Completada' ? `
-                <div class="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-sm text-xs">
-                  <span class="font-bold text-emerald-800 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Sesión Cobrada en Caja</span>
-                  <span class="text-[10px] text-emerald-700 italic">Recepción gestiona la próxima cita</span>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-sm text-xs">
+                    <span class="font-bold text-emerald-800 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Sesión Cobrada en Caja</span>
+                    <span class="text-[10px] text-emerald-700 italic">Recepción gestiona la próxima cita</span>
+                  </div>
+                  <button type="button" onclick="abrirModalSolicitudCambioZonas('${c._id}')" class="w-full bg-white hover:bg-neutral-100 text-black border border-brand-border py-1.5 px-3 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center justify-center gap-1.5 transition shadow-2xs" title="Actualizar o agregar zonas realizadas">
+                    <i data-lucide="layers" class="w-3.5 h-3.5 text-purple-700"></i> Actualizar / Agregar Otra Zona
+                  </button>
                 </div>
               ` : ''}
             </div>
@@ -8213,6 +8407,499 @@
       }
     }
 
+    // ── GESTIÓN DE SOLICITUDES Y AUTORIZACIÓN DE ZONAS (ADMIN / RECEPCIÓN / CABINA) ──
+    let solicitudZonasState = {
+      citaId: null,
+      zonasOriginales: [],
+      zonasSeleccionadas: [],
+      cita: null
+    };
+
+    let tabNotificacionesAdminActivo = 'pendientes';
+
+    function abrirModalSolicitudCambioZonas(citaId) {
+      const cita = (appState.citas || []).find(c => String(c._id) === String(citaId));
+      if (!cita) {
+        alert('Cita no encontrada.');
+        return;
+      }
+
+      solicitudZonasState.citaId = citaId;
+      solicitudZonasState.cita = cita;
+      solicitudZonasState.zonasOriginales = Array.isArray(cita.zonas) ? [...cita.zonas] : [];
+      solicitudZonasState.zonasSeleccionadas = [...solicitudZonasState.zonasOriginales];
+
+      const cliente = (appState.clientes || []).find(c => String(c._id) === String(cita.clienteId));
+      const tel = cliente ? (cliente.telefono || cita.clienteTelefono) : cita.clienteTelefono;
+
+      const elCliente = document.getElementById('solicitudModalCliente');
+      const elDetalle = document.getElementById('solicitudModalDetalle');
+      if (elCliente) elCliente.textContent = cita.clienteNombre;
+      if (elDetalle) elDetalle.textContent = `${cita.servicio} — ${cita.fecha} ${cita.hora} (Operaria: ${cita.operaria}) | Tel: ${tel || 'Sin teléfono'}`;
+
+      const badgeEstado = document.getElementById('solicitudModalEstadoBadge');
+      const avisoFacturado = document.getElementById('solicitudModalFacturadoAviso');
+      if (badgeEstado && avisoFacturado) {
+        if (cita.estado === 'Completada') {
+          badgeEstado.className = 'inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full border border-emerald-500 bg-emerald-50 text-emerald-800';
+          badgeEstado.textContent = 'Completada / Facturada';
+          avisoFacturado.textContent = '✓ Ya pagada en Caja';
+        } else if (cita.estado === 'Listo para Facturar') {
+          badgeEstado.className = 'inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full border border-amber-500 bg-amber-50 text-amber-900';
+          badgeEstado.textContent = 'Listo para Facturar';
+          avisoFacturado.textContent = '⏳ En espera de cobro';
+        } else {
+          badgeEstado.className = 'inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full border border-neutral-300 bg-neutral-100 text-neutral-800';
+          badgeEstado.textContent = cita.estado;
+          avisoFacturado.textContent = '🗓 Cita agendada';
+        }
+      }
+
+      const session = obtenerSesion();
+      const esAdmin = session && session.rol === 'admin';
+      const avisoRol = document.getElementById('solicitudModalRolAviso');
+      const btnTxt = document.getElementById('solicitudModalBtnTxt');
+
+      if (avisoRol && btnTxt) {
+        if (esAdmin) {
+          avisoRol.className = 'p-2.5 rounded-xs text-[11px] leading-relaxed bg-purple-100/90 text-purple-950 border border-purple-200';
+          avisoRol.innerHTML = `<strong>🛡 Modo Administrador:</strong> Tienes permisos de autorización directa. Los cambios que guardes se aplicarán de inmediato a la cita${cita.estado === 'Completada' ? ' y las nuevas zonas se abonarán al historial de sesiones del paciente' : ''}.`;
+          btnTxt.textContent = 'Guardar y Autorizar Cambio';
+        } else {
+          avisoRol.className = 'p-2.5 rounded-xs text-[11px] leading-relaxed bg-amber-50 text-amber-900 border border-amber-200';
+          avisoRol.innerHTML = `<strong>🔔 Solicitud con Notificación al Administrador:</strong> Al enviar, se creará una solicitud pendiente. El Administrador recibirá una alerta inmediata con campana y banner para revisar y autorizar este cambio.`;
+          btnTxt.textContent = 'Enviar Solicitud al Admin';
+        }
+      }
+
+      // Renderizar zonas actuales
+      const contActuales = document.getElementById('solicitudModalZonasActuales');
+      if (contActuales) {
+        if (solicitudZonasState.zonasOriginales.length === 0) {
+          contActuales.innerHTML = `<span class="text-neutral-500 italic text-[11px]">Sin zonas previas registradas</span>`;
+        } else {
+          contActuales.innerHTML = solicitudZonasState.zonasOriginales.map(z => `
+            <span class="bg-neutral-800 text-white px-2 py-0.5 rounded-xs font-semibold text-[10px]">${z}</span>
+          `).join('');
+        }
+      }
+
+      // Renderizar Grid de Selección
+      renderGridSolicitudZonas();
+      actualizarResumenSolicitudZonas();
+
+      const inputMotivo = document.getElementById('solicitudModalMotivo');
+      if (inputMotivo) inputMotivo.value = '';
+
+      openModal('modalSolicitudCambioZonas');
+    }
+
+    function renderGridSolicitudZonas() {
+      const cont = document.getElementById('solicitudModalGridZonas');
+      if (!cont) return;
+
+      cont.innerHTML = ZONAS_LASER.map(z => {
+        const seleccionada = solicitudZonasState.zonasSeleccionadas.includes(z);
+        const eraOriginal = solicitudZonasState.zonasOriginales.includes(z);
+        const esNueva = seleccionada && !eraOriginal;
+
+        let badge = '';
+        if (esNueva) {
+          badge = `<span class="text-[9px] font-black uppercase bg-emerald-500 text-white px-1.5 py-0.2 rounded-xs">+ Nueva</span>`;
+        } else if (seleccionada) {
+          badge = `<span class="text-[9px] font-bold uppercase text-purple-200">✓ Activa</span>`;
+        }
+
+        return `
+          <div onclick="toggleZonaSolicitud('${z}')" class="flex items-center justify-between p-2 border ${seleccionada ? 'bg-purple-950 text-white border-purple-800 shadow-xs' : 'bg-white text-black border-brand-border hover:border-black'} rounded-sm cursor-pointer text-xs transition select-none">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <input type="checkbox" ${seleccionada ? 'checked' : ''} class="accent-purple-600 w-3.5 h-3.5 cursor-pointer" onclick="event.stopPropagation(); toggleZonaSolicitud('${z}')">
+              <span class="font-medium truncate">${z}</span>
+            </div>
+            ${badge}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleZonaSolicitud(zona) {
+      if (solicitudZonasState.zonasSeleccionadas.includes(zona)) {
+        solicitudZonasState.zonasSeleccionadas = solicitudZonasState.zonasSeleccionadas.filter(z => z !== zona);
+      } else {
+        solicitudZonasState.zonasSeleccionadas.push(zona);
+      }
+      renderGridSolicitudZonas();
+      actualizarResumenSolicitudZonas();
+    }
+
+    function limpiarZonasSolicitud() {
+      solicitudZonasState.zonasSeleccionadas = [];
+      renderGridSolicitudZonas();
+      actualizarResumenSolicitudZonas();
+    }
+
+    function restaurarZonasSolicitudOriginales() {
+      solicitudZonasState.zonasSeleccionadas = [...solicitudZonasState.zonasOriginales];
+      renderGridSolicitudZonas();
+      actualizarResumenSolicitudZonas();
+    }
+
+    function actualizarResumenSolicitudZonas() {
+      const agregadas = solicitudZonasState.zonasSeleccionadas.filter(z => !solicitudZonasState.zonasOriginales.includes(z));
+      const removidas = solicitudZonasState.zonasOriginales.filter(z => !solicitudZonasState.zonasSeleccionadas.includes(z));
+
+      const cantEl = document.getElementById('solicitudModalConteoZonas');
+      if (cantEl) cantEl.textContent = `${solicitudZonasState.zonasSeleccionadas.length} zonas seleccionadas`;
+
+      const diffEl = document.getElementById('solicitudModalDiffZonas');
+      if (!diffEl) return;
+
+      if (agregadas.length === 0 && removidas.length === 0) {
+        diffEl.innerHTML = `<span class="text-neutral-500 italic">No hay cambios respecto a las zonas actuales de la cita.</span>`;
+        return;
+      }
+
+      let html = '';
+      if (agregadas.length > 0) {
+        html += `
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-emerald-700 font-bold">Zonas a agregar (+):</span>
+            ${agregadas.map(z => `<span class="bg-emerald-600 text-white font-black px-2 py-0.5 rounded-xs text-[10px]">+ ${z}</span>`).join(' ')}
+          </div>
+        `;
+      }
+      if (removidas.length > 0) {
+        html += `
+          <div class="flex items-center gap-1.5 flex-wrap mt-1">
+            <span class="text-rose-700 font-bold">Zonas a remover (-):</span>
+            ${removidas.map(z => `<span class="bg-rose-100 text-rose-800 border border-rose-300 font-bold px-2 py-0.5 rounded-xs text-[10px] line-through">- ${z}</span>`).join(' ')}
+          </div>
+        `;
+      }
+      diffEl.innerHTML = html;
+    }
+
+    async function enviarSolicitudCambioZonas() {
+      if (!solicitudZonasState.citaId) return;
+
+      const agregadas = solicitudZonasState.zonasSeleccionadas.filter(z => !solicitudZonasState.zonasOriginales.includes(z));
+      const removidas = solicitudZonasState.zonasOriginales.filter(z => !solicitudZonasState.zonasSeleccionadas.includes(z));
+
+      if (agregadas.length === 0 && removidas.length === 0) {
+        alert('Debes agregar o modificar al menos una zona para enviar la solicitud.');
+        return;
+      }
+
+      const motivo = (document.getElementById('solicitudModalMotivo')?.value || '').trim();
+      const btn = document.getElementById('solicitudModalBtnSubmit');
+      if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
+
+      try {
+        const res = await fetch('/api/solicitudes-cambio-zonas', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            citaId: solicitudZonasState.citaId,
+            zonasNuevas: solicitudZonasState.zonasSeleccionadas,
+            motivo
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalSolicitudCambioZonas');
+          await cargarDatosServidor();
+          if (data.autoAprobado) {
+            alert('✓ Cambio de zonas autorizado y aplicado exitosamente.');
+          } else {
+            alert('✓ ¡Solicitud enviada al Administrador! Se notificó al Administrador para su debida autorización.');
+          }
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo procesar la solicitud'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> <span id="solicitudModalBtnTxt">Enviar Solicitud al Admin</span>';
+          lucide.createIcons();
+        }
+      }
+    }
+
+    // ── GESTIÓN DE NOTIFICACIONES Y AUTORIZACIONES (ADMIN) ──
+
+    function actualizarBadgesNotificacionesAdmin() {
+      const session = obtenerSesion();
+      const esAdmin = session && session.rol === 'admin';
+
+      const solicitudes = appState.solicitudesZonas || [];
+      const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE');
+
+      const btnNav = document.getElementById('navBtnNotificacionesAdmin');
+      const txtNav = document.getElementById('navTxtNotificacionesAdmin');
+      const banner = document.getElementById('bannerAlertaSolicitudesAdmin');
+      const badgeBanner = document.getElementById('badgeBannerSolicitudesAdmin');
+      const txtBanner = document.getElementById('txtBannerSolicitudesAdmin');
+
+      if (!esAdmin) {
+        if (btnNav) {
+          btnNav.classList.add('hidden');
+          btnNav.classList.remove('flex');
+        }
+        if (banner) banner.classList.add('hidden');
+        return;
+      }
+
+      if (btnNav) {
+        btnNav.classList.remove('hidden');
+        btnNav.classList.add('flex');
+        if (txtNav) {
+          txtNav.textContent = `${pendientes.length} ${pendientes.length === 1 ? 'Solicitud' : 'Solicitudes'}`;
+        }
+        if (pendientes.length > 0) {
+          btnNav.classList.add('animate-pulse');
+        } else {
+          btnNav.classList.remove('animate-pulse');
+        }
+      }
+
+      if (banner) {
+        if (pendientes.length > 0) {
+          banner.classList.remove('hidden');
+          if (badgeBanner) badgeBanner.textContent = pendientes.length;
+          if (txtBanner) {
+            const primero = pendientes[0];
+            txtBanner.textContent = `${pendientes.length} ${pendientes.length === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'}: ${primero.solicitadoPor} solicitó cambio de zonas para ${primero.clienteNombre} (+${(primero.zonasAgregadas || []).join(', ') || 'zonas'}).`;
+          }
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
+
+      // Si el modal de notificaciones está abierto, re-renderizar
+      const modalAdmin = document.getElementById('modalNotificacionesAdmin');
+      if (modalAdmin && !modalAdmin.classList.contains('hidden')) {
+        renderizarSolicitudesAdmin();
+      }
+    }
+
+    function abrirModalNotificacionesAdmin() {
+      const session = obtenerSesion();
+      if (!session || session.rol !== 'admin') {
+        alert('Solo el Administrador puede revisar y autorizar cambios de zonas.');
+        return;
+      }
+      tabNotificacionesAdminActivo = 'pendientes';
+      renderizarSolicitudesAdmin();
+      openModal('modalNotificacionesAdmin');
+    }
+
+    function cambiarTabNotificacionesAdmin(tab) {
+      tabNotificacionesAdminActivo = tab;
+      const tabPend = document.getElementById('tabNotifPendientes');
+      const tabHist = document.getElementById('tabNotifHistorial');
+      if (tabPend && tabHist) {
+        if (tab === 'pendientes') {
+          tabPend.className = 'pb-2 px-3 font-bold uppercase tracking-wider text-xs border-b-2 border-black text-black flex items-center gap-1.5';
+          tabHist.className = 'pb-2 px-3 font-bold uppercase tracking-wider text-xs border-b-2 border-transparent text-brand-gray hover:text-black flex items-center gap-1.5';
+        } else {
+          tabHist.className = 'pb-2 px-3 font-bold uppercase tracking-wider text-xs border-b-2 border-black text-black flex items-center gap-1.5';
+          tabPend.className = 'pb-2 px-3 font-bold uppercase tracking-wider text-xs border-b-2 border-transparent text-brand-gray hover:text-black flex items-center gap-1.5';
+        }
+      }
+      renderizarSolicitudesAdmin();
+    }
+
+    function renderizarSolicitudesAdmin() {
+      const cont = document.getElementById('contenedorSolicitudesAdmin');
+      if (!cont) return;
+
+      const solicitudes = appState.solicitudesZonas || [];
+      const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE');
+
+      const badgeP = document.getElementById('badgeTabNotifPendientes');
+      const badgeH = document.getElementById('badgeTabNotifHistorial');
+      if (badgeP) badgeP.textContent = pendientes.length;
+      if (badgeH) badgeH.textContent = solicitudes.length;
+
+      const lista = tabNotificacionesAdminActivo === 'pendientes'
+        ? pendientes
+        : solicitudes;
+
+      if (lista.length === 0) {
+        cont.innerHTML = `
+          <div class="text-center py-10 px-4 bg-neutral-50 rounded-sm border border-brand-border space-y-2">
+            <i data-lucide="check-circle-2" class="w-10 h-10 text-emerald-600 mx-auto"></i>
+            <h4 class="font-bold text-sm text-black uppercase">
+              ${tabNotificacionesAdminActivo === 'pendientes' ? '¡Todo al día! No hay solicitudes pendientes' : 'No hay historial de solicitudes registrado'}
+            </h4>
+            <p class="text-xs text-brand-gray">
+              ${tabNotificacionesAdminActivo === 'pendientes' ? 'Cuando una recepcionista u operaria solicite modificar o agregar zonas a una cita, aparecerá aquí para que la autorices.' : 'Las solicitudes autorizadas o rechazadas se listarán en esta pestaña.'}
+            </p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      cont.innerHTML = lista.map(sol => {
+        const esPend = sol.estado === 'PENDIENTE';
+        const esAprob = sol.estado === 'APROBADA';
+        const esRech = sol.estado === 'RECHAZADA';
+
+        let badgeEstadoClass = 'bg-yellow-100 text-yellow-900 border-yellow-300';
+        if (esAprob) badgeEstadoClass = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+        if (esRech) badgeEstadoClass = 'bg-rose-100 text-rose-900 border-rose-300';
+
+        const fechaSolicitud = sol.createdAt ? new Date(sol.createdAt).toLocaleString('es-CO') : '';
+        const fueFacturada = sol.estadoCita === 'Completada';
+
+        return `
+          <div class="p-4 border ${esPend ? 'border-purple-400 bg-purple-50/40 shadow-sm' : 'border-brand-border bg-white'} rounded-sm space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-brand-border pb-2.5">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h4 class="text-sm font-extrabold text-black">${sol.clienteNombre}</h4>
+                  <span class="px-2 py-0.5 text-[9px] font-bold uppercase rounded-full border ${badgeEstadoClass}">
+                    ${sol.estado}
+                  </span>
+                  ${fueFacturada ? `
+                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                      ⚡ Cita Ya Facturada
+                    </span>
+                  ` : ''}
+                </div>
+                <p class="text-[11px] text-brand-gray mt-0.5">
+                  Cita: <strong>${sol.servicio}</strong> (${sol.fechaCita} ${sol.horaCita}) • Tel: ${sol.clienteTelefono || 'Sin teléfono'}
+                </p>
+              </div>
+
+              <div class="text-left sm:text-right">
+                <span class="text-[10px] text-brand-gray block">Solicitó: <strong class="text-black">${sol.solicitadoPor} (${sol.rolSolicitante})</strong></span>
+                <span class="text-[9px] text-neutral-400 block">${fechaSolicitud}</span>
+              </div>
+            </div>
+
+            <!-- Comparativa de Zonas -->
+            <div class="bg-neutral-50 p-2.5 rounded-xs border border-brand-border/60 space-y-2">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span class="text-[10px] uppercase font-bold text-neutral-500 block">Zonas Anteriores (${(sol.zonasAnteriores || []).length}):</span>
+                  <div class="flex flex-wrap gap-1 mt-1">
+                    ${(sol.zonasAnteriores && sol.zonasAnteriores.length > 0) ? sol.zonasAnteriores.map(z => `
+                      <span class="bg-neutral-200 text-neutral-800 px-1.5 py-0.5 rounded-xs text-[10px]">${z}</span>
+                    `).join('') : '<span class="text-neutral-400 italic text-[11px]">Ninguna</span>'}
+                  </div>
+                </div>
+
+                <div>
+                  <span class="text-[10px] uppercase font-bold text-purple-900 block">Zonas Nuevas Solicitadas (${(sol.zonasNuevas || []).length}):</span>
+                  <div class="flex flex-wrap gap-1 mt-1">
+                    ${(sol.zonasNuevas && sol.zonasNuevas.length > 0) ? sol.zonasNuevas.map(z => `
+                      <span class="bg-purple-900 text-white font-semibold px-1.5 py-0.5 rounded-xs text-[10px]">${z}</span>
+                    `).join('') : '<span class="text-neutral-400 italic text-[11px]">Ninguna</span>'}
+                  </div>
+                </div>
+              </div>
+
+              ${(sol.zonasAgregadas && sol.zonasAgregadas.length > 0) ? `
+                <div class="pt-2 border-t border-brand-border/60 flex items-center gap-1.5 flex-wrap">
+                  <span class="text-[10px] font-black uppercase text-emerald-800">Nuevas Zonas a Incorporar:</span>
+                  ${sol.zonasAgregadas.map(z => `
+                    <span class="bg-emerald-600 text-white font-black px-2 py-0.5 rounded-xs text-[10px] shadow-2xs">+ ${z}</span>
+                  `).join('')}
+                </div>
+              ` : ''}
+
+              ${(sol.zonasRemovidas && sol.zonasRemovidas.length > 0) ? `
+                <div class="pt-1 flex items-center gap-1.5 flex-wrap">
+                  <span class="text-[10px] font-bold uppercase text-rose-800">Zonas Removidas:</span>
+                  ${sol.zonasRemovidas.map(z => `
+                    <span class="bg-rose-100 text-rose-800 border border-rose-300 font-semibold px-2 py-0.5 rounded-xs text-[10px] line-through">- ${z}</span>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+
+            ${sol.motivo ? `
+              <div class="text-xs text-neutral-700 bg-white p-2 border border-brand-border rounded-xs">
+                <strong>Motivo:</strong> "${sol.motivo}"
+              </div>
+            ` : ''}
+
+            ${esPend ? `
+              <div class="pt-2 border-t border-brand-border flex flex-col sm:flex-row justify-between items-center gap-2">
+                <span class="text-[10px] text-purple-900 font-medium">
+                  ${fueFacturada ? '⚠️ Al autorizar, las nuevas zonas se abonarán automáticamente al contador del cliente.' : 'La cita actualizará sus zonas de inmediato.'}
+                </span>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <button type="button" onclick="rechazarSolicitudZonas('${sol._id}')" class="flex-1 sm:flex-none px-3 py-1.5 border border-rose-300 text-rose-700 hover:bg-rose-50 font-bold uppercase tracking-wider text-[11px] rounded-sm transition">
+                    ✕ Rechazar
+                  </button>
+                  <button type="button" onclick="aprobarSolicitudZonas('${sol._id}')" class="flex-1 sm:flex-none px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-wider text-[11px] rounded-sm shadow-sm transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i> ✓ Autorizar Cambio
+                  </button>
+                </div>
+              </div>
+            ` : `
+              <div class="text-[10px] text-neutral-500 pt-1 border-t border-brand-border flex justify-between">
+                <span>Revisado por: <strong>${sol.revisadoPor || 'Admin'}</strong></span>
+                <span>${sol.fechaRevision ? new Date(sol.fechaRevision).toLocaleString('es-CO') : ''}</span>
+              </div>
+            `}
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    async function aprobarSolicitudZonas(solicitudId) {
+      if (!confirm('¿Confirmas la autorización de este cambio de zonas para la cita?')) return;
+
+      try {
+        const res = await fetch(`/api/solicitudes-cambio-zonas/${solicitudId}/aprobar`, {
+          method: 'PUT',
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          renderizarSolicitudesAdmin();
+          alert('✓ ¡Solicitud autorizada exitosamente! La cita y el historial del paciente fueron actualizados.');
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo autorizar'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    async function rechazarSolicitudZonas(solicitudId) {
+      const notasRevision = prompt('Ingresa el motivo del rechazo (opcional):', '');
+      if (notasRevision === null) return; // canceló prompt
+
+      try {
+        const res = await fetch(`/api/solicitudes-cambio-zonas/${solicitudId}/rechazar`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ notasRevision })
+        });
+        const data = await res.json();
+        if (data.success) {
+          await cargarDatosServidor();
+          renderizarSolicitudesAdmin();
+          alert('Solicitud rechazada.');
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo rechazar'));
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+    }
+
     // ================= INICIALIZACIÓN =================
     window.addEventListener('DOMContentLoaded', () => {
       // ── Verificar sesión ──────────────────────────────────────────────────
@@ -8229,12 +8916,14 @@
       cargarDatosServidor().then(() => {
         // Re-aplicar restricciones una vez los datos y listas estén poblados
         aplicarRestriccionesPorRol(session);
+        actualizarBadgesNotificacionesAdmin();
         lucide.createIcons();
       });
 
       // ── Polling en vivo para Recepción, Admin y Médico (cada 6 segundos) ───────────
       let ultimosFacturarCount = -1;
       let ultimosIdsAlertasMedicas = null;
+      let ultimasSolicitudesCount = -1;
 
       setInterval(async () => {
         const sesionActual = obtenerSesion();
@@ -8257,6 +8946,7 @@
               renderizarBannerCitasFacturar();
               renderizarAgenda();
               renderizarCaja();
+              actualizarBadgesNotificacionesAdmin();
             }
           } catch (e) {}
         }
@@ -8287,6 +8977,24 @@
               ultimosIdsAlertasMedicas = idsActuales;
               appState = json.data;
               renderizarPanelMedico();
+            }
+          } catch (e) {}
+        }
+
+        // 3. Admin: Solicitudes de cambio de zonas pendientes
+        if (sesionActual.rol === 'admin') {
+          try {
+            const res = await fetch('/api/solicitudes-cambio-zonas', { headers: authHeaders() });
+            const json = await res.json();
+            if (json.success) {
+              const pendientes = (json.solicitudes || []).filter(s => s.estado === 'PENDIENTE');
+              const actual = pendientes.length;
+              if (ultimasSolicitudesCount !== -1 && actual > ultimasSolicitudesCount) {
+                reproducirSonidoAlerta();
+              }
+              ultimasSolicitudesCount = actual;
+              appState.solicitudesZonas = json.solicitudes || [];
+              actualizarBadgesNotificacionesAdmin();
             }
           } catch (e) {}
         }
