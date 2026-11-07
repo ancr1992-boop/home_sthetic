@@ -105,6 +105,10 @@ const appointmentSchema = new mongoose.Schema({
     fecha: { type: String, default: '' }
   }],
   valor: { type: Number, required: true },
+  valorBruto: { type: Number, default: 0 },
+  valorIva: { type: Number, default: 0 },
+  metodoPago: { type: String, default: '' },
+  ventaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Sale' },
   operaria: { type: String, required: true },
   fecha: { type: String, required: true }, // YYYY-MM-DD
   hora: { type: String, required: true }, // HH:MM
@@ -1258,10 +1262,6 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
       cita.zonas = zonas;
     }
 
-    // Actualizar estado de cita
-    cita.estado = 'Completada';
-    await cita.save();
-
     const cliente = await Client.findById(cita.clienteId);
     let esSesionPaquete = false;
 
@@ -1419,6 +1419,15 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
       valorIva: vIvaFinal,
       pagos: listaPagos
     });
+
+    // Actualizar cita con los valores reales facturados en caja
+    cita.estado = 'Completada';
+    cita.valor = valorCobro;
+    cita.valorBruto = vBrutoFinal;
+    cita.valorIva = vIvaFinal;
+    cita.metodoPago = metodoCobro;
+    cita.ventaId = venta._id;
+    await cita.save();
 
     res.json({
       success: true,

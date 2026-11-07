@@ -3345,13 +3345,8 @@
                       `;
                     }).join('')}
                   </div>
-                  <span class="text-xs text-brand-gray mt-1.5 block">Liquidación: <strong class="text-black font-bold font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : (cita.estado === 'Completada' ? formatMoney(cita.valor) : 'Se define en Caja')}</strong></span>
                 </div>
-              ` : `
-                <div class="mt-2.5 pt-2 border-t border-brand-border/60">
-                  <span class="text-xs text-brand-gray block">Liquidación: <strong class="text-black font-bold font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : (cita.estado === 'Completada' ? formatMoney(cita.valor) : 'Se define en Caja')}</strong></span>
-                </div>
-              `}
+              ` : ''}
 
               ${cita.tratamientosAdicionales && cita.tratamientosAdicionales.length > 0 ? `
                 <div class="mt-2.5 p-2.5 bg-purple-50/70 border border-purple-200 rounded-sm space-y-1.5">
@@ -3383,7 +3378,10 @@
               ` : ''}
 
               <div class="mt-2.5 pt-2 border-t border-brand-border/60 flex justify-between items-center bg-neutral-50 px-2.5 py-1.5 rounded-xs">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-brand-black">Facturación en Caja:</span>
+                <div>
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-brand-black block">Facturación en Caja:</span>
+                  ${cita.estado === 'Completada' && cita.metodoPago ? `<span class="text-[10px] text-brand-gray font-medium">${cita.metodoPago}</span>` : ''}
+                </div>
                 <span class="text-sm font-black text-black font-mono">${(cliente && cliente.esPublicidad) ? '$0 (Cortesía Publicidad)' : (cita.estado === 'Completada' ? formatMoney(cita.valor) : 'Se liquida al cobrar')}</span>
               </div>
 
