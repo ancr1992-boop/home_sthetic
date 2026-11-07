@@ -4024,14 +4024,24 @@
       if (valPaqInput) valPaqInput.value = '';
       if (camposActivar) camposActivar.classList.add('hidden');
 
+      // Identificar si hay zonas nuevas fuera del paquete
+      const zonasNuevasExtra = cobroZonasLista.filter(z => z.modo === 'normal');
+
       if (bannerPaq) {
         if (tienePaqueteActivo && !esPublicidad) {
           bannerPaq.classList.remove('hidden');
           const badge = document.getElementById('cobroPaqueteBadge');
           const det = document.getElementById('cobroPaqueteDetalle');
           const paq = clienteObj?.paqueteActivo;
-          if (badge && paq) badge.innerText = `${paq.sesionesRestantes} restantes`;
-          if (det && paq) det.innerText = `Paquete activo: ${paq.zonas.join(' + ')}. Las zonas cubiertas están preseleccionadas a $0 COP.`;
+          if (badge && paq) badge.innerText = `${paq.sesionesRestantes} restantes de ${paq.sesionesTotales}`;
+          if (det && paq) {
+            if (zonasNuevasExtra.length === 0) {
+              det.innerHTML = `<strong>Paquete Activo:</strong> ${paq.zonas.join(' + ')}. <span class="text-emerald-800 font-bold block mt-0.5">✓ Sesión #${(paq.sesionesRealizadas || 0) + 1} prepagada. Saldo a cobrar en caja: $0 COP.</span>`;
+            } else {
+              const nombresNuevas = zonasNuevasExtra.map(z => z.nombre).join(', ');
+              det.innerHTML = `<strong>Paquete Activo:</strong> ${paq.zonas.join(' + ')} ($0 COP). <span class="text-purple-950 font-bold block mt-0.5">⚡ Zonas nuevas detectadas no cubiertas: ${nombresNuevas}. Ingresa abajo únicamente el valor a cobrar por las zonas nuevas.</span>`;
+            }
+          }
           if (bloqueActivar) bloqueActivar.classList.add('hidden');
         } else {
           bannerPaq.classList.add('hidden');
@@ -4070,15 +4080,19 @@
 
       const selMetodo = document.getElementById('cobroMetodo');
       if (selMetodo) {
-        if (esPublicidad) selMetodo.value = 'Cortesía / Publicidad';
-        else selMetodo.value = 'Efectivo';
+        if (esPublicidad) {
+          selMetodo.value = 'Cortesía / Publicidad';
+        } else if (tienePaqueteActivo && zonasNuevasExtra.length === 0) {
+          selMetodo.value = 'Sesión de Paquete Prepago ($0)';
+        } else {
+          selMetodo.value = 'Efectivo';
+        }
       }
 
-      // Inicializar valor de la sesión pactado con el cliente (por defecto $0 o valor acordado)
+      // Inicializar valor de la sesión pactado con el cliente (por defecto $0 o valor acordado si hay zonas nuevas)
       const inpValorSesion = document.getElementById('valorSesionZonasCobro');
-      const tieneSoloZonasGratis = cobroZonasLista.length > 0 && cobroZonasLista.every(z => z.modo === 'paquete' || z.modo === 'retoque');
       if (inpValorSesion) {
-        if (esPublicidad || tieneSoloZonasGratis) {
+        if (esPublicidad || (tienePaqueteActivo && zonasNuevasExtra.length === 0)) {
           inpValorSesion.value = 0;
         } else {
           const esLaser = (cita.servicio || '').toLowerCase().includes('laser') || (cita.servicio || '').toLowerCase().includes('láser');
@@ -4095,6 +4109,12 @@
       const cont = document.getElementById('contenedorZonasCobro');
       if (!cont) return;
 
+      const citaId = document.getElementById('cobroCitaId')?.value;
+      const cita = appState.citas.find(c => c._id == citaId);
+      const clienteObj = cita ? appState.clientes.find(c => c._id == cita.clienteId) : null;
+      const tienePaqueteActivo = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
+      const paqZonas = tienePaqueteActivo ? (clienteObj.paqueteActivo.zonas || []) : [];
+
       if (cobroZonasLista.length === 0) {
         cont.innerHTML = `
           <div class="p-3 bg-amber-50 border border-amber-200 rounded-sm text-center text-xs text-amber-900 font-medium">
@@ -4106,11 +4126,13 @@
 
       cont.innerHTML = cobroZonasLista.map((z, idx) => {
         const modo = z.modo || 'normal';
+        const estaEnPaquete = tienePaqueteActivo && paqZonas.includes(z.nombre);
         return `
           <div class="flex items-center justify-between p-2.5 bg-white border border-brand-border rounded-sm text-xs gap-2 shadow-2xs">
             <div class="flex items-center gap-1.5 flex-1 min-w-0">
               <span class="w-2.5 h-2.5 rounded-full ${modo === 'normal' ? 'bg-black' : (modo === 'paquete' ? 'bg-purple-600' : 'bg-emerald-600')}"></span>
               <span class="font-bold text-black truncate">${z.nombre}</span>
+              ${estaEnPaquete ? `<span class="text-[9px] bg-purple-100 text-purple-800 font-bold px-1.5 py-0.5 rounded-xs uppercase tracking-wider">Paquete</span>` : (tienePaqueteActivo ? `<span class="text-[9px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded-xs uppercase tracking-wider">Zona Nueva</span>` : '')}
             </div>
 
             <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -4141,6 +4163,25 @@
     function cambiarModoZonaCobro(idx, modo) {
       if (cobroZonasLista[idx]) {
         cobroZonasLista[idx].modo = modo;
+
+        const citaId = document.getElementById('cobroCitaId').value;
+        const cita = appState.citas.find(c => c._id == citaId);
+        const clienteObj = cita ? appState.clientes.find(c => c._id == cita.clienteId) : null;
+        const tienePaqueteActivo = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
+
+        const tieneZonasNormales = cobroZonasLista.some(z => z.modo === 'normal');
+        const inpValorSesion = document.getElementById('valorSesionZonasCobro');
+        const selMetodo = document.getElementById('cobroMetodo');
+
+        if (!tieneZonasNormales) {
+          if (inpValorSesion) inpValorSesion.value = 0;
+          if (selMetodo && tienePaqueteActivo) selMetodo.value = 'Sesión de Paquete Prepago ($0)';
+        } else {
+          if (selMetodo && selMetodo.value.includes('Prepago')) {
+            selMetodo.value = 'Efectivo';
+          }
+        }
+
         renderizarZonasEnCobro();
         calcularTotalesCobro();
       }
@@ -4148,6 +4189,19 @@
 
     function eliminarZonaEnCobro(idx) {
       cobroZonasLista.splice(idx, 1);
+      const citaId = document.getElementById('cobroCitaId').value;
+      const cita = appState.citas.find(c => c._id == citaId);
+      const clienteObj = cita ? appState.clientes.find(c => c._id == cita.clienteId) : null;
+      const tienePaqueteActivo = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
+      const tieneZonasNormales = cobroZonasLista.some(z => z.modo === 'normal');
+      const inpValorSesion = document.getElementById('valorSesionZonasCobro');
+      const selMetodo = document.getElementById('cobroMetodo');
+
+      if (!tieneZonasNormales) {
+        if (inpValorSesion) inpValorSesion.value = 0;
+        if (selMetodo && tienePaqueteActivo) selMetodo.value = 'Sesión de Paquete Prepago ($0)';
+      }
+
       renderizarZonasEnCobro();
       calcularTotalesCobro();
     }
@@ -4160,8 +4214,22 @@
         alert(`La zona "${zona}" ya se encuentra agregada a la lista.`);
         return;
       }
-      cobroZonasLista.push({ nombre: zona, modo: 'normal' });
+
+      const citaId = document.getElementById('cobroCitaId').value;
+      const cita = appState.citas.find(c => c._id == citaId);
+      const clienteObj = cita ? appState.clientes.find(c => c._id == cita.clienteId) : null;
+      const tienePaqueteActivo = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
+      const paqZonas = tienePaqueteActivo ? (clienteObj.paqueteActivo.zonas || []) : [];
+
+      const modoInicial = (tienePaqueteActivo && paqZonas.includes(zona)) ? 'paquete' : 'normal';
+      cobroZonasLista.push({ nombre: zona, modo: modoInicial });
       sel.value = '';
+
+      const selMetodo = document.getElementById('cobroMetodo');
+      if (modoInicial === 'normal' && selMetodo && selMetodo.value.includes('Prepago')) {
+        selMetodo.value = 'Efectivo';
+      }
+
       renderizarZonasEnCobro();
       calcularTotalesCobro();
     }

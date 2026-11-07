@@ -1395,6 +1395,10 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
       const sReal = cliente?.paqueteActivo ? cliente.paqueteActivo.sesionesRealizadas : 1;
       const sTot = cliente?.paqueteActivo ? cliente.paqueteActivo.sesionesTotales : '-';
       concepto += ` [Sesión Paquete #${sReal} de ${sTot}]`;
+    } else if (esSesionPaquete && valorCobro > 0) {
+      const sReal = cliente?.paqueteActivo ? cliente.paqueteActivo.sesionesRealizadas : 1;
+      const sTot = cliente?.paqueteActivo ? cliente.paqueteActivo.sesionesTotales : '-';
+      concepto += ` [Sesión Paquete #${sReal} de ${sTot} + Zonas Nuevas Extras]`;
     } else if (activarPaquete || cita.esCompraPaquete) {
       const cantTot = (activarPaquete && activarPaquete.sesionesTotales) || (cita.detallesPaquete && cita.detallesPaquete.sesionesTotales) || 6;
       concepto += ` [Compra de Paquete: ${cantTot} sesiones]`;
