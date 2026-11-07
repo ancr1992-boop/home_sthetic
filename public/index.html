@@ -1629,10 +1629,14 @@
             </div>
             <div>
               <div class="flex justify-between items-center mb-0.5">
-                <label class="block text-[10px] uppercase font-bold text-purple-900">Valor Total a Cobrar por el Paquete ($ COP) *</label>
+                <label class="block text-[10px] uppercase font-bold text-purple-900">Valor a Cobrar por el Paquete ($ COP) *</label>
                 <span class="text-[10px] text-purple-700 italic">Editable</span>
               </div>
               <input type="number" id="valorTotalPaqueteCobro" placeholder="Ej: 250000" class="w-full border border-purple-300 p-2 rounded-sm bg-white font-bold text-xs focus:border-purple-600 outline-none font-mono" oninput="calcularTotalesCobro()">
+              <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-purple-950 font-medium mt-1.5 select-none bg-purple-100/70 p-1.5 rounded-xs border border-purple-200">
+                <input type="checkbox" id="chkPaquetePrecioIncluyeIva" onchange="calcularTotalesCobro()" class="accent-purple-700 w-3.5 h-3.5 cursor-pointer">
+                <span>¿Este valor del paquete ya incluye el 19% de IVA? (Desglosar base sin sumar doble)</span>
+              </label>
             </div>
           </div>
         </div>
@@ -4019,6 +4023,10 @@
       const camposActivar = document.getElementById('camposActivarPaqueteCobro');
 
       if (chkActivar) chkActivar.checked = false;
+      const chkIncluyeIva = document.getElementById('chkPaquetePrecioIncluyeIva');
+      if (chkIncluyeIva) chkIncluyeIva.checked = false;
+      const valPaqInput = document.getElementById('valorTotalPaqueteCobro');
+      if (valPaqInput) valPaqInput.value = '';
       if (camposActivar) camposActivar.classList.add('hidden');
 
       if (bannerPaq) {
@@ -4161,6 +4169,9 @@
       if (chk && campos) {
         if (chk.checked) {
           campos.classList.remove('hidden');
+          // Al activar compra de paquete hoy, todas las zonas de la cita de hoy quedan cubiertas en el paquete (1ra sesión a $0 COP)
+          cobroZonasLista.forEach(z => { z.modo = 'paquete'; });
+          renderizarZonasEnCobro();
           const valInput = document.getElementById('valorTotalPaqueteCobro');
           const numSes = Number(document.getElementById('numSesionesCobro')?.value || 6);
           const cantZonas = cobroZonasLista.length > 0 ? cobroZonasLista.length : 1;
@@ -4169,6 +4180,15 @@
           }
         } else {
           campos.classList.add('hidden');
+          const citaId = document.getElementById('cobroCitaId').value;
+          const cita = appState.citas.find(c => c._id == citaId);
+          const clienteObj = cita ? appState.clientes.find(c => c._id == cita.clienteId) : null;
+          const tienePaquetePrevio = Boolean(clienteObj && clienteObj.paqueteActivo && clienteObj.paqueteActivo.activo && clienteObj.paqueteActivo.sesionesRestantes > 0);
+          const paqZonas = tienePaquetePrevio ? (clienteObj.paqueteActivo.zonas || []) : [];
+          cobroZonasLista.forEach(z => {
+            z.modo = (tienePaquetePrevio && paqZonas.includes(z.nombre)) ? 'paquete' : 'normal';
+          });
+          renderizarZonasEnCobro();
         }
       }
       calcularTotalesCobro();
@@ -4214,13 +4234,13 @@
       const clienteObj = cita ? appState.clientes.find(c => c._id == cita.clienteId) : null;
       const esPublicidad = Boolean(clienteObj && clienteObj.esPublicidad);
 
-      let baseBruta = 0;
+      let zonasBase = 0;
 
       if (!esPublicidad) {
         // Sumar zonas normales ($50.000 COP c/u)
         cobroZonasLista.forEach(z => {
           if (z.modo === 'normal') {
-            baseBruta += 50000;
+            zonasBase += 50000;
           }
         });
 
@@ -4228,26 +4248,25 @@
         if (cita && cita.servicio) {
           const esLaser = cita.servicio.toLowerCase().includes('laser') || cita.servicio.toLowerCase().includes('láser');
           if (!esLaser && (!cita.zonas || cita.zonas.length === 0)) {
-            baseBruta += (Number(cita.valor) || 0);
+            zonasBase += (Number(cita.valor) || 0);
           }
         }
 
         // Tratamientos adicionales
         if (cita && cita.tratamientosAdicionales && Array.isArray(cita.tratamientosAdicionales)) {
           cita.tratamientosAdicionales.forEach(t => {
-            baseBruta += (Number(t.precio) || 0);
+            zonasBase += (Number(t.precio) || 0);
           });
-        }
-
-        // Si activa compra de paquete
-        const chkActivar = document.getElementById('chkActivarPaqueteCobro');
-        if (chkActivar && chkActivar.checked) {
-          const valPaq = Number(document.getElementById('valorTotalPaqueteCobro')?.value) || 0;
-          baseBruta += valPaq;
         }
       }
 
-      // Regla de IVA: 19% en todos los medios excepto Efectivo (0% IVA)
+      // Si activa compra de paquete
+      const chkActivar = document.getElementById('chkActivarPaqueteCobro');
+      const esCompraPaquete = Boolean(!esPublicidad && chkActivar && chkActivar.checked);
+      const valPaq = esCompraPaquete ? (Number(document.getElementById('valorTotalPaqueteCobro')?.value) || 0) : 0;
+      const chkIncluyeIva = Boolean(document.getElementById('chkPaquetePrecioIncluyeIva')?.checked);
+
+      let baseBruta = 0;
       let iva = 0;
       let totalNeto = 0;
 
@@ -4265,13 +4284,26 @@
           iva = 0;
           totalNeto = 0;
         } else if (metodo.toLowerCase().includes('efectivo')) {
-          // Efectivo = 0% IVA
+          // Efectivo = 0% IVA siempre
+          baseBruta = zonasBase + valPaq;
           iva = 0;
           totalNeto = baseBruta;
         } else {
-          // Otros medios (Transferencia, Addi, Tarjetas) = +19% IVA
-          iva = Math.round(baseBruta * 0.19);
-          totalNeto = baseBruta + iva;
+          // Medios electrónicos (Transferencia, Addi, Tarjetas) = +19% IVA
+          if (esCompraPaquete && chkIncluyeIva) {
+            // El usuario indicó que el precio ingresado para el paquete YA incluye el 19% de IVA: se desglosa
+            const paqBase = Math.round(valPaq / 1.19);
+            const paqIva = valPaq - paqBase;
+            const zonasIva = Math.round(zonasBase * 0.19);
+            baseBruta = zonasBase + paqBase;
+            iva = zonasIva + paqIva;
+            totalNeto = baseBruta + iva;
+          } else {
+            // Tarifa estándar: la base bruta es zonas + paquete, y se suma el 19% de IVA una sola vez
+            baseBruta = zonasBase + valPaq;
+            iva = Math.round(baseBruta * 0.19);
+            totalNeto = baseBruta + iva;
+          }
         }
       } else {
         // En pago mixto, cada medio suma su IVA según sea efectivo o electrónico
@@ -4289,7 +4321,8 @@
         });
 
         if (filasPagoMixto.length === 0) {
-          totalNeto = baseBruta;
+          totalNeto = zonasBase + valPaq;
+          baseBruta = totalNeto;
           iva = 0;
         } else {
           baseBruta = sumaBases;
@@ -4475,9 +4508,10 @@
       if (chkActivar && chkActivar.checked) {
         const sesiones = Number(document.getElementById('numSesionesCobro').value || 6);
         const zonasPaq = cobroZonasLista.map(z => z.nombre);
+        const precioPaqCobrado = Number(document.getElementById('valorTotalPaqueteCobro')?.value) || valor;
         activarPaquete = {
           sesionesTotales: sesiones,
-          precioTotalPagado: valor,
+          precioTotalPagado: precioPaqCobrado,
           zonas: zonasPaq.length > 0 ? zonasPaq : ['Bikini Completo', 'Axilas']
         };
       }
@@ -4534,72 +4568,6 @@
             alert('✓ Sesión de paquete completada. Se descontó 1 sesión del paquete y se sumó al contador del cliente ($0 en caja).');
           } else {
             alert('✓ Cita cobrada exitosamente. Sesiones sumadas al contador del cliente e ingreso registrado en Caja con sus valores de base e IVA.');
-          }
-        } else {
-          alert('Error al procesar cobro: ' + (data.error || 'Ocurrió un error'));
-        }
-      } catch (err) {
-        alert('Error de conexión: ' + err.message);
-      }
-    }
-
-    async function procesarCobro(e) {
-      e.preventDefault();
-      const citaId = document.getElementById('cobroCitaId').value;
-      const valor = Number(document.getElementById('cobroMonto').value) || 0;
-      let metodo = document.getElementById('cobroMetodo').value;
-
-      const cita = appState.citas.find(c => c._id == citaId);
-      const chkActivar = document.getElementById('chkActivarPaqueteCobro');
-      let activarPaquete = null;
-
-      if (chkActivar && chkActivar.checked) {
-        const sesiones = Number(document.getElementById('numSesionesCobro').value || 6);
-        const zonas = (cita && cita.zonas && cita.zonas.length > 0) ? cita.zonas : ['Bikini Completo', 'Axilas'];
-        activarPaquete = {
-          sesionesTotales: sesiones,
-          precioTotalPagado: valor,
-          zonas: zonas
-        };
-      }
-
-      const chkMixto = document.getElementById('chkPagoMixto');
-      let pagos = [];
-
-      if (chkMixto && chkMixto.checked && valor > 0) {
-        pagos = filasPagoMixto.map(f => ({ metodo: f.metodo, valor: Number(f.valor) || 0 })).filter(f => f.valor > 0);
-        const sumaPagos = pagos.reduce((acc, p) => acc + p.valor, 0);
-        if (sumaPagos !== valor) {
-          alert(`⚠️ Los medios de pago no cuadran con el valor total a cobrar:\n\n• Valor a cobrar: ${formatMoney(valor)}\n• Suma de pagos ingresados: ${formatMoney(sumaPagos)}\n• Diferencia: ${formatMoney(Math.abs(valor - sumaPagos))}\n\nPor favor ajusta los montos para que la suma sea exactamente igual.`);
-          return;
-        }
-        if (pagos.length > 1) {
-          metodo = `Mixto (${pagos.map(p => `${p.metodo}: ${formatMoney(p.valor)}`).join(' + ')})`;
-        } else if (pagos.length === 1) {
-          metodo = pagos[0].metodo;
-        }
-      }
-
-      try {
-        const payload = { valor, metodo };
-        if (pagos.length > 0) payload.pagos = pagos;
-        if (activarPaquete) payload.activarPaquete = activarPaquete;
-
-        const res = await fetch(`/api/citas/${citaId}/completar-cobro`, {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          closeModal('modalCobrarCita');
-          await cargarDatosServidor();
-          if (activarPaquete) {
-            alert(`✓ ¡Paquete de ${activarPaquete.sesionesTotales} sesiones activado y pagado en caja! Se consumió la primera sesión.`);
-          } else if (metodo.includes('Paquete Prepago')) {
-            alert('✓ Sesión de paquete completada. Se descontó 1 sesión del paquete y se sumó al contador del cliente ($0 en caja).');
-          } else {
-            alert('✓ Cita cobrada exitosamente. Sesión sumada al contador del cliente e ingreso registrado en Caja con sus medios de pago.');
           }
         } else {
           alert('Error al procesar cobro: ' + (data.error || 'Ocurrió un error'));
