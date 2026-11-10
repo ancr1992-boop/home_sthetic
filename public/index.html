@@ -2093,6 +2093,7 @@
             <option value="operaria">Operaria — Solo Cabina</option>
             <option value="medico">Médico / Doctor — Control de Historias Clínicas & Aval</option>
             <option value="socio">Socio / Propietario — Solo Caja & Retiros de Efectivo</option>
+            <option value="contadora">Contadora — Solo Ventas, Gastos, Formas de Pago e Informes</option>
             <option value="admin">Administrador — Control Total</option>
           </select>
         </div>
@@ -2427,15 +2428,16 @@
           recepcionista: '🖥 Recepcionista', 
           operaria: '✨ Especialista', 
           medico: '🩺 Médico / Director',
-          socio: '💼 Socio / Control de Efectivo'
+          socio: '💼 Socio / Control de Efectivo',
+          contadora: '📊 Contadora / Finanzas'
         };
         navRole.textContent = labels[rol] || rol;
       }
 
-      // ── Badge "Caja Hoy" en Navbar: Visible para Administrador y Socio ──
+      // ── Badge "Caja Hoy" en Navbar: Visible para Administrador, Socio y Contadora ──
       const navCaja = document.getElementById('navCajaBadgeContainer');
       if (navCaja) {
-        if (rol === 'admin' || rol === 'socio') {
+        if (rol === 'admin' || rol === 'socio' || rol === 'contadora') {
           navCaja.style.display = 'flex';
         } else {
           navCaja.style.display = 'none';
@@ -2563,6 +2565,48 @@
         // En la tabla de ventas, el socio puede ver acciones de eliminación de retiros
         const thAcciones = document.getElementById('thAccionesVenta');
         if (thAcciones) thAcciones.classList.remove('hidden');
+
+        cambiarSeccion('caja');
+        return;
+      }
+
+      if (rol === 'contadora') {
+        // ── CONTADORA: Acceso a Caja Diaria, Formas de Pago e Informes Financieros ──
+        ['tab-agenda','tab-clientes','tab-equipo','tab-usuarios','tab-operaria','tab-medico'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('hidden');
+        });
+
+        // Asegurarse de que Caja e Informes Financieros estén visibles
+        const tabCaja = document.getElementById('tab-caja');
+        if (tabCaja) tabCaja.classList.remove('hidden');
+
+        const tabInf = document.getElementById('tab-informes');
+        if (tabInf) tabInf.classList.remove('hidden');
+
+        const btnInf = document.getElementById('btnCajaIrInformes');
+        if (btnInf) btnInf.classList.remove('hidden');
+
+        // Ocultar botón "Nueva Cita" del navbar
+        const btnNuevaCita = document.getElementById('btnNavNuevaCita');
+        if (btnNuevaCita) btnNuevaCita.classList.add('hidden');
+
+        // Ocultar acciones operativas de facturación y apertura/cierre de caja
+        const bloqueFacturar = document.getElementById('bloqueCajaPorFacturar');
+        if (bloqueFacturar) bloqueFacturar.classList.add('hidden');
+
+        const btnAbrirCaja = document.getElementById('btnCajaAbrir');
+        if (btnAbrirCaja) btnAbrirCaja.classList.add('hidden');
+
+        const btnCerrarCaja = document.getElementById('btnCajaCerrar');
+        if (btnCerrarCaja) btnCerrarCaja.classList.add('hidden');
+
+        const btnVentaRapida = document.getElementById('btnCajaVentaRapida');
+        if (btnVentaRapida) btnVentaRapida.classList.add('hidden');
+
+        // Ocultar acciones de eliminación de ventas (la contadora audita, no elimina)
+        const thAcciones = document.getElementById('thAccionesVenta');
+        if (thAcciones) thAcciones.classList.add('hidden');
 
         cambiarSeccion('caja');
         return;
@@ -2737,8 +2781,8 @@
         renderizarPanelMedico();
       } else if (seccion === 'informes') {
         const session = obtenerSesion();
-        if (!session || session.rol !== 'admin') {
-          alert('Solo el Administrador tiene acceso a los informes financieros.');
+        if (!session || (session.rol !== 'admin' && session.rol !== 'contadora')) {
+          alert('Solo el Administrador y Contabilidad tienen acceso a los informes financieros.');
           cambiarSeccion('agenda');
           return;
         }
@@ -7340,7 +7384,8 @@
         recepcionista: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-100 text-blue-800 border border-blue-200 rounded-full">Recepcionista</span>',
         operaria: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-pink-100 text-pink-800 border border-pink-200 rounded-full">Operaria</span>',
         medico: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full">Médico</span>',
-        socio: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300 rounded-full">Socio / Retiros</span>'
+        socio: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300 rounded-full">Socio / Retiros</span>',
+        contadora: '<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-teal-100 text-teal-900 border border-teal-300 rounded-full">Contadora</span>'
       };
 
       tbody.innerHTML = usuarios.map(u => `

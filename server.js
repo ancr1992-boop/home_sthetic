@@ -188,7 +188,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   nombre: { type: String, required: true },
-  rol: { type: String, enum: ['admin', 'recepcionista', 'operaria', 'medico', 'socio'], required: true },
+  rol: { type: String, enum: ['admin', 'recepcionista', 'operaria', 'medico', 'socio', 'contadora'], required: true },
   operariaNombre: { type: String, default: '' },
   activo: { type: Boolean, default: true }
 }, { timestamps: true });
@@ -411,6 +411,25 @@ async function initDatabaseDefaults() {
       rol: 'socio'
     });
     console.log('✓ Usuario Socio creado: socio / 123');
+  }
+
+  const contadoraExists = await User.findOne({ username: 'taty' });
+  if (!contadoraExists) {
+    await User.create({
+      username: 'taty',
+      password: 'Taty123',
+      nombre: 'Taty',
+      rol: 'contadora',
+      activo: true
+    });
+    console.log('✓ Usuario Contadora creado: taty / Taty123');
+  } else {
+    contadoraExists.password = 'Taty123';
+    contadoraExists.rol = 'contadora';
+    contadoraExists.nombre = 'Taty';
+    contadoraExists.activo = true;
+    await contadoraExists.save();
+    console.log('✓ Usuario Contadora actualizado: taty / Taty123');
   }
 
   // Asegurar usuarios para las operarias registradas
@@ -1685,10 +1704,10 @@ app.post('/api/caja/retiros', async (req, res) => {
 app.get('/api/reportes/financiero', async (req, res) => {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.rol !== 'admin') {
+    if (!authUser || (authUser.rol !== 'admin' && authUser.rol !== 'contadora')) {
       return res.status(403).json({
         success: false,
-        error: 'Acceso denegado. Solo el Administrador tiene autorización para consultar los informes y balances financieros.'
+        error: 'Acceso denegado. Solo el Administrador o Contabilidad tienen autorización para consultar los informes y balances financieros.'
       });
     }
 
