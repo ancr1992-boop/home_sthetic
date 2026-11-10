@@ -2571,18 +2571,18 @@
       }
 
       if (rol === 'contadora') {
-        // ── CONTADORA: Acceso a Caja Diaria, Formas de Pago e Informes Financieros ──
+        // ── CONTADORA: Modo Auditoría & Consulta de Históricos (Solo Lectura) ──
         ['tab-agenda','tab-clientes','tab-equipo','tab-usuarios','tab-operaria','tab-medico'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.add('hidden');
         });
 
-        // Asegurarse de que Caja e Informes Financieros estén visibles
-        const tabCaja = document.getElementById('tab-caja');
-        if (tabCaja) tabCaja.classList.remove('hidden');
-
+        // Asegurarse de que Informes Financieros y Caja estén visibles
         const tabInf = document.getElementById('tab-informes');
         if (tabInf) tabInf.classList.remove('hidden');
+
+        const tabCaja = document.getElementById('tab-caja');
+        if (tabCaja) tabCaja.classList.remove('hidden');
 
         const btnInf = document.getElementById('btnCajaIrInformes');
         if (btnInf) btnInf.classList.remove('hidden');
@@ -2591,7 +2591,7 @@
         const btnNuevaCita = document.getElementById('btnNavNuevaCita');
         if (btnNuevaCita) btnNuevaCita.classList.add('hidden');
 
-        // Ocultar acciones operativas de facturación y apertura/cierre de caja
+        // Ocultar botones de modificación, creación, cobro o retiro en Caja
         const bloqueFacturar = document.getElementById('bloqueCajaPorFacturar');
         if (bloqueFacturar) bloqueFacturar.classList.add('hidden');
 
@@ -2604,11 +2604,18 @@
         const btnVentaRapida = document.getElementById('btnCajaVentaRapida');
         if (btnVentaRapida) btnVentaRapida.classList.add('hidden');
 
-        // Ocultar acciones de eliminación de ventas (la contadora audita, no elimina)
+        const btnNuevoGasto = document.getElementById('btnCajaNuevoGasto');
+        if (btnNuevoGasto) btnNuevoGasto.classList.add('hidden');
+
+        const btnRetiro = document.getElementById('btnCajaRetiroEfectivo');
+        if (btnRetiro) btnRetiro.classList.add('hidden');
+
+        // Ocultar columna de acciones de eliminar (la contadora audita, no modifica ni elimina)
         const thAcciones = document.getElementById('thAccionesVenta');
         if (thAcciones) thAcciones.classList.add('hidden');
 
-        cambiarSeccion('caja');
+        // Redirigir directamente a la pantalla de Informes e Históricos
+        cambiarSeccion('informes');
         return;
       }
 
@@ -6571,7 +6578,25 @@
     function renderizarCaja() {
       const session = obtenerSesion();
       const esAdmin = session && session.rol === 'admin';
+      const esContadora = session && session.rol === 'contadora';
       const puedeEliminarGasto = session && (session.rol === 'admin' || session.rol === 'recepcionista' || session.rol === 'socio');
+
+      if (esContadora) {
+        const btnG = document.getElementById('btnCajaNuevoGasto');
+        if (btnG) btnG.classList.add('hidden');
+        const btnR = document.getElementById('btnCajaRetiroEfectivo');
+        if (btnR) btnR.classList.add('hidden');
+        const btnA = document.getElementById('btnCajaAbrir');
+        if (btnA) btnA.classList.add('hidden');
+        const btnC = document.getElementById('btnCajaCerrar');
+        if (btnC) btnC.classList.add('hidden');
+        const btnVR = document.getElementById('btnCajaVentaRapida');
+        if (btnVR) btnVR.classList.add('hidden');
+        const thA = document.getElementById('thAccionesVenta');
+        if (thA) thA.classList.add('hidden');
+        const blqF = document.getElementById('bloqueCajaPorFacturar');
+        if (blqF) blqF.classList.add('hidden');
+      }
 
       const fondo = (appState.config && appState.config.caja && appState.config.caja.fondoInicial) || 0;
       
@@ -6707,11 +6732,11 @@
           subtexto.innerText = `Caja abierta hoy a las ${cajaConfig.horaApertura || 'inicio de jornada'} por ${cajaConfig.usuarioApertura || 'Recepción'} con base de ${formatMoney(fondo)}.`;
         }
         if (elBannerCerrada) elBannerCerrada.classList.add('hidden');
-        if (btnAbrir && (!session || session.rol !== 'socio')) {
+        if (btnAbrir && (!session || (session.rol !== 'socio' && session.rol !== 'contadora'))) {
           btnAbrir.innerText = 'Ajustar Base Caja';
           btnAbrir.className = 'border border-neutral-300 text-neutral-700 hover:border-black hover:text-black px-3.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-sm transition';
         }
-        if (btnCerrar && (!session || session.rol !== 'socio')) {
+        if (btnCerrar && (!session || (session.rol !== 'socio' && session.rol !== 'contadora'))) {
           btnCerrar.classList.remove('hidden');
         }
       } else {
@@ -6722,8 +6747,14 @@
         if (subtexto) {
           subtexto.innerText = `La caja se encuentra cerrada. Es obligatorio realizar la apertura para registrar cobros o facturar.`;
         }
-        if (elBannerCerrada) elBannerCerrada.classList.remove('hidden');
-        if (btnAbrir && (!session || session.rol !== 'socio')) {
+        if (elBannerCerrada) {
+          if (esContadora) {
+            elBannerCerrada.classList.add('hidden');
+          } else {
+            elBannerCerrada.classList.remove('hidden');
+          }
+        }
+        if (btnAbrir && (!session || (session.rol !== 'socio' && session.rol !== 'contadora'))) {
           btnAbrir.innerText = '⚡ Abrir Caja del Día';
           btnAbrir.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-black uppercase tracking-wider rounded-sm transition shadow-xs hover:scale-[1.01]';
         }
@@ -6756,9 +6787,11 @@
                 ${totalRetirosEf > 0 ? ` Ya se han retirado hoy: <strong class="text-amber-900 font-mono">${formatMoney(totalRetirosEf)}</strong>.` : ''}
               </p>
             </div>
-            <button type="button" onclick="abrirModalRetiroEfectivo()" class="whitespace-nowrap bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 text-xs font-black uppercase tracking-wider rounded-sm flex items-center gap-1.5 shadow-xs transition hover:scale-[1.01]">
-              <i data-lucide="hand-coins" class="w-4 h-4"></i> Registrar Recogida de Efectivo
-            </button>
+            ${!esContadora ? `
+              <button type="button" onclick="abrirModalRetiroEfectivo()" class="whitespace-nowrap bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 text-xs font-black uppercase tracking-wider rounded-sm flex items-center gap-1.5 shadow-xs transition hover:scale-[1.01]">
+                <i data-lucide="hand-coins" class="w-4 h-4"></i> Registrar Recogida de Efectivo
+              </button>
+            ` : ''}
           `;
         } else {
           bannerRecogida.className = 'border-2 rounded-sm p-4 bg-gradient-to-r from-neutral-50 via-neutral-100/70 to-neutral-50 border-neutral-300 text-neutral-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-2xs';
@@ -6781,7 +6814,7 @@
                 ${totalRetirosEf > 0 ? `<br><span class="text-amber-800 font-medium">Nota: Hoy ya se retiraron ${formatMoney(totalRetirosEf)} de efectivo de la caja.</span>` : ''}
               </p>
             </div>
-            ${efectivoEnCaja > 0 ? `
+            ${efectivoEnCaja > 0 && !esContadora ? `
               <button type="button" onclick="abrirModalRetiroEfectivo()" class="whitespace-nowrap border border-neutral-400 bg-white hover:bg-neutral-100 text-neutral-900 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center gap-1.5 transition">
                 <i data-lucide="hand-coins" class="w-3.5 h-3.5 text-neutral-600"></i> Retirar Efectivo de Base
               </button>
@@ -6942,7 +6975,7 @@
               <td class="p-3 text-right font-mono text-xs ${esVenta ? 'font-bold text-emerald-800' : 'font-bold text-rose-600'}">
                 ${esVenta ? `+${formatMoney(m.valor)}` : `-${formatMoney(m.valor)}`}
               </td>
-              <td class="p-3 text-center">
+              <td class="p-3 text-center ${esContadora ? 'hidden' : ''}">
                 ${esVenta ? (esAdmin ? `
                   <button onclick="eliminarVenta('${m.id}')"
                     class="text-neutral-400 hover:text-red-600 transition p-1.5 border border-transparent hover:border-red-200 rounded-sm"
@@ -7642,8 +7675,8 @@
 
     function irAInformesFinancieros() {
       const session = obtenerSesion();
-      if (!session || session.rol !== 'admin') {
-        alert('Solo el Administrador tiene acceso a los informes financieros.');
+      if (!session || (session.rol !== 'admin' && session.rol !== 'contadora')) {
+        alert('Solo el Administrador y Contabilidad tienen acceso a los informes financieros.');
         return;
       }
       cambiarSeccion('informes');
@@ -7701,7 +7734,7 @@
 
     async function consultarInformeFinanciero() {
       const session = obtenerSesion();
-      if (!session || session.rol !== 'admin') {
+      if (!session || (session.rol !== 'admin' && session.rol !== 'contadora')) {
         alert('Acceso no autorizado.');
         return;
       }

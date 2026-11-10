@@ -1264,6 +1264,11 @@ app.post('/api/citas/:id/completar-cobro', async (req, res) => {
     const { id } = req.params;
     const { valor, valorBruto, valorIva, metodo, pagos, activarPaquete, zonas } = req.body;
 
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol === 'contadora') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado: El perfil Contadora tiene permisos de solo lectura y no puede facturar ni cobrar citas.' });
+    }
+
     const config = await getOrCreateConfig();
     if (!isCajaAbierta(config)) {
       return res.status(400).json({
@@ -1465,6 +1470,9 @@ app.post('/api/caja/apertura', async (req, res) => {
   try {
     const { fondoInicial } = req.body;
     const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol === 'contadora') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado: El perfil Contadora tiene permisos de solo lectura.' });
+    }
     let config = await getOrCreateConfig();
     config.caja.abierta = true;
     config.caja.fondoInicial = Number(fondoInicial) >= 0 ? Number(fondoInicial) : 50000;
@@ -1485,6 +1493,9 @@ app.post('/api/caja/apertura', async (req, res) => {
 app.post('/api/caja/cierre', async (req, res) => {
   try {
     const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol === 'contadora') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado: El perfil Contadora tiene permisos de solo lectura.' });
+    }
     let config = await getOrCreateConfig();
     config.caja.abierta = false;
     config.caja.fechaCierre = getFechaHoy();
@@ -1503,6 +1514,11 @@ app.post('/api/caja/cierre', async (req, res) => {
 // 7. Cobro Rápido Manual en Caja
 app.post('/api/caja/venta-rapida', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol === 'contadora') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado: El perfil Contadora tiene permisos de solo lectura y no puede registrar ventas.' });
+    }
+
     const config = await getOrCreateConfig();
     if (!isCajaAbierta(config)) {
       return res.status(400).json({
@@ -1586,6 +1602,11 @@ app.delete('/api/ventas/:id', (req, res) => res.redirect(307, `/api/caja/ventas/
 // 7.2 Gastos: Registrar Gasto en Caja
 app.post('/api/caja/gastos', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol === 'contadora') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado: El perfil Contadora tiene permisos de solo lectura y no puede registrar gastos.' });
+    }
+
     const { concepto, categoria, metodo, valor, responsable } = req.body;
     if (!concepto || !concepto.trim()) {
       return res.status(400).json({ success: false, error: 'El concepto del gasto es obligatorio.' });
@@ -1595,7 +1616,6 @@ app.post('/api/caja/gastos', async (req, res) => {
       return res.status(400).json({ success: false, error: 'El valor del gasto debe ser un número mayor a 0.' });
     }
 
-    const authUser = await getAuthUser(req);
     const nombreResponsable = responsable || (authUser ? authUser.nombre : 'Recepción');
 
     const gasto = await Expense.create({
@@ -1619,6 +1639,11 @@ app.post('/api/caja/gastos', async (req, res) => {
 // 7.3 Gastos: Eliminar Gasto
 app.delete('/api/caja/gastos/:id', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol === 'contadora') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado: El perfil Contadora tiene permisos de solo lectura y no puede eliminar gastos.' });
+    }
+
     const { id } = req.params;
     const gasto = await Expense.findByIdAndDelete(id);
     if (!gasto) {
@@ -1636,13 +1661,17 @@ app.delete('/api/caja/gastos/:id', async (req, res) => {
 // 7.4 Retiro / Recogida de Efectivo en Caja (Socio o Admin)
 app.post('/api/caja/retiros', async (req, res) => {
   try {
+    const authUser = await getAuthUser(req);
+    if (authUser && authUser.rol === 'contadora') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado: El perfil Contadora tiene permisos de solo lectura y no puede registrar retiros de efectivo.' });
+    }
+
     const { valor, concepto } = req.body;
     const monto = Number(valor);
     if (isNaN(monto) || monto <= 0) {
       return res.status(400).json({ success: false, error: 'Ingresa un monto válido mayor a 0 para el retiro.' });
     }
 
-    const authUser = await getAuthUser(req);
     const nombreResponsable = authUser ? authUser.nombre : 'Socio';
 
     // Verificar cuánto efectivo físico hay actualmente en caja
