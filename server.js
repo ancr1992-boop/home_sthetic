@@ -2017,8 +2017,8 @@ async function enviarCorreoComprobanteNomina(pago) {
             </thead>
             <tbody>
               <tr>
-                <td><strong>Sueldo Base Acordado</strong></td>
-                <td class="text-right" style="color: #6b7280;">${pago.tipoPeriodo === 'Mensual' ? 'Sueldo mensual pactado' : 'Sueldo quincenal pactado'}</td>
+                <td><strong>Sueldo Base</strong></td>
+                <td class="text-right" style="color: #6b7280;">${pago.tipoPeriodo === 'Mensual' ? 'Sueldo mensual' : 'Sueldo quincenal'}</td>
                 <td class="text-right" style="font-weight: 600; font-family: monospace;">$${pago.sueldoBase ? pago.sueldoBase.toLocaleString('es-CO') : 0}</td>
               </tr>
               ${diasAdic > 0 ? `

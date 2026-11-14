@@ -2735,7 +2735,7 @@ SMTP_FROM="HOME STHETIC" &lt;tucorreo@gmail.com&gt;</pre>
         <!-- Sueldo Base del Período -->
         <div class="border border-brand-border p-3 rounded-sm bg-emerald-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span class="font-bold text-emerald-950 uppercase tracking-wider text-[11px] block">Sueldo Base Acordado para este Período ($ COP) *</span>
+            <span class="font-bold text-emerald-950 uppercase tracking-wider text-[11px] block">Sueldo Base para este Período ($ COP) *</span>
             <span class="text-[10px] text-emerald-800">Calculado automáticamente según el salario mensual pactado</span>
           </div>
           <div class="w-full sm:w-56">
@@ -9673,8 +9673,8 @@ SMTP_FROM="HOME STHETIC" &lt;tucorreo@gmail.com&gt;</pre>
             </thead>
             <tbody>
               <tr>
-                <td><strong>Sueldo Base Acordado</strong></td>
-                <td class="text-right text-gray">${(pago.tipoPeriodo || pago.periodoTipo || '').toLowerCase() === 'mensual' ? 'Sueldo mensual pactado' : 'Sueldo quincenal pactado'}</td>
+                <td><strong>Sueldo Base</strong></td>
+                <td class="text-right text-gray">${(pago.tipoPeriodo || pago.periodoTipo || '').toLowerCase() === 'mensual' ? 'Sueldo mensual' : 'Sueldo quincenal'}</td>
                 <td class="text-right font-mono">${formatMoney(pago.sueldoBase || 0)}</td>
               </tr>
               ${diasAdic > 0 ? `
