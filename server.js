@@ -221,6 +221,29 @@ const zoneChangeRequestSchema = new mongoose.Schema({
 
 const ZoneChangeRequest = mongoose.model('ZoneChangeRequest', zoneChangeRequestSchema);
 
+// 7. Registro de Pagos de Nómina (Sueldos Fijos Quincenales / Mensuales)
+const payrollPaymentSchema = new mongoose.Schema({
+  colaboradorNombre: { type: String, required: true },
+  cargo: { type: String, default: 'Especialista en Depilación Láser' },
+  tipoPeriodo: { type: String, enum: ['Quincenal', 'Mensual'], default: 'Quincenal' },
+  periodoTexto: { type: String, default: '' },
+  fechaPago: { type: String, required: true },
+  horaPago: { type: String, default: '' },
+  sueldoBase: { type: Number, required: true },
+  bonificaciones: { type: Number, default: 0 },
+  conceptoBonificacion: { type: String, default: '' },
+  deducciones: { type: Number, default: 0 },
+  conceptoDeduccion: { type: String, default: '' },
+  totalPagado: { type: Number, required: true },
+  afectaCaja: { type: Boolean, default: true },
+  metodoPago: { type: String, default: 'Transferencia' },
+  gastoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Expense', default: null },
+  observaciones: { type: String, default: '' },
+  registradoPor: { type: String, default: 'Administrador' }
+}, { timestamps: true });
+
+const PayrollPayment = mongoose.model('PayrollPayment', payrollPaymentSchema);
+
 // Helper para verificar usuario autenticado en peticiones
 async function getAuthUser(req) {
   try {
@@ -467,13 +490,14 @@ app.get('/api/bootstrap', async (req, res) => {
       console.log(`⏰ Nuevo día (${hoy}): Caja del día anterior cerrada automáticamente para exigir apertura matutina.`);
     }
 
-    const [clientes, todasLasCitas, ventasHoy, gastosHoy, usuarios, solicitudesZonas] = await Promise.all([
+    const [clientes, todasLasCitas, ventasHoy, gastosHoy, usuarios, solicitudesZonas, nominas] = await Promise.all([
       Client.find().sort({ nombre: 1 }),
       Appointment.find().sort({ fecha: 1, hora: 1 }),
       Sale.find({ fecha: hoy }).sort({ createdAt: -1 }),
       Expense.find({ fecha: hoy }).sort({ createdAt: -1 }),
       User.find().select('-password').sort({ rol: 1, nombre: 1 }),
-      ZoneChangeRequest.find().sort({ createdAt: -1 }).limit(100)
+      ZoneChangeRequest.find().sort({ createdAt: -1 }).limit(100),
+      PayrollPayment.find().sort({ fechaPago: -1, createdAt: -1 }).limit(200)
     ]);
 
     res.json({
@@ -486,6 +510,7 @@ app.get('/api/bootstrap', async (req, res) => {
         gastos: gastosHoy,
         usuarios,
         solicitudesZonas: solicitudesZonas || [],
+        nominas: nominas || [],
         fechaHoy: hoy
       }
     });
@@ -1839,6 +1864,151 @@ app.get('/api/reportes/financiero', async (req, res) => {
     });
   } catch (error) {
     console.error('Error al generar informe financiero:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ================= 7.6 GESTIÓN & PAGO DE NÓMINA (ADMINISTRADOR & CONTADORA) =================
+
+// Listar pagos de nómina
+app.get('/api/nomina', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || (authUser.rol !== 'admin' && authUser.rol !== 'contadora')) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado. Solo Administrador y Contabilidad pueden consultar nómina.' });
+    }
+
+    const pagos = await PayrollPayment.find().sort({ fechaPago: -1, createdAt: -1 });
+    res.json({ success: true, pagos });
+  } catch (error) {
+    console.error('Error al listar pagos de nómina:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Registrar pago de nómina (Exclusivo Administrador)
+app.post('/api/nomina', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador tiene autorización para liquidar y registrar pagos de nómina.' });
+    }
+
+    const {
+      colaboradorNombre,
+      cargo,
+      tipoPeriodo,
+      periodoTipo,
+      periodoTexto,
+      fechaPago,
+      sueldoBase,
+      bonificaciones,
+      conceptoBonificacion,
+      motivoBonificacion,
+      deducciones,
+      conceptoDeduccion,
+      motivoDeduccion,
+      afectaCaja,
+      metodoPago,
+      observaciones,
+      notas
+    } = req.body;
+
+    if (!colaboradorNombre || !colaboradorNombre.trim()) {
+      return res.status(400).json({ success: false, error: 'El nombre de la colaboradora o empleado es obligatorio.' });
+    }
+
+    const sBase = Number(sueldoBase);
+    if (isNaN(sBase) || sBase <= 0) {
+      return res.status(400).json({ success: false, error: 'El sueldo base debe ser un monto numérico mayor a 0.' });
+    }
+
+    const sBonos = Math.max(0, Number(bonificaciones) || 0);
+    const sDeduc = Math.max(0, Number(deducciones) || 0);
+    const totalNeto = Math.max(0, sBase + sBonos - sDeduc);
+    const fecha = fechaPago ? String(fechaPago).trim().slice(0, 10) : getFechaHoy();
+    const hora = getHoraActual();
+    const esMensual = (tipoPeriodo || periodoTipo || '').toString().toLowerCase() === 'mensual';
+    const finalTipoPeriodo = esMensual ? 'Mensual' : 'Quincenal';
+    const descPeriodo = (periodoTexto && periodoTexto.trim()) ? periodoTexto.trim() : `${finalTipoPeriodo} - ${fecha}`;
+
+    const debeAfectarCaja = Boolean(afectaCaja);
+    let gastoCreado = null;
+
+    if (debeAfectarCaja && totalNeto > 0) {
+      const metodoFinal = (metodoPago === 'Efectivo') ? 'Efectivo' : 'Transferencia';
+
+      gastoCreado = await Expense.create({
+        fecha,
+        hora,
+        concepto: `Pago Nómina (${finalTipoPeriodo}): ${colaboradorNombre.trim()} [${descPeriodo}]`,
+        categoria: 'Nómina / Sueldos',
+        metodo: metodoFinal,
+        responsable: colaboradorNombre.trim(),
+        valor: totalNeto
+      });
+
+      console.log(`💸 Egreso de Nómina registrado en caja: $${totalNeto} para ${colaboradorNombre} [${metodoFinal}]`);
+    }
+
+    const nuevoPago = await PayrollPayment.create({
+      colaboradorNombre: colaboradorNombre.trim(),
+      cargo: (cargo && cargo.trim()) ? cargo.trim() : 'Especialista en Depilación Láser',
+      tipoPeriodo: finalTipoPeriodo,
+      periodoTexto: descPeriodo,
+      fechaPago: fecha,
+      horaPago: hora,
+      sueldoBase: sBase,
+      bonificaciones: sBonos,
+      conceptoBonificacion: (conceptoBonificacion || motivoBonificacion || '').trim(),
+      deducciones: sDeduc,
+      conceptoDeduccion: (conceptoDeduccion || motivoDeduccion || '').trim(),
+      totalPagado: totalNeto,
+      afectaCaja: debeAfectarCaja,
+      metodoPago: debeAfectarCaja ? (metodoPago || 'Transferencia') : 'Registro Contable Externo',
+      gastoId: gastoCreado ? gastoCreado._id : null,
+      observaciones: (observaciones || notas || '').trim(),
+      registradoPor: authUser.nombre || 'Administrador'
+    });
+
+    console.log(`✓ Pago de nómina registrado: ${nuevoPago.colaboradorNombre} - Total: $${nuevoPago.totalPagado} (${nuevoPago.periodoTexto})`);
+
+    res.json({
+      success: true,
+      mensaje: `Nómina registrada exitosamente para ${nuevoPago.colaboradorNombre}. Total pagado: $${nuevoPago.totalPagado.toLocaleString('es-CO')}`,
+      pago: nuevoPago,
+      gasto: gastoCreado
+    });
+  } catch (error) {
+    console.error('Error al registrar pago de nómina:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Eliminar registro de nómina (Exclusivo Administrador)
+app.delete('/api/nomina/:id', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede anular o eliminar registros de nómina.' });
+    }
+
+    const { id } = req.params;
+    const pago = await PayrollPayment.findByIdAndDelete(id);
+    if (!pago) {
+      return res.status(404).json({ success: false, error: 'Registro de nómina no encontrado.' });
+    }
+
+    // Si generó un egreso financiero en Caja/Gastos, eliminarlo también para mantener consistencia
+    if (pago.gastoId) {
+      await Expense.findByIdAndDelete(pago.gastoId);
+      console.log(`✓ Egreso de caja asociado a nómina eliminado (${pago.gastoId})`);
+    }
+
+    console.log(`✓ Registro de nómina eliminado: ${pago.colaboradorNombre} ($${pago.totalPagado})`);
+    res.json({ success: true, mensaje: 'Registro de nómina eliminado exitosamente.', pago });
+  } catch (error) {
+    console.error('Error al eliminar registro de nómina:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

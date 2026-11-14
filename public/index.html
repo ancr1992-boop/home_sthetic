@@ -123,6 +123,9 @@
       <button onclick="cambiarSeccion('informes')" id="tab-informes" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap hidden">
         <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-600"></i> Informes Financieros
       </button>
+      <button onclick="cambiarSeccion('nomina')" id="tab-nomina" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap hidden">
+        <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-emerald-600"></i> Nómina
+      </button>
       <button onclick="cambiarSeccion('operaria')" id="tab-operaria" class="tab-btn px-4 sm:px-5 py-2 text-xs font-medium uppercase tracking-wider rounded-sm text-brand-gray hover:text-black hover:bg-brand-lightGray transition flex items-center gap-2 whitespace-nowrap hidden">
         <i data-lucide="sparkles" class="w-4 h-4 text-pink-600"></i> Mi Cabina / Clientes
       </button>
@@ -789,6 +792,104 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SECCIÓN 9: GESTIÓN Y PAGO DE NÓMINA ================= -->
+    <section id="sec-nomina" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-5">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 class="text-2xl font-bold tracking-tight">Gestión y Pago de Nómina</h2>
+            <span class="px-2.5 py-0.5 text-[10px] font-black uppercase bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full flex items-center gap-1">
+              <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5 text-emerald-700"></i> Sueldos & Colaboradores
+            </span>
+          </div>
+          <p class="text-xs text-brand-gray uppercase tracking-wider mt-1">
+            Registro de liquidaciones quincenales y mensuales, bonificaciones, deducciones y comprobantes
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" id="btnAbrirModalPagoNomina" onclick="abrirModalPagarNomina()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-sm flex items-center gap-2 shadow-xs transition">
+            <i data-lucide="plus" class="w-4 h-4"></i> Pagar Nómina
+          </button>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Resumen Métrico -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white border border-brand-border p-4 rounded-sm shadow-2xs">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-gray block mb-1">Total Pagado Este Mes</span>
+          <div class="flex items-baseline justify-between">
+            <span id="nomMetricaMes" class="text-2xl font-bold text-emerald-700">$0</span>
+            <span class="text-xs text-brand-gray" id="nomMetricaMesLabel">Mes actual</span>
+          </div>
+        </div>
+        <div class="bg-white border border-brand-border p-4 rounded-sm shadow-2xs">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-gray block mb-1">Total Pagado en el Año</span>
+          <div class="flex items-baseline justify-between">
+            <span id="nomMetricaAno" class="text-2xl font-bold text-black">$0</span>
+            <span class="text-xs text-brand-gray" id="nomMetricaAnoLabel">Año actual</span>
+          </div>
+        </div>
+        <div class="bg-white border border-brand-border p-4 rounded-sm shadow-2xs">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-gray block mb-1">Pagos Registrados</span>
+          <div class="flex items-baseline justify-between">
+            <span id="nomMetricaCantidad" class="text-2xl font-bold text-black">0</span>
+            <span class="text-xs text-brand-gray">Comprobantes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros y Búsqueda -->
+      <div class="bg-white border border-brand-border p-4 rounded-sm shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-brand-gray mb-1">Colaborador / Operaria</label>
+            <select id="filtroNominaColaborador" onchange="renderizarNomina()" class="border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none bg-white font-medium">
+              <option value="todos">Todos los Colaboradores</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-brand-gray mb-1">Período</label>
+            <select id="filtroNominaPeriodo" onchange="renderizarNomina()" class="border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none bg-white font-medium">
+              <option value="todos">Todos los Períodos</option>
+              <option value="quincenal">Quincenales</option>
+              <option value="mensual">Mensuales</option>
+            </select>
+          </div>
+        </div>
+        <div class="w-full md:w-64">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-brand-gray mb-1">Buscar</label>
+          <div class="relative">
+            <input type="text" id="filtroNominaBusqueda" oninput="renderizarNomina()" placeholder="Buscar colaboradora, nota..." class="w-full border border-brand-border pl-8 pr-3 py-2 text-xs rounded-sm focus:border-black outline-none">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-brand-gray"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Pagos de Nómina -->
+      <div class="bg-white border border-brand-border rounded-sm overflow-hidden shadow-2xs">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-brand-lightGray border-b border-brand-border uppercase tracking-wider text-[11px] text-brand-gray font-semibold">
+                <th class="p-3">Fecha</th>
+                <th class="p-3">Colaborador / Cargo</th>
+                <th class="p-3">Período</th>
+                <th class="p-3 text-right">Sueldo Base</th>
+                <th class="p-3 text-right">Bonif. / Deduc.</th>
+                <th class="p-3 text-right">Neto Pagado</th>
+                <th class="p-3 text-center">Salida / Medio</th>
+                <th class="p-3 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaNominaBody" class="divide-y divide-brand-border">
+              <tr><td colspan="8" class="p-8 text-center text-brand-gray">Cargando nómina...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -2375,6 +2476,140 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: REGISTRAR PAGO DE NÓMINA ================= -->
+  <div id="modalPagarNomina" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-2xl w-full border border-black shadow-2xl rounded-sm p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <div class="flex items-center gap-2">
+          <span class="p-2 bg-emerald-100 text-emerald-800 rounded-sm">
+            <i data-lucide="badge-dollar-sign" class="w-5 h-5"></i>
+          </span>
+          <div>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-black">Registrar Pago de Nómina</h3>
+            <p class="text-[11px] text-brand-gray">Liquidación de sueldo fijo quincenal o mensual</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeModal('modalPagarNomina')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="formPagarNomina" onsubmit="guardarPagoNomina(event)" class="space-y-4">
+        <!-- Colaborador y Cargo -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Colaborador / Empleado *</label>
+            <select id="nomColaboradorSelect" onchange="onSelectNominaColaborador(this.value)" required class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-medium">
+              <!-- Dinámico -->
+            </select>
+            <input type="text" id="nomColaboradorCustom" placeholder="Nombre completo del colaborador" class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none mt-1.5 hidden font-medium" />
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Cargo / Especialidad *</label>
+            <input type="text" id="nomCargo" required value="Especialista / Operaria" class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-medium" />
+          </div>
+        </div>
+
+        <!-- Período y Fecha de Pago -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Tipo de Período *</label>
+            <select id="nomPeriodoTipo" onchange="actualizarPeriodoTextoSugerido()" class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-medium">
+              <option value="quincenal">Quincenal (Fijo)</option>
+              <option value="mensual">Mensual (Fijo)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Descripción del Período *</label>
+            <input type="text" id="nomPeriodoTexto" required placeholder="Ej: 1ra Quincena Noviembre 2026" class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-medium" />
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Fecha de Pago *</label>
+            <input type="date" id="nomFechaPago" required class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-mono font-bold" />
+          </div>
+        </div>
+
+        <!-- Valores Económicos: Sueldo Base, Bonificaciones, Deducciones -->
+        <div class="bg-neutral-50 p-3.5 rounded-sm border border-neutral-200 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Sueldo Base Acordado ($ COP) *</label>
+              <input type="number" id="nomSueldoBase" required min="0" step="1000" placeholder="0" oninput="calcularTotalNetoNominaModal()" class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-bold font-mono text-emerald-700 bg-white" />
+            </div>
+            <div>
+              <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Bonificaciones ($ COP)</label>
+              <input type="number" id="nomBonificaciones" min="0" step="1000" value="0" oninput="calcularTotalNetoNominaModal()" class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-bold font-mono bg-white" />
+            </div>
+            <div>
+              <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Deducciones ($ COP)</label>
+              <input type="number" id="nomDeducciones" min="0" step="1000" value="0" oninput="calcularTotalNetoNominaModal()" class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-bold font-mono text-red-600 bg-white" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+            <div>
+              <label class="block text-brand-gray font-medium mb-0.5">Motivo Bonificación (opcional):</label>
+              <input type="text" id="nomMotivoBonificacion" placeholder="Ej: Cumplimiento de metas, bono puntualidad" class="w-full border border-brand-border p-1.5 text-xs rounded-sm focus:border-black outline-none bg-white" />
+            </div>
+            <div>
+              <label class="block text-brand-gray font-medium mb-0.5">Motivo Deducción (opcional):</label>
+              <input type="text" id="nomMotivoDeduccion" placeholder="Ej: Anticipo, préstamo, permiso" class="w-full border border-brand-border p-1.5 text-xs rounded-sm focus:border-black outline-none bg-white" />
+            </div>
+          </div>
+
+          <!-- Total Neto Liquidado -->
+          <div class="flex items-center justify-between pt-2 border-t border-neutral-200">
+            <span class="text-xs uppercase font-bold text-black tracking-wider">Total Neto a Liquidar:</span>
+            <span id="nomTotalNetoDisplay" class="text-lg font-black text-emerald-800 font-mono">$0</span>
+          </div>
+        </div>
+
+        <!-- Destino de Fondo / Descuento de Caja -->
+        <div class="border border-brand-border p-3 rounded-sm space-y-2">
+          <label class="block uppercase tracking-wider text-black font-bold text-[10px]">¿Cómo se paga y registra este dinero? *</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="flex items-start gap-2 p-2 border border-brand-border rounded-sm cursor-pointer hover:bg-neutral-50">
+              <input type="radio" name="nomAfectaCaja" value="true" checked onchange="toggleMedioPagoNomina(true)" class="mt-0.5 text-black focus:ring-black">
+              <div>
+                <span class="font-bold block text-black text-xs">Descontar de Caja de la Clínica</span>
+                <span class="text-[10px] text-brand-gray block">Genera egreso oficial en Caja Diaria e Informes</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2 p-2 border border-brand-border rounded-sm cursor-pointer hover:bg-neutral-50">
+              <input type="radio" name="nomAfectaCaja" value="false" onchange="toggleMedioPagoNomina(false)" class="mt-0.5 text-black focus:ring-black">
+              <div>
+                <span class="font-bold block text-black text-xs">Pago Externo / Solo Registro Contable</span>
+                <span class="text-[10px] text-brand-gray block">No descuenta de la caja de recepción</span>
+              </div>
+            </label>
+          </div>
+
+          <div id="nomContenedorMedioPago" class="pt-2">
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Medio de Pago Utilizado *</label>
+            <select id="nomMetodoPago" class="w-full sm:w-1/2 border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none font-medium">
+              <option value="Transferencia">Transferencia Bancaria</option>
+              <option value="Efectivo">Efectivo de Caja</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Observaciones / Notas Adicionales</label>
+          <textarea id="nomNotas" rows="2" placeholder="Observaciones internas del pago..." class="w-full border border-brand-border p-2 text-xs rounded-sm focus:border-black outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-brand-border">
+          <button type="button" onclick="closeModal('modalPagarNomina')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">
+            Cancelar
+          </button>
+          <button type="submit" id="btnGuardarNominaSubmit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white uppercase tracking-wider font-bold rounded-sm flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i> Confirmar y Registrar Pago
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= JAVASCRIPT ================= -->
   <script>
     let appState = {
@@ -2446,7 +2681,7 @@
 
       if (rol === 'operaria') {
         // ── OPERARIA: ocultar casi todo, mostrar solo "Mi Cabina" ──
-        ['tab-agenda','tab-clientes','tab-caja','tab-equipo','tab-usuarios','tab-medico','tab-informes'].forEach(id => {
+        ['tab-agenda','tab-clientes','tab-caja','tab-equipo','tab-usuarios','tab-medico','tab-informes','tab-nomina'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.add('hidden');
         });
@@ -2480,7 +2715,7 @@
 
       if (rol === 'medico') {
         // ── MÉDICO: Panel Médico, Clientes & Historias Clínicas, Agenda ──
-        ['tab-caja','tab-equipo','tab-usuarios','tab-operaria','tab-informes'].forEach(id => {
+        ['tab-caja','tab-equipo','tab-usuarios','tab-operaria','tab-informes','tab-nomina'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.add('hidden');
         });
@@ -2510,6 +2745,9 @@
         const tabInf = document.getElementById('tab-informes');
         if (tabInf) tabInf.classList.add('hidden');
 
+        const tabNomina = document.getElementById('tab-nomina');
+        if (tabNomina) tabNomina.classList.add('hidden');
+
         const btnInf = document.getElementById('btnCajaIrInformes');
         if (btnInf) btnInf.classList.add('hidden');
 
@@ -2531,7 +2769,7 @@
 
       if (rol === 'socio') {
         // ── SOCIO: Exclusivo para revisar dinero en caja y retirar/recoger efectivo ──
-        ['tab-agenda','tab-clientes','tab-equipo','tab-usuarios','tab-operaria','tab-medico','tab-informes'].forEach(id => {
+        ['tab-agenda','tab-clientes','tab-equipo','tab-usuarios','tab-operaria','tab-medico','tab-informes','tab-nomina'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.add('hidden');
         });
@@ -2577,9 +2815,12 @@
           if (el) el.classList.add('hidden');
         });
 
-        // Asegurarse de que Informes Financieros y Caja estén visibles
+        // Asegurarse de que Informes Financieros, Nómina y Caja estén visibles
         const tabInf = document.getElementById('tab-informes');
         if (tabInf) tabInf.classList.remove('hidden');
+
+        const tabNom = document.getElementById('tab-nomina');
+        if (tabNom) tabNom.classList.remove('hidden');
 
         const tabCaja = document.getElementById('tab-caja');
         if (tabCaja) tabCaja.classList.remove('hidden');
@@ -2610,6 +2851,10 @@
         const btnRetiro = document.getElementById('btnCajaRetiroEfectivo');
         if (btnRetiro) btnRetiro.classList.add('hidden');
 
+        // En Nómina, la contadora puede auditar y reimprimir recibos, pero no pagar ni eliminar
+        const btnPagarNom = document.getElementById('btnAbrirModalPagoNomina');
+        if (btnPagarNom) btnPagarNom.classList.add('hidden');
+
         // Ocultar columna de acciones de eliminar (la contadora audita, no modifica ni elimina)
         const thAcciones = document.getElementById('thAccionesVenta');
         if (thAcciones) thAcciones.classList.add('hidden');
@@ -2638,6 +2883,12 @@
 
         const tabInf = document.getElementById('tab-informes');
         if (tabInf) tabInf.classList.remove('hidden');
+
+        const tabNomina = document.getElementById('tab-nomina');
+        if (tabNomina) tabNomina.classList.remove('hidden');
+
+        const btnPagarNom = document.getElementById('btnAbrirModalPagoNomina');
+        if (btnPagarNom) btnPagarNom.classList.remove('hidden');
 
         const btnInf = document.getElementById('btnCajaIrInformes');
         if (btnInf) btnInf.classList.remove('hidden');
@@ -2749,6 +3000,7 @@
           cargarHistorialBackups();
           renderizarCabinaOperaria();
           renderizarPanelMedico();
+          renderizarNomina();
           renderizarBannerCitasFacturar();
           actualizarBadgesNotificacionesAdmin();
         } else {
@@ -2761,7 +3013,7 @@
     }
 
     function cambiarSeccion(seccion) {
-      const secciones = ['agenda', 'clientes', 'caja', 'equipo', 'usuarios', 'operaria', 'medico', 'informes'];
+      const secciones = ['agenda', 'clientes', 'caja', 'equipo', 'usuarios', 'operaria', 'medico', 'informes', 'nomina'];
       secciones.forEach(sec => {
         const el = document.getElementById(`sec-${sec}`);
         if (el) el.classList.add('hidden');
@@ -2795,6 +3047,14 @@
         }
         inicializarFechasInformeSiVacio();
         consultarInformeFinanciero();
+      } else if (seccion === 'nomina') {
+        const session = obtenerSesion();
+        if (!session || (session.rol !== 'admin' && session.rol !== 'contadora')) {
+          alert('Solo el Administrador y Contabilidad tienen acceso al módulo de nómina.');
+          cambiarSeccion('agenda');
+          return;
+        }
+        renderizarNomina();
       } else {
         renderizarBannerCitasFacturar();
       }
@@ -7962,6 +8222,699 @@
 
     function imprimirInformeFinanciero() {
       window.print();
+    }
+
+    // ================= GESTIÓN Y PAGO DE NÓMINA =================
+
+    function onSelectNominaColaborador(val) {
+      const inputCustom = document.getElementById('nomColaboradorCustom');
+      const inputCargo = document.getElementById('nomCargo');
+      if (val === '__custom__') {
+        if (inputCustom) {
+          inputCustom.classList.remove('hidden');
+          inputCustom.required = true;
+          inputCustom.focus();
+        }
+        if (inputCargo) inputCargo.value = 'Colaborador';
+      } else {
+        if (inputCustom) {
+          inputCustom.classList.add('hidden');
+          inputCustom.required = false;
+          inputCustom.value = '';
+        }
+        // Buscar cargo en operarias registradas
+        const operaria = (appState.config?.operarias || []).find(o => o.nombre === val);
+        if (inputCargo) {
+          inputCargo.value = (operaria && operaria.rol) ? operaria.rol : 'Especialista / Operaria';
+        }
+      }
+    }
+
+    function actualizarPeriodoTextoSugerido() {
+      const tipo = document.getElementById('nomPeriodoTipo')?.value || 'quincenal';
+      const fechaVal = document.getElementById('nomFechaPago')?.value || (appState.fechaHoy || new Date().toISOString().split('T')[0]);
+      const inputTexto = document.getElementById('nomPeriodoTexto');
+      if (!inputTexto) return;
+
+      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const partes = fechaVal.split('-');
+      const ano = partes[0] || new Date().getFullYear();
+      const mesNum = parseInt(partes[1], 10) - 1;
+      const dia = parseInt(partes[2], 10) || 1;
+      const nombreMes = meses[mesNum] || '';
+
+      if (tipo === 'quincenal') {
+        const numQ = dia <= 15 ? '1ra' : '2da';
+        inputTexto.value = `${numQ} Quincena ${nombreMes} ${ano}`;
+      } else {
+        inputTexto.value = `Mes de ${nombreMes} ${ano}`;
+      }
+    }
+
+    function toggleMedioPagoNomina(afecta) {
+      const cont = document.getElementById('nomContenedorMedioPago');
+      if (cont) {
+        if (afecta) {
+          cont.classList.remove('hidden');
+        } else {
+          cont.classList.add('hidden');
+        }
+      }
+    }
+
+    function calcularTotalNetoNominaModal() {
+      const base = parseFloat(document.getElementById('nomSueldoBase')?.value) || 0;
+      const bonif = parseFloat(document.getElementById('nomBonificaciones')?.value) || 0;
+      const deduc = parseFloat(document.getElementById('nomDeducciones')?.value) || 0;
+      const total = Math.max(0, base + bonif - deduc);
+      const display = document.getElementById('nomTotalNetoDisplay');
+      if (display) {
+        display.textContent = formatMoney(total);
+      }
+      return total;
+    }
+
+    function abrirModalPagarNomina() {
+      const sesion = obtenerSesion();
+      if (!sesion || sesion.rol !== 'admin') {
+        alert('Solo el Administrador tiene autorización para liquidar y registrar pagos de nómina.');
+        return;
+      }
+
+      // Llenar select de colaboradores con las operarias registradas
+      const selectColab = document.getElementById('nomColaboradorSelect');
+      if (selectColab) {
+        const operarias = appState.config?.operarias || [];
+        let html = '';
+        if (operarias.length === 0) {
+          html = `<option value="__custom__">➕ Registrar empleado externo / manual...</option>`;
+        } else {
+          html = operarias.map(o => `<option value="${o.nombre}">${o.nombre} (${o.rol || 'Operaria'})</option>`).join('');
+          html += `<option value="__custom__">➕ Otro Colaborador / Personal externo...</option>`;
+        }
+        selectColab.innerHTML = html;
+        selectColab.value = operarias.length > 0 ? operarias[0].nombre : '__custom__';
+        onSelectNominaColaborador(selectColab.value);
+      }
+
+      // Fecha de pago por defecto hoy
+      const inputFecha = document.getElementById('nomFechaPago');
+      if (inputFecha) {
+        inputFecha.value = appState.fechaHoy || new Date().toISOString().split('T')[0];
+      }
+
+      // Tipo periodo
+      const selTipo = document.getElementById('nomPeriodoTipo');
+      if (selTipo) selTipo.value = 'quincenal';
+
+      actualizarPeriodoTextoSugerido();
+
+      // Resetear campos numéricos y motivos
+      const inBase = document.getElementById('nomSueldoBase');
+      if (inBase) inBase.value = '';
+      const inBonif = document.getElementById('nomBonificaciones');
+      if (inBonif) inBonif.value = '0';
+      const inMotivoBonif = document.getElementById('nomMotivoBonificacion');
+      if (inMotivoBonif) inMotivoBonif.value = '';
+      const inDeduc = document.getElementById('nomDeducciones');
+      if (inDeduc) inDeduc.value = '0';
+      const inMotivoDeduc = document.getElementById('nomMotivoDeduccion');
+      if (inMotivoDeduc) inMotivoDeduc.value = '';
+      const inNotas = document.getElementById('nomNotas');
+      if (inNotas) inNotas.value = '';
+
+      // Resetear radio a afecta caja = true
+      const radioTrue = document.querySelector('input[name="nomAfectaCaja"][value="true"]');
+      if (radioTrue) radioTrue.checked = true;
+      toggleMedioPagoNomina(true);
+
+      const selMetodo = document.getElementById('nomMetodoPago');
+      if (selMetodo) selMetodo.value = 'Transferencia';
+
+      calcularTotalNetoNominaModal();
+      openModal('modalPagarNomina');
+      lucide.createIcons();
+    }
+
+    async function guardarPagoNomina(e) {
+      e.preventDefault();
+      const sesion = obtenerSesion();
+      if (!sesion || sesion.rol !== 'admin') {
+        alert('Solo el Administrador tiene autorización para registrar nómina.');
+        return;
+      }
+
+      const selectColab = document.getElementById('nomColaboradorSelect');
+      const inputCustom = document.getElementById('nomColaboradorCustom');
+      let colaboradorNombre = '';
+      let colaboradorId = null;
+
+      if (selectColab.value === '__custom__') {
+        colaboradorNombre = (inputCustom?.value || '').trim();
+      } else {
+        colaboradorNombre = selectColab.value;
+        const op = (appState.config?.operarias || []).find(o => o.nombre === colaboradorNombre);
+        if (op) colaboradorId = op._id || null;
+      }
+
+      if (!colaboradorNombre) {
+        alert('Por favor especifica el nombre del colaborador o empleado.');
+        return;
+      }
+
+      const cargo = (document.getElementById('nomCargo')?.value || 'Especialista / Operaria').trim();
+      const periodoTipo = document.getElementById('nomPeriodoTipo')?.value || 'quincenal';
+      const periodoTexto = (document.getElementById('nomPeriodoTexto')?.value || '').trim();
+      const fechaPago = document.getElementById('nomFechaPago')?.value;
+      const sueldoBase = parseFloat(document.getElementById('nomSueldoBase')?.value) || 0;
+      const bonificaciones = parseFloat(document.getElementById('nomBonificaciones')?.value) || 0;
+      const motivoBonificacion = (document.getElementById('nomMotivoBonificacion')?.value || '').trim();
+      const deducciones = parseFloat(document.getElementById('nomDeducciones')?.value) || 0;
+      const motivoDeduccion = (document.getElementById('nomMotivoDeduccion')?.value || '').trim();
+      const totalNeto = Math.max(0, sueldoBase + bonificaciones - deducciones);
+
+      const afectaCaja = document.querySelector('input[name="nomAfectaCaja"]:checked')?.value === 'true';
+      const metodoPago = afectaCaja ? (document.getElementById('nomMetodoPago')?.value || 'Transferencia') : 'No aplica';
+      const notas = (document.getElementById('nomNotas')?.value || '').trim();
+
+      if (!fechaPago) {
+        alert('Por favor selecciona la fecha de pago.');
+        return;
+      }
+      if (sueldoBase <= 0 && totalNeto <= 0) {
+        alert('El sueldo base o total neto debe ser mayor a cero.');
+        return;
+      }
+
+      const btnSubmit = document.getElementById('btnGuardarNominaSubmit');
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Registrando...`;
+        lucide.createIcons();
+      }
+
+      try {
+        const payload = {
+          colaboradorId,
+          colaboradorNombre,
+          cargo,
+          periodoTipo,
+          periodoTexto,
+          fechaPago,
+          sueldoBase,
+          bonificaciones,
+          motivoBonificacion,
+          deducciones,
+          motivoDeduccion,
+          totalNeto,
+          afectaCaja,
+          metodoPago,
+          notas
+        };
+
+        const res = await fetch('/api/nomina', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        if (json.success) {
+          closeModal('modalPagarNomina');
+          await cargarDatosServidor();
+          renderizarNomina();
+          alert(`¡Pago de nómina para ${colaboradorNombre} registrado exitosamente!\nTotal neto pagado: ${formatMoney(totalNeto)}${afectaCaja ? ' (Descontado en Caja)' : ''}`);
+        } else {
+          alert('Error al registrar pago de nómina: ' + (json.error || 'Desconocido'));
+        }
+      } catch (err) {
+        console.error('Error al guardar nómina:', err);
+        alert('Error de conexión al registrar pago de nómina.');
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> Confirmar y Registrar Pago`;
+          lucide.createIcons();
+        }
+      }
+    }
+
+    async function eliminarPagoNomina(id) {
+      const sesion = obtenerSesion();
+      if (!sesion || sesion.rol !== 'admin') {
+        alert('Solo el Administrador puede eliminar registros de nómina.');
+        return;
+      }
+
+      const pago = (appState.nominas || []).find(n => n._id === id);
+      const nombre = pago ? pago.colaboradorNombre : 'este pago';
+      const valor = pago ? formatMoney(pago.totalNeto) : '';
+
+      if (!confirm(`¿Estás seguro de eliminar el registro de nómina de ${nombre} por ${valor}?\n\nSi este pago afectó la caja diaria, el egreso asociado también será retirado automáticamente.`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/nomina/${id}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+          await cargarDatosServidor();
+          renderizarNomina();
+          alert('Registro de nómina eliminado correctamente.');
+        } else {
+          alert('Error al eliminar: ' + (json.error || 'Desconocido'));
+        }
+      } catch (err) {
+        console.error('Error al eliminar nómina:', err);
+        alert('Error de conexión al eliminar nómina.');
+      }
+    }
+
+    function renderizarNomina() {
+      const tbody = document.getElementById('tablaNominaBody');
+      if (!tbody) return;
+
+      const nominas = appState.nominas || [];
+      const sesion = obtenerSesion();
+      const esAdmin = sesion && sesion.rol === 'admin';
+
+      // ── 1. Métricas ──
+      const fechaHoy = appState.fechaHoy || new Date().toISOString().split('T')[0];
+      const anoActual = fechaHoy.split('-')[0];
+      const mesActual = fechaHoy.substring(0, 7); // YYYY-MM
+
+      let totalMes = 0;
+      let totalAno = 0;
+
+      nominas.forEach(n => {
+        const f = n.fechaPago || '';
+        const neto = Number(n.totalPagado != null ? n.totalPagado : (n.totalNeto || 0));
+        if (f.startsWith(mesActual)) {
+          totalMes += neto;
+        }
+        if (f.startsWith(anoActual)) {
+          totalAno += neto;
+        }
+      });
+
+      const elMes = document.getElementById('nomMetricaMes');
+      const elAno = document.getElementById('nomMetricaAno');
+      const elCant = document.getElementById('nomMetricaCantidad');
+      if (elMes) elMes.textContent = formatMoney(totalMes);
+      if (elAno) elAno.textContent = formatMoney(totalAno);
+      if (elCant) elCant.textContent = nominas.length;
+
+      // ── 2. Filtro de Colaboradores ──
+      const selColab = document.getElementById('filtroNominaColaborador');
+      if (selColab) {
+        const colabSeleccionado = selColab.value || 'todos';
+        const nombresUnicos = Array.from(new Set(nominas.map(n => n.colaboradorNombre).filter(Boolean)));
+        let htmlColabs = `<option value="todos">Todos los Colaboradores</option>`;
+        nombresUnicos.forEach(nom => {
+          htmlColabs += `<option value="${nom}">${nom}</option>`;
+        });
+        selColab.innerHTML = htmlColabs;
+        if (nombresUnicos.includes(colabSeleccionado)) {
+          selColab.value = colabSeleccionado;
+        } else {
+          selColab.value = 'todos';
+        }
+      }
+
+      // ── 3. Aplicar Filtros a la Tabla ──
+      const filtroColab = document.getElementById('filtroNominaColaborador')?.value || 'todos';
+      const filtroPeriodo = document.getElementById('filtroNominaPeriodo')?.value || 'todos';
+      const busqueda = (document.getElementById('filtroNominaBusqueda')?.value || '').trim().toLowerCase();
+
+      const pagosFiltrados = nominas.filter(p => {
+        const pTipoNorm = (p.tipoPeriodo || p.periodoTipo || '').toLowerCase();
+        if (filtroColab !== 'todos' && p.colaboradorNombre !== filtroColab) return false;
+        if (filtroPeriodo !== 'todos' && pTipoNorm !== filtroPeriodo.toLowerCase()) return false;
+        if (busqueda) {
+          const matchColab = (p.colaboradorNombre || '').toLowerCase().includes(busqueda);
+          const matchPeriodo = (p.periodoTexto || '').toLowerCase().includes(busqueda);
+          const matchCargo = (p.cargo || '').toLowerCase().includes(busqueda);
+          const matchNotas = (p.observaciones || p.notas || '').toLowerCase().includes(busqueda);
+          if (!matchColab && !matchPeriodo && !matchCargo && !matchNotas) return false;
+        }
+        return true;
+      });
+
+      if (pagosFiltrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-brand-gray">No hay registros de nómina que coincidan con los filtros.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = pagosFiltrados.map(p => {
+        const bonif = p.bonificaciones || 0;
+        const deduc = p.deducciones || 0;
+        const totalNetoFmt = Number(p.totalPagado != null ? p.totalPagado : (p.totalNeto || 0));
+        const motBonif = p.conceptoBonificacion || p.motivoBonificacion || 'Bonificación';
+        const motDeduc = p.conceptoDeduccion || p.motivoDeduccion || 'Deducción';
+        let bonifDeducHtml = '<span class="text-neutral-400 font-mono">—</span>';
+        if (bonif > 0 || deduc > 0) {
+          bonifDeducHtml = `
+            <div class="text-[11px] font-mono leading-tight">
+              ${bonif > 0 ? `<div class="text-emerald-700 font-semibold" title="${motBonif}">+${formatMoney(bonif)}</div>` : ''}
+              ${deduc > 0 ? `<div class="text-rose-600 font-semibold" title="${motDeduc}">-${formatMoney(deduc)}</div>` : ''}
+            </div>
+          `;
+        }
+
+        const esMensual = (p.tipoPeriodo || p.periodoTipo || '').toLowerCase() === 'mensual';
+        const badgePeriodo = esMensual 
+          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-200">Mensual</span>`
+          : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">Quincenal</span>`;
+
+        let salidaHtml = '';
+        if (p.afectaCaja) {
+          salidaHtml = `
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-900 border border-purple-200">
+              <i data-lucide="wallet" class="w-3 h-3 text-purple-700"></i> Caja (${p.metodoPago || 'Transferencia'})
+            </span>
+          `;
+        } else {
+          salidaHtml = `
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 border border-neutral-300">
+              <i data-lucide="file-text" class="w-3 h-3 text-neutral-500"></i> Contable Externo
+            </span>
+          `;
+        }
+
+        const btnEliminar = esAdmin ? `
+          <button type="button" onclick="eliminarPagoNomina('${p._id}')" class="p-1.5 text-brand-gray hover:text-red-600 rounded-sm hover:bg-neutral-100 transition" title="Eliminar este pago">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        ` : '';
+
+        return `
+          <tr class="hover:bg-neutral-50 transition">
+            <td class="p-3 font-mono font-medium whitespace-nowrap text-neutral-900">
+              ${p.fechaPago || '—'}
+            </td>
+            <td class="p-3">
+              <div class="font-bold text-neutral-900">${p.colaboradorNombre}</div>
+              <div class="text-[10px] text-brand-gray uppercase tracking-wider">${p.cargo || 'Especialista'}</div>
+            </td>
+            <td class="p-3">
+              <div class="font-medium text-neutral-900">${p.periodoTexto}</div>
+              <div class="mt-0.5">${badgePeriodo}</div>
+            </td>
+            <td class="p-3 text-right font-mono font-medium text-neutral-800">
+              ${formatMoney(p.sueldoBase || 0)}
+            </td>
+            <td class="p-3 text-right">
+              ${bonifDeducHtml}
+            </td>
+            <td class="p-3 text-right font-black font-mono text-emerald-800 text-sm">
+              ${formatMoney(totalNetoFmt)}
+            </td>
+            <td class="p-3 text-center whitespace-nowrap">
+              ${salidaHtml}
+            </td>
+            <td class="p-3 text-center whitespace-nowrap">
+              <div class="flex items-center justify-center gap-1">
+                <button type="button" onclick="imprimirComprobanteNomina('${p._id}')" class="p-1.5 text-neutral-700 hover:text-black rounded-sm hover:bg-neutral-100 transition" title="Imprimir Comprobante de Pago">
+                  <i data-lucide="printer" class="w-4 h-4"></i>
+                </button>
+                ${btnEliminar}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function imprimirComprobanteNomina(id) {
+      const pago = (appState.nominas || []).find(n => n._id === id);
+      if (!pago) {
+        alert('No se encontró el registro de nómina.');
+        return;
+      }
+
+      const ventana = window.open('', '_blank', 'width=750,height=800');
+      if (!ventana) {
+        alert('Por favor permite ventanas emergentes para imprimir el comprobante.');
+        return;
+      }
+
+      const bonif = pago.bonificaciones || 0;
+      const deduc = pago.deducciones || 0;
+
+      const html = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <title>Comprobante de Pago de Nómina - ${pago.colaboradorNombre}</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              color: #111;
+              margin: 0;
+              padding: 30px;
+              font-size: 13px;
+              line-height: 1.4;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #000;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
+            }
+            .header h1 {
+              margin: 0 0 5px 0;
+              font-size: 22px;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+            }
+            .header p {
+              margin: 2px 0;
+              font-size: 12px;
+              color: #555;
+            }
+            .comprobante-title {
+              font-size: 14px;
+              font-weight: bold;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-top: 10px;
+              display: inline-block;
+              background: #f0fdf4;
+              border: 1px solid #86efac;
+              color: #166534;
+              padding: 4px 12px;
+              border-radius: 4px;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              margin-bottom: 20px;
+              background: #fafafa;
+              padding: 15px;
+              border: 1px solid #e5e5e5;
+              border-radius: 4px;
+            }
+            .info-item {
+              display: flex;
+              flex-direction: column;
+            }
+            .info-label {
+              font-size: 10px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              color: #666;
+              font-weight: bold;
+            }
+            .info-val {
+              font-size: 13px;
+              font-weight: 600;
+              color: #111;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            th, td {
+              padding: 10px 12px;
+              border-bottom: 1px solid #eee;
+              text-align: left;
+            }
+            th {
+              background: #f5f5f5;
+              font-size: 11px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              color: #555;
+              font-weight: bold;
+            }
+            .text-right { text-align: right; }
+            .total-row {
+              font-weight: bold;
+              border-top: 2px solid #000;
+              border-bottom: 2px solid #000;
+              background: #fafafa;
+            }
+            .total-row td {
+              font-size: 14px;
+              padding: 12px;
+            }
+            .total-amount {
+              color: #166534;
+              font-size: 16px;
+              font-weight: 900;
+            }
+            .notas-box {
+              background: #fff;
+              border: 1px dashed #ccc;
+              padding: 10px 12px;
+              border-radius: 4px;
+              font-size: 11px;
+              color: #444;
+              margin-bottom: 40px;
+            }
+            .firmas-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 40px;
+              margin-top: 50px;
+            }
+            .firma-box {
+              text-align: center;
+              border-top: 1px solid #333;
+              padding-top: 8px;
+            }
+            .firma-box .cargo {
+              font-size: 11px;
+              color: #666;
+            }
+            .no-print {
+              margin-top: 25px;
+              text-align: center;
+            }
+            .btn-print {
+              background: #000;
+              color: #fff;
+              border: none;
+              padding: 10px 24px;
+              font-size: 12px;
+              font-weight: bold;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              border-radius: 4px;
+              cursor: pointer;
+            }
+            @media print {
+              .no-print { display: none; }
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>HOME STHETIC</h1>
+            <p>Clínica de Estética & Depilación Láser Especializada</p>
+            <div class="comprobante-title">Comprobante Oficial de Pago de Nómina</div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Colaborador / Empleado</span>
+              <span class="info-val">${pago.colaboradorNombre}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Cargo / Función</span>
+              <span class="info-val">${pago.cargo || 'Especialista / Operaria'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Período Liquidado</span>
+              <span class="info-val">${pago.periodoTexto} (${(pago.tipoPeriodo || pago.periodoTipo || '').toLowerCase() === 'mensual' ? 'Mensual' : 'Quincenal'})</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Fecha de Liquidación y Pago</span>
+              <span class="info-val">${pago.fechaPago}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Medio de Pago / Registro</span>
+              <span class="info-val">${pago.afectaCaja ? `Caja (${pago.metodoPago || 'Transferencia'})` : 'Pago Externo / Contable'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Identificador / Folio</span>
+              <span class="info-val" style="font-family: monospace; font-size: 11px;">#NOM-${pago._id.toString().substring(18)}</span>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Concepto de Liquidación</th>
+                <th class="text-right">Detalle / Motivo</th>
+                <th class="text-right">Valor ($ COP)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Sueldo Base Acordado</strong></td>
+                <td class="text-right text-gray">${(pago.tipoPeriodo || pago.periodoTipo || '').toLowerCase() === 'mensual' ? 'Sueldo mensual pactado' : 'Sueldo quincenal pactado'}</td>
+                <td class="text-right font-mono">${formatMoney(pago.sueldoBase || 0)}</td>
+              </tr>
+              ${bonif > 0 ? `
+              <tr>
+                <td><strong style="color: #166534;">(+) Bonificaciones / Comisiones</strong></td>
+                <td class="text-right text-gray">${pago.conceptoBonificacion || pago.motivoBonificacion || 'Incentivos y bonos'}</td>
+                <td class="text-right font-mono" style="color: #166534;">+${formatMoney(bonif)}</td>
+              </tr>` : ''}
+              ${deduc > 0 ? `
+              <tr>
+                <td><strong style="color: #b91c1c;">(-) Deducciones / Préstamos</strong></td>
+                <td class="text-right text-gray">${pago.conceptoDeduccion || pago.motivoDeduccion || 'Descuentos acordados'}</td>
+                <td class="text-right font-mono" style="color: #b91c1c;">-${formatMoney(deduc)}</td>
+              </tr>` : ''}
+              <tr class="total-row">
+                <td colspan="2">TOTAL NETO LIQUIDADO Y PAGADO</td>
+                <td class="text-right font-mono total-amount">${formatMoney(Number(pago.totalPagado != null ? pago.totalPagado : (pago.totalNeto || 0)))}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          ${(pago.observaciones || pago.notas) ? `
+          <div class="notas-box">
+            <strong>Observaciones:</strong> ${pago.observaciones || pago.notas}
+          </div>` : ''}
+
+          <div class="firmas-grid">
+            <div class="firma-box">
+              <div style="font-weight: bold; margin-bottom: 2px;">HOME STHETIC</div>
+              <div class="cargo">Empleador / Administración</div>
+            </div>
+            <div class="firma-box">
+              <div style="font-weight: bold; margin-bottom: 2px;">${pago.colaboradorNombre}</div>
+              <div class="cargo">Recibí Conforme / C.C. ___________________</div>
+            </div>
+          </div>
+
+          <div class="no-print">
+            <button class="btn-print" onclick="window.print()">🖨️ Imprimir Comprobante</button>
+          </div>
+
+          <script>
+            window.onload = function() {
+              setTimeout(function() { window.print(); }, 400);
+            };
+          <\/script>
+        </body>
+        </html>
+      `;
+
+      ventana.document.write(html);
+      ventana.document.close();
     }
 
     // ================= CABINA DE ATENCIÓN DE OPERARIA =================
