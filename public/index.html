@@ -2080,6 +2080,121 @@ SMTP_FROM="HOME STHETIC" &lt;tucorreo@gmail.com&gt;</pre>
     </div>
   </div>
 
+  <!-- Modal: Editar Venta (Exclusivo Administrador) -->
+  <div id="modalEditarVenta" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
+    <div class="bg-white max-w-lg w-full border border-black rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-brand-border pb-3">
+        <div class="flex items-center gap-2">
+          <span class="p-1.5 bg-blue-100 text-blue-800 rounded-sm">
+            <i data-lucide="edit-3" class="w-4 h-4"></i>
+          </span>
+          <div>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-black flex items-center gap-2">
+              Editar Venta de Caja
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-purple-100 text-purple-900 border border-purple-200">Solo Admin</span>
+            </h3>
+            <p class="text-[11px] text-brand-gray">Modifica cualquier dato, monto, método o responsable de este cobro</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modalEditarVenta')" class="text-brand-gray hover:text-black">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="guardarEdicionVenta(event)" class="space-y-3.5">
+        <input type="hidden" id="editVentaId" value="" />
+
+        <!-- Fecha y Hora -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Fecha de la Venta *</label>
+            <input type="date" id="editVentaFecha" required class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-mono font-bold text-xs bg-white">
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Hora *</label>
+            <input type="time" id="editVentaHora" required class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-mono font-bold text-xs bg-white">
+          </div>
+        </div>
+
+        <!-- Cliente y Operaria -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Cliente *</label>
+            <input type="text" id="editVentaCliente" required placeholder="Nombre de la cliente" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-medium text-xs bg-white">
+          </div>
+          <div>
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Operaria / Responsable *</label>
+            <select id="editVentaOperaria" required class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none font-medium text-xs bg-white">
+              <!-- Dinámico -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Concepto -->
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Concepto / Detalle de la Venta *</label>
+          <textarea id="editVentaConcepto" rows="2" required placeholder="Detalle de zonas, paquete o producto vendido" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none text-xs bg-white font-medium"></textarea>
+        </div>
+
+        <!-- Monto Total -->
+        <div>
+          <label class="block uppercase tracking-wider text-brand-gray font-bold text-[10px] mb-1">Valor Total Facturado ($ COP) *</label>
+          <input type="number" id="editVentaValor" min="0" step="100" required placeholder="0" oninput="actualizarCalculoPagoMixtoEditar()" class="w-full border-2 border-emerald-600 p-2.5 text-base font-black rounded-sm focus:border-black outline-none font-mono text-emerald-900 bg-emerald-50/40">
+        </div>
+
+        <!-- Medios de Pago -->
+        <div class="border border-brand-border rounded-sm p-3 bg-neutral-50 space-y-2.5">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="chkPagoMixtoEditar" onchange="togglePagoMixtoEditar()" class="w-4 h-4 accent-black rounded-xs cursor-pointer">
+            <span class="text-[11px] font-bold text-black uppercase tracking-wider flex items-center gap-1">
+              <i data-lucide="split" class="w-3.5 h-3.5 text-purple-700"></i>
+              Dividir Pago en Varios Medios (Pago Mixto)
+            </span>
+          </label>
+
+          <!-- Modo Simple -->
+          <div id="bloqueMedioPagoSimpleEditar">
+            <label class="block uppercase tracking-wider text-brand-gray font-bold text-[9px] mb-1">Medio de Pago Principal</label>
+            <select id="editVentaMetodoSimple" class="w-full border border-brand-border p-2 rounded-sm focus:border-black outline-none bg-white text-xs font-semibold">
+              <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Transferencia (Nequi / Bancolombia / Daviplata)</option>
+              <option value="Tarjeta Débito">Tarjeta Débito</option>
+              <option value="Tarjeta Crédito">Tarjeta Crédito</option>
+              <option value="Crédito Addi">Crédito Addi</option>
+              <option value="CORTESÍA / PUBLICIDAD">CORTESÍA / PUBLICIDAD ($0)</option>
+              <option value="Sesión de Paquete Prepago ($0)">Sesión de Paquete Prepago ($0)</option>
+            </select>
+          </div>
+
+          <!-- Modo Mixto -->
+          <div id="bloqueMedioPagoMixtoEditar" class="hidden space-y-2 pt-1 border-t border-brand-border/60">
+            <div id="contenedorFilasPagoMixtoEditar" class="space-y-1.5">
+              <!-- Renderizado dinámico de filas -->
+            </div>
+            <div class="flex justify-between items-center pt-0.5">
+              <button type="button" onclick="agregarFilaPagoMixtoEditar()" class="text-[11px] font-bold text-purple-800 hover:text-black flex items-center gap-1">
+                <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-purple-600"></i> + Agregar otro medio
+              </button>
+            </div>
+            <div id="alertaCuadrePagoMixtoEditar" class="p-2 rounded-sm text-[11px] flex justify-between items-center border bg-white border-brand-border font-semibold">
+              <span id="txtEstadoCuadreMixtoEditar">Suma: $0</span>
+              <span id="badgeEstadoCuadreMixtoEditar" class="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-neutral-200">Falta</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalEditarVenta')" class="px-4 py-2 border border-brand-border text-brand-gray hover:text-black uppercase tracking-wider font-semibold rounded-sm">
+            Cancelar
+          </button>
+          <button type="submit" id="btnGuardarEdicionVenta" class="bg-black hover:bg-neutral-800 text-white px-5 py-2 uppercase tracking-wider font-bold rounded-sm flex items-center gap-1.5 shadow-xs">
+            <i data-lucide="check" class="w-4 h-4"></i> Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal: Registrar Gasto / Egreso en Caja -->
   <div id="modalNuevoGasto" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 text-xs">
     <div class="bg-white max-w-sm w-full border border-brand-border rounded-sm shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
@@ -7502,11 +7617,18 @@ SMTP_FROM="HOME STHETIC" &lt;tucorreo@gmail.com&gt;</pre>
               </td>
               <td class="p-3 text-center ${esContadora ? 'hidden' : ''}">
                 ${esVenta ? (esAdmin ? `
-                  <button onclick="eliminarVenta('${m.id}')"
-                    class="text-neutral-400 hover:text-red-600 transition p-1.5 border border-transparent hover:border-red-200 rounded-sm"
-                    title="Eliminar venta (Solo Administrador)">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                  </button>
+                  <div class="flex items-center justify-center gap-1">
+                    <button onclick="abrirModalEditarVenta('${m.id}')"
+                      class="text-neutral-500 hover:text-blue-600 transition p-1.5 border border-transparent hover:border-blue-200 rounded-sm"
+                      title="Editar venta (Solo Administrador)">
+                      <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button onclick="eliminarVenta('${m.id}')"
+                      class="text-neutral-400 hover:text-red-600 transition p-1.5 border border-transparent hover:border-red-200 rounded-sm"
+                      title="Eliminar venta (Solo Administrador)">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
                 ` : '<span class="text-brand-gray/40 text-[10px]">-</span>') : (puedeEliminarGasto ? `
                   <button onclick="eliminarGastoCaja('${m.id}')"
                     class="text-rose-400 hover:text-red-700 transition p-1.5 border border-transparent hover:border-red-200 rounded-sm"
@@ -7536,6 +7658,296 @@ SMTP_FROM="HOME STHETIC" &lt;tucorreo@gmail.com&gt;</pre>
         }
       } catch (err) {
         alert('Error de conexión: ' + err.message);
+      }
+    }
+
+    // ─── EDICIÓN DE VENTAS (EXCLUSIVO ADMINISTRADOR) ───
+    let filasPagoMixtoEditar = [];
+
+    function abrirModalEditarVenta(id) {
+      const session = obtenerSesion();
+      if (!session || session.rol !== 'admin') {
+        alert('Acceso restringido: Solo el Administrador tiene autorización para modificar ventas.');
+        return;
+      }
+
+      const venta = (appState.ventas || []).find(v => v._id === id);
+      if (!venta) {
+        alert('No se encontró la venta especificada.');
+        return;
+      }
+
+      document.getElementById('editVentaId').value = venta._id;
+      document.getElementById('editVentaFecha').value = venta.fecha || (appState.fechaHoy || new Date().toISOString().split('T')[0]);
+      document.getElementById('editVentaHora').value = venta.hora || '12:00';
+      document.getElementById('editVentaCliente').value = venta.cliente || '';
+      document.getElementById('editVentaConcepto').value = venta.concepto || '';
+      document.getElementById('editVentaValor').value = venta.valor != null ? venta.valor : 0;
+
+      // Selector de operarias
+      const selOp = document.getElementById('editVentaOperaria');
+      if (selOp) {
+        const operarias = appState.config?.operarias || [];
+        let opts = `<option value="Recepción">Recepción / General</option>`;
+        operarias.forEach(o => {
+          opts += `<option value="${o.nombre}">${o.nombre} (${o.rol || 'Operaria'})</option>`;
+        });
+        if (venta.operaria && !operarias.some(o => o.nombre === venta.operaria) && venta.operaria !== 'Recepción') {
+          opts += `<option value="${venta.operaria}">${venta.operaria}</option>`;
+        }
+        selOp.innerHTML = opts;
+        selOp.value = venta.operaria || 'Recepción';
+      }
+
+      // Medios de pago
+      const chkMixto = document.getElementById('chkPagoMixtoEditar');
+      const selMetodo = document.getElementById('editVentaMetodoSimple');
+
+      if (Array.isArray(venta.pagos) && venta.pagos.length > 1) {
+        if (chkMixto) chkMixto.checked = true;
+        filasPagoMixtoEditar = venta.pagos.map(p => ({
+          metodo: p.metodo || 'Efectivo',
+          valor: Number(p.valor) || 0
+        }));
+      } else {
+        if (chkMixto) chkMixto.checked = false;
+        const metOriginal = (venta.metodo && !venta.metodo.startsWith('Mixto')) ? venta.metodo : 'Efectivo';
+        filasPagoMixtoEditar = [
+          { metodo: metOriginal, valor: Number(venta.valor) || 0 },
+          { metodo: 'Transferencia', valor: 0 }
+        ];
+        if (selMetodo) {
+          selMetodo.value = metOriginal;
+        }
+      }
+
+      togglePagoMixtoEditar();
+      openModal('modalEditarVenta');
+      lucide.createIcons();
+    }
+
+    function togglePagoMixtoEditar() {
+      const chk = document.getElementById('chkPagoMixtoEditar');
+      const bSimple = document.getElementById('bloqueMedioPagoSimpleEditar');
+      const bMixto = document.getElementById('bloqueMedioPagoMixtoEditar');
+      if (!chk) return;
+
+      if (chk.checked) {
+        if (bSimple) bSimple.classList.add('hidden');
+        if (bMixto) bMixto.classList.remove('hidden');
+
+        if (filasPagoMixtoEditar.length === 0) {
+          const tot = Number(document.getElementById('editVentaValor')?.value || 0);
+          const m1 = Math.round(tot / 2);
+          const m2 = tot - m1;
+          filasPagoMixtoEditar = [
+            { metodo: 'Efectivo', valor: m1 },
+            { metodo: 'Transferencia', valor: m2 }
+          ];
+        }
+        renderizarFilasPagoMixtoEditar();
+      } else {
+        if (bSimple) bSimple.classList.remove('hidden');
+        if (bMixto) bMixto.classList.add('hidden');
+      }
+    }
+
+    function renderizarFilasPagoMixtoEditar() {
+      const cont = document.getElementById('contenedorFilasPagoMixtoEditar');
+      if (!cont) return;
+
+      cont.innerHTML = filasPagoMixtoEditar.map((f, idx) => `
+        <div class="flex items-center gap-2 bg-white p-1.5 border border-brand-border rounded-xs">
+          <div class="w-1/2">
+            <select onchange="cambiarMetodoFilaPagoMixtoEditar(${idx}, this.value)" class="w-full border border-brand-border p-1.5 rounded-xs text-xs bg-white font-semibold outline-none focus:border-black">
+              ${MEDIOS_PAGO_OPCIONES.map(m => `
+                <option value="${m}" ${m === f.metodo ? 'selected' : ''}>${m}</option>
+              `).join('')}
+            </select>
+          </div>
+          <div class="w-1/2 flex items-center gap-1.5">
+            <input type="number" value="${f.valor || 0}" min="0" oninput="cambiarMontoFilaPagoMixtoEditar(${idx}, this.value)" placeholder="Monto" class="w-full border border-brand-border p-1.5 rounded-xs text-xs font-mono font-bold outline-none focus:border-black text-right">
+            ${filasPagoMixtoEditar.length > 1 ? `
+              <button type="button" onclick="eliminarFilaPagoMixtoEditar(${idx})" class="p-1 text-brand-gray hover:text-red-600 rounded-xs" title="Eliminar este medio">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      actualizarCalculoPagoMixtoEditar();
+      lucide.createIcons();
+    }
+
+    function cambiarMetodoFilaPagoMixtoEditar(idx, val) {
+      if (filasPagoMixtoEditar[idx]) {
+        filasPagoMixtoEditar[idx].metodo = val;
+      }
+      actualizarCalculoPagoMixtoEditar();
+    }
+
+    function cambiarMontoFilaPagoMixtoEditar(idx, val) {
+      if (filasPagoMixtoEditar[idx]) {
+        filasPagoMixtoEditar[idx].valor = Math.max(0, Number(val) || 0);
+      }
+      actualizarCalculoPagoMixtoEditar();
+    }
+
+    function agregarFilaPagoMixtoEditar() {
+      const totalEsperado = Number(document.getElementById('editVentaValor')?.value || 0);
+      const sumaActual = filasPagoMixtoEditar.reduce((acc, f) => acc + (Number(f.valor) || 0), 0);
+      const faltante = Math.max(0, totalEsperado - sumaActual);
+
+      const usados = filasPagoMixtoEditar.map(f => f.metodo);
+      const disponible = MEDIOS_PAGO_OPCIONES.find(m => !usados.includes(m)) || 'Efectivo';
+
+      filasPagoMixtoEditar.push({ metodo: disponible, valor: faltante });
+      renderizarFilasPagoMixtoEditar();
+    }
+
+    function eliminarFilaPagoMixtoEditar(index) {
+      if (filasPagoMixtoEditar.length > 1) {
+        filasPagoMixtoEditar.splice(index, 1);
+        renderizarFilasPagoMixtoEditar();
+      }
+    }
+
+    function actualizarCalculoPagoMixtoEditar() {
+      const chk = document.getElementById('chkPagoMixtoEditar');
+      if (!chk || !chk.checked) return;
+
+      const totalEsperado = Number(document.getElementById('editVentaValor')?.value || 0);
+      const suma = filasPagoMixtoEditar.reduce((acc, f) => acc + (Number(f.valor) || 0), 0);
+      const dif = totalEsperado - suma;
+
+      const txt = document.getElementById('txtEstadoCuadreMixtoEditar');
+      const badge = document.getElementById('badgeEstadoCuadreMixtoEditar');
+      const box = document.getElementById('alertaCuadrePagoMixtoEditar');
+
+      if (txt) txt.textContent = `Suma Medios: ${formatMoney(suma)} / Total: ${formatMoney(totalEsperado)}`;
+
+      if (badge && box) {
+        if (dif === 0) {
+          badge.textContent = '✓ Cuadra Exacto';
+          badge.className = 'text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white';
+          box.className = 'p-2 rounded-sm text-[11px] flex justify-between items-center border bg-emerald-50 border-emerald-300 font-semibold text-emerald-950';
+        } else if (dif > 0) {
+          badge.textContent = `Faltan ${formatMoney(dif)}`;
+          badge.className = 'text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white';
+          box.className = 'p-2 rounded-sm text-[11px] flex justify-between items-center border bg-amber-50 border-amber-300 font-semibold text-amber-950';
+        } else {
+          badge.textContent = `Sobran ${formatMoney(Math.abs(dif))}`;
+          badge.className = 'text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-rose-600 text-white';
+          box.className = 'p-2 rounded-sm text-[11px] flex justify-between items-center border bg-rose-50 border-rose-300 font-semibold text-rose-950';
+        }
+      }
+    }
+
+    async function guardarEdicionVenta(e) {
+      e.preventDefault();
+      const session = obtenerSesion();
+      if (!session || session.rol !== 'admin') {
+        alert('Acceso restringido: Solo el Administrador tiene autorización para modificar ventas.');
+        return;
+      }
+
+      const id = document.getElementById('editVentaId')?.value;
+      if (!id) {
+        alert('Identificador de venta no válido.');
+        return;
+      }
+
+      const fecha = (document.getElementById('editVentaFecha')?.value || '').trim();
+      const hora = (document.getElementById('editVentaHora')?.value || '').trim();
+      const cliente = (document.getElementById('editVentaCliente')?.value || '').trim();
+      const operaria = (document.getElementById('editVentaOperaria')?.value || 'Recepción').trim();
+      const concepto = (document.getElementById('editVentaConcepto')?.value || '').trim();
+      const valor = Number(document.getElementById('editVentaValor')?.value) || 0;
+
+      if (!fecha || !hora) {
+        alert('La fecha y la hora de la venta son obligatorias.');
+        return;
+      }
+      if (!cliente) {
+        alert('El nombre del cliente es obligatorio.');
+        return;
+      }
+      if (!concepto) {
+        alert('El concepto de la venta es obligatorio.');
+        return;
+      }
+      if (valor < 0) {
+        alert('El valor no puede ser negativo.');
+        return;
+      }
+
+      const chkMixto = document.getElementById('chkPagoMixtoEditar');
+      let metodo = document.getElementById('editVentaMetodoSimple')?.value || 'Efectivo';
+      let pagos = [];
+
+      if (chkMixto && chkMixto.checked && valor > 0) {
+        pagos = filasPagoMixtoEditar.map(f => ({
+          metodo: f.metodo,
+          valor: Number(f.valor) || 0
+        })).filter(f => f.valor > 0);
+
+        const sumaPagos = pagos.reduce((acc, p) => acc + p.valor, 0);
+        if (sumaPagos !== valor) {
+          alert(`⚠️ Los medios de pago no coinciden con el valor total de la venta:\n\n• Total venta: ${formatMoney(valor)}\n• Suma de medios: ${formatMoney(sumaPagos)}\n• Diferencia: ${formatMoney(Math.abs(valor - sumaPagos))}\n\nPor favor ajusta los montos.`);
+          return;
+        }
+
+        if (pagos.length > 1) {
+          metodo = `Mixto (${pagos.map(p => `${p.metodo}: ${formatMoney(p.valor)}`).join(' + ')})`;
+        } else if (pagos.length === 1) {
+          metodo = pagos[0].metodo;
+        }
+      }
+
+      const btnSubmit = document.getElementById('btnGuardarEdicionVenta');
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Guardando...`;
+        lucide.createIcons();
+      }
+
+      try {
+        const payload = {
+          fecha,
+          hora,
+          cliente,
+          operaria,
+          concepto,
+          valor,
+          metodo,
+          pagos
+        };
+
+        const res = await fetch(`/api/caja/ventas/${id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        if (json.success) {
+          closeModal('modalEditarVenta');
+          await cargarDatosServidor();
+          renderizarCaja();
+          alert('✓ Venta modificada exitosamente por el Administrador.');
+        } else {
+          alert('Error al modificar venta: ' + (json.error || 'Acceso denegado'));
+        }
+      } catch (err) {
+        console.error('Error al guardar edición de venta:', err);
+        alert('Error de conexión al modificar la venta.');
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> Guardar Cambios`;
+          lucide.createIcons();
+        }
       }
     }
 

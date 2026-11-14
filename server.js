@@ -1657,6 +1657,106 @@ app.delete('/api/caja/ventas/:id', async (req, res) => {
 
 app.delete('/api/ventas/:id', (req, res) => res.redirect(307, `/api/caja/ventas/${req.params.id}`));
 
+// 7.1.1 Modificar Venta de Caja (ESTRICTAMENTE SOLO ADMINISTRADOR)
+app.put('/api/caja/ventas/:id', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado: Solo el Administrador tiene autorización para modificar ventas registradas.'
+      });
+    }
+
+    const { id } = req.params;
+    const venta = await Sale.findById(id);
+    if (!venta) {
+      return res.status(404).json({ success: false, error: 'Venta no encontrada.' });
+    }
+
+    const { fecha, hora, cliente, concepto, operaria, valor, metodo, pagos, valorBruto, valorIva } = req.body;
+
+    if (valor === undefined || isNaN(Number(valor)) || Number(valor) < 0) {
+      return res.status(400).json({ success: false, error: 'El monto de la venta debe ser un número válido mayor o igual a 0.' });
+    }
+
+    const montoTotal = Number(valor);
+
+    // Procesar desglose de pagos si existen
+    let listaPagos = [];
+    if (Array.isArray(pagos) && pagos.length > 0) {
+      listaPagos = pagos.map(p => {
+        const pVal = Number(p.valor) || 0;
+        const pMet = (p.metodo || 'Efectivo').trim();
+        const pBruto = p.valorBruto !== undefined && !isNaN(Number(p.valorBruto))
+          ? Number(p.valorBruto)
+          : (pMet.toLowerCase().includes('efectivo') ? pVal : Math.round(pVal / 1.19));
+        const pIva = p.valorIva !== undefined && !isNaN(Number(p.valorIva))
+          ? Number(p.valorIva)
+          : Math.max(0, pVal - pBruto);
+        return {
+          metodo: pMet,
+          valor: pVal,
+          valorBruto: pBruto,
+          valorIva: pIva
+        };
+      }).filter(p => p.valor > 0);
+    }
+
+    let metodoFinal = (metodo || venta.metodo || 'Efectivo').trim();
+    if (listaPagos.length > 1) {
+      metodoFinal = `Mixto (${listaPagos.map(p => `${p.metodo}: $${p.valor.toLocaleString('es-CO')}`).join(' + ')})`;
+    } else if (listaPagos.length === 1) {
+      metodoFinal = listaPagos[0].metodo;
+    }
+
+    let vBrutoFinal = valorBruto !== undefined && !isNaN(Number(valorBruto))
+      ? Number(valorBruto)
+      : (listaPagos.length > 0
+          ? listaPagos.reduce((acc, p) => acc + p.valorBruto, 0)
+          : (montoTotal > 0 ? (metodoFinal.toLowerCase().includes('efectivo') ? montoTotal : Math.round(montoTotal / 1.19)) : 0));
+
+    let vIvaFinal = valorIva !== undefined && !isNaN(Number(valorIva))
+      ? Number(valorIva)
+      : (listaPagos.length > 0
+          ? listaPagos.reduce((acc, p) => acc + p.valorIva, 0)
+          : Math.max(0, montoTotal - vBrutoFinal));
+
+    if (fecha) venta.fecha = fecha.trim();
+    if (hora) venta.hora = hora.trim();
+    if (cliente) venta.cliente = cliente.trim();
+    if (concepto) venta.concepto = concepto.trim();
+    if (operaria) venta.operaria = operaria.trim();
+    venta.valor = montoTotal;
+    venta.metodo = metodoFinal;
+    venta.pagos = listaPagos;
+    venta.valorBruto = vBrutoFinal;
+    venta.valorIva = vIvaFinal;
+
+    await venta.save();
+
+    // Sincronizar con cita asociada si existe
+    const citaAsociada = await Appointment.findOne({ ventaId: venta._id });
+    if (citaAsociada) {
+      if (cliente) citaAsociada.clienteNombre = cliente.trim();
+      if (operaria) citaAsociada.operaria = operaria.trim();
+      citaAsociada.valor = montoTotal;
+      citaAsociada.valorBruto = vBrutoFinal;
+      citaAsociada.valorIva = vIvaFinal;
+      citaAsociada.metodoPago = metodoFinal;
+      await citaAsociada.save();
+    }
+
+    console.log(`✓ Venta #${venta._id} modificada por Administrador: ${venta.concepto} (${montoTotal})`);
+    res.json({ success: true, message: 'Venta actualizada exitosamente.', venta });
+  } catch (error) {
+    console.error('Error al editar venta:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/ventas/:id', (req, res) => res.redirect(307, `/api/caja/ventas/${req.params.id}`));
+
 // 7.2 Gastos: Registrar Gasto en Caja
 app.post('/api/caja/gastos', async (req, res) => {
   try {
