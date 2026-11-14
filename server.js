@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const cron = require('node-cron');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -221,15 +222,42 @@ const zoneChangeRequestSchema = new mongoose.Schema({
 
 const ZoneChangeRequest = mongoose.model('ZoneChangeRequest', zoneChangeRequestSchema);
 
-// 7. Registro de Pagos de Nómina (Sueldos Fijos Quincenales / Mensuales)
+// 7. Directorio de Trabajadores / Colaboradores de HOME STHETIC
+const workerSchema = new mongoose.Schema({
+  cedula: { type: String, required: true, trim: true },
+  nombre: { type: String, required: true, trim: true },
+  correo: { type: String, required: true, lowercase: true, trim: true },
+  telefono: { type: String, default: '' },
+  cargo: { type: String, default: 'Especialista en Depilación Láser' },
+  salarioMensual: { type: Number, required: true, min: 0 },
+  tipoPagoFrecuente: { type: String, enum: ['Quincenal', 'Mensual'], default: 'Quincenal' },
+  activo: { type: Boolean, default: true },
+  fechaIngreso: { type: String, default: '' },
+  observaciones: { type: String, default: '' }
+}, { timestamps: true });
+
+const Worker = mongoose.model('Worker', workerSchema);
+
+// 8. Registro de Pagos de Nómina y Liquidaciones
 const payrollPaymentSchema = new mongoose.Schema({
+  trabajadorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Worker', default: null },
+  cedula: { type: String, default: '' },
+  correo: { type: String, default: '' },
   colaboradorNombre: { type: String, required: true },
   cargo: { type: String, default: 'Especialista en Depilación Láser' },
   tipoPeriodo: { type: String, enum: ['Quincenal', 'Mensual'], default: 'Quincenal' },
   periodoTexto: { type: String, default: '' },
   fechaPago: { type: String, required: true },
   horaPago: { type: String, default: '' },
+  salarioMensualAcordado: { type: Number, default: 0 },
   sueldoBase: { type: Number, required: true },
+  diasAdicionales: { type: Number, default: 0 },
+  valorDia: { type: Number, default: 0 },
+  totalDiasAdicionales: { type: Number, default: 0 },
+  horasExtras: { type: Number, default: 0 },
+  valorHoraExtra: { type: Number, default: 0 },
+  totalHorasExtras: { type: Number, default: 0 },
+  detalleHorasExtras: { type: String, default: '' },
   bonificaciones: { type: Number, default: 0 },
   conceptoBonificacion: { type: String, default: '' },
   deducciones: { type: Number, default: 0 },
@@ -239,6 +267,9 @@ const payrollPaymentSchema = new mongoose.Schema({
   metodoPago: { type: String, default: 'Transferencia' },
   gastoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Expense', default: null },
   observaciones: { type: String, default: '' },
+  correoEnviado: { type: Boolean, default: false },
+  fechaEnvioCorreo: { type: String, default: '' },
+  errorEnvioCorreo: { type: String, default: '' },
   registradoPor: { type: String, default: 'Administrador' }
 }, { timestamps: true });
 
@@ -490,14 +521,15 @@ app.get('/api/bootstrap', async (req, res) => {
       console.log(`⏰ Nuevo día (${hoy}): Caja del día anterior cerrada automáticamente para exigir apertura matutina.`);
     }
 
-    const [clientes, todasLasCitas, ventasHoy, gastosHoy, usuarios, solicitudesZonas, nominas] = await Promise.all([
+    const [clientes, todasLasCitas, ventasHoy, gastosHoy, usuarios, solicitudesZonas, nominas, trabajadores] = await Promise.all([
       Client.find().sort({ nombre: 1 }),
       Appointment.find().sort({ fecha: 1, hora: 1 }),
       Sale.find({ fecha: hoy }).sort({ createdAt: -1 }),
       Expense.find({ fecha: hoy }).sort({ createdAt: -1 }),
       User.find().select('-password').sort({ rol: 1, nombre: 1 }),
       ZoneChangeRequest.find().sort({ createdAt: -1 }).limit(100),
-      PayrollPayment.find().sort({ fechaPago: -1, createdAt: -1 }).limit(200)
+      PayrollPayment.find().sort({ fechaPago: -1, createdAt: -1 }).limit(200),
+      Worker.find().sort({ nombre: 1 })
     ]);
 
     res.json({
@@ -511,6 +543,7 @@ app.get('/api/bootstrap', async (req, res) => {
         usuarios,
         solicitudesZonas: solicitudesZonas || [],
         nominas: nominas || [],
+        trabajadores: trabajadores || [],
         fechaHoy: hoy
       }
     });
@@ -1870,6 +1903,299 @@ app.get('/api/reportes/financiero', async (req, res) => {
 
 // ================= 7.6 GESTIÓN & PAGO DE NÓMINA (ADMINISTRADOR & CONTADORA) =================
 
+function getEmailTransporter() {
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = parseInt(process.env.SMTP_PORT, 10) || 465;
+  const user = (process.env.SMTP_USER || '').trim();
+  const pass = (process.env.SMTP_PASS || '').trim();
+  const secure = port === 465;
+
+  if (!user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false }
+  });
+}
+
+async function enviarCorreoComprobanteNomina(pago) {
+  if (!pago || !pago.correo) {
+    return { ok: false, error: 'El trabajador no tiene correo electrónico asignado.' };
+  }
+
+  const transporter = getEmailTransporter();
+  if (!transporter) {
+    return { 
+      ok: false, 
+      notConfigured: true, 
+      error: 'Servidor de correo no configurado. Para activar el envío real de correos, agrega SMTP_USER y SMTP_PASS en el archivo .env.' 
+    };
+  }
+
+  const bonif = pago.bonificaciones || 0;
+  const deduc = pago.deducciones || 0;
+  const diasAdic = pago.totalDiasAdicionales || 0;
+  const horasExt = pago.totalHorasExtras || 0;
+  const totalNeto = Number(pago.totalPagado != null ? pago.totalPagado : (pago.totalNeto || 0));
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2937; margin: 0; padding: 20px; background-color: #f9fafb; }
+        .container { max-width: 650px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .header { background: #000000; color: #ffffff; padding: 24px; text-align: center; }
+        .header h1 { margin: 0; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; }
+        .header p { margin: 4px 0 0; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; }
+        .badge { display: inline-block; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 6px 14px; font-size: 12px; font-weight: bold; border-radius: 9999px; margin-top: 15px; }
+        .content { padding: 24px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 6px; padding: 16px; margin-bottom: 20px; }
+        .info-cell { margin-bottom: 6px; }
+        .info-label { font-size: 10px; color: #6b7280; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
+        .info-value { font-size: 13px; font-weight: 600; color: #111827; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #f3f4f6; color: #4b5563; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; text-align: left; }
+        td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+        .text-right { text-align: right; }
+        .total-row { background: #f0fdf4; border-top: 2px solid #059669; }
+        .total-row td { font-size: 15px; font-weight: 900; color: #065f46; padding: 14px 12px; }
+        .footer { padding: 20px; text-align: center; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>HOME STHETIC</h1>
+          <p>Clínica de Estética & Depilación Láser</p>
+          <div class="badge">COMPROBANTE OFICIAL DE PAGO DE NÓMINA</div>
+        </div>
+        <div class="content">
+          <p style="font-size: 14px; margin-top: 0;">Hola <strong>${pago.colaboradorNombre}</strong>,</p>
+          <p style="font-size: 13px; color: #4b5563;">Te compartimos el detalle de la liquidación de tu nómina correspondiente al período: <strong>${pago.periodoTexto}</strong>.</p>
+          
+          <div class="info-grid">
+            <div class="info-cell">
+              <span class="info-label">Colaborador(a)</span>
+              <span class="info-value">${pago.colaboradorNombre}</span>
+            </div>
+            <div class="info-cell">
+              <span class="info-label">Documento / Cédula</span>
+              <span class="info-value">${pago.cedula || 'N/A'}</span>
+            </div>
+            <div class="info-cell">
+              <span class="info-label">Cargo / Función</span>
+              <span class="info-value">${pago.cargo || 'Especialista'}</span>
+            </div>
+            <div class="info-cell">
+              <span class="info-label">Fecha de Liquidación</span>
+              <span class="info-value">${pago.fechaPago}</span>
+            </div>
+            <div class="info-cell">
+              <span class="info-label">Modalidad / Período</span>
+              <span class="info-value">${pago.periodoTexto} (${pago.tipoPeriodo})</span>
+            </div>
+            <div class="info-cell">
+              <span class="info-label">Medio de Pago</span>
+              <span class="info-value">${pago.afectaCaja ? 'Caja (' + pago.metodoPago + ')' : 'Pago Externo / Bancario'}</span>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Concepto</th>
+                <th class="text-right">Detalle</th>
+                <th class="text-right">Valor ($ COP)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Sueldo Base Acordado</strong></td>
+                <td class="text-right" style="color: #6b7280;">${pago.tipoPeriodo === 'Mensual' ? 'Sueldo mensual pactado' : 'Sueldo quincenal pactado'}</td>
+                <td class="text-right" style="font-weight: 600; font-family: monospace;">$${pago.sueldoBase ? pago.sueldoBase.toLocaleString('es-CO') : 0}</td>
+              </tr>
+              ${diasAdic > 0 ? `
+              <tr>
+                <td><strong style="color: #065f46;">(+) Días Adicionales</strong></td>
+                <td class="text-right" style="color: #6b7280;">${pago.diasAdicionales} día(s) x $${(pago.valorDia || 0).toLocaleString('es-CO')}</td>
+                <td class="text-right" style="color: #065f46; font-weight: 600; font-family: monospace;">+$${diasAdic.toLocaleString('es-CO')}</td>
+              </tr>` : ''}
+              ${horasExt > 0 ? `
+              <tr>
+                <td><strong style="color: #065f46;">(+) Horas Extras</strong></td>
+                <td class="text-right" style="color: #6b7280;">${pago.horasExtras} hora(s)${pago.detalleHorasExtras ? ' (' + pago.detalleHorasExtras + ')' : ''}</td>
+                <td class="text-right" style="color: #065f46; font-weight: 600; font-family: monospace;">+$${horasExt.toLocaleString('es-CO')}</td>
+              </tr>` : ''}
+              ${bonif > 0 ? `
+              <tr>
+                <td><strong style="color: #065f46;">(+) Bonificaciones / Comisiones</strong></td>
+                <td class="text-right" style="color: #6b7280;">${pago.conceptoBonificacion || pago.motivoBonificacion || 'Incentivos y metas'}</td>
+                <td class="text-right" style="color: #065f46; font-weight: 600; font-family: monospace;">+$${bonif.toLocaleString('es-CO')}</td>
+              </tr>` : ''}
+              ${deduc > 0 ? `
+              <tr>
+                <td><strong style="color: #b91c1c;">(-) Deducciones / Anticipos</strong></td>
+                <td class="text-right" style="color: #6b7280;">${pago.conceptoDeduccion || pago.motivoDeduccion || 'Descuentos acordados'}</td>
+                <td class="text-right" style="color: #b91c1c; font-weight: 600; font-family: monospace;">-$${deduc.toLocaleString('es-CO')}</td>
+              </tr>` : ''}
+              <tr class="total-row">
+                <td colspan="2">TOTAL NETO CONSIGNADO / PAGADO</td>
+                <td class="text-right font-mono" style="font-size: 16px;">$${totalNeto.toLocaleString('es-CO')}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          ${pago.observaciones ? `
+          <div style="background: #fdfdfd; border: 1px dashed #d1d5db; padding: 12px; border-radius: 6px; font-size: 12px; color: #4b5563; margin-top: 15px;">
+            <strong>Observaciones:</strong> ${pago.observaciones}
+          </div>` : ''}
+        </div>
+        <div class="footer">
+          <p style="margin: 0;">Este es un comprobante generado automáticamente por el sistema de <strong>HOME STHETIC</strong>.</p>
+          <p style="margin: 4px 0 0;">Si tienes alguna inquietud con tu liquidación, comunícate con administración.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const fromEmail = process.env.SMTP_FROM || `"HOME STHETIC" <${process.env.SMTP_USER}>`;
+
+  const mailOptions = {
+    from: fromEmail,
+    to: pago.correo,
+    subject: `Comprobante de Pago de Nómina - ${pago.periodoTexto} | HOME STHETIC`,
+    html
+  };
+
+  const info = await transporter.sendMail(mailOptions);
+  return { ok: true, messageId: info.messageId };
+}
+
+// ── Rutas de Trabajadores / Colaboradores ──
+
+// Listar trabajadores
+app.get('/api/trabajadores', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || (authUser.rol !== 'admin' && authUser.rol !== 'contadora')) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+    }
+
+    const trabajadores = await Worker.find().sort({ nombre: 1 });
+    res.json({ success: true, trabajadores });
+  } catch (error) {
+    console.error('Error al listar trabajadores:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Crear trabajador
+app.post('/api/trabajadores', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede registrar trabajadores.' });
+    }
+
+    const { cedula, nombre, correo, telefono, cargo, salarioMensual, tipoPagoFrecuente, observaciones } = req.body;
+
+    if (!cedula || !cedula.trim()) {
+      return res.status(400).json({ success: false, error: 'La cédula o documento de identidad es obligatorio.' });
+    }
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({ success: false, error: 'El nombre completo del trabajador es obligatorio.' });
+    }
+    if (!correo || !correo.trim()) {
+      return res.status(400).json({ success: false, error: 'El correo electrónico es obligatorio para enviar los comprobantes.' });
+    }
+    const sal = Number(salarioMensual);
+    if (isNaN(sal) || sal < 0) {
+      return res.status(400).json({ success: false, error: 'El salario mensual debe ser un valor numérico válido.' });
+    }
+
+    const nuevo = await Worker.create({
+      cedula: cedula.trim(),
+      nombre: nombre.trim(),
+      correo: correo.trim().toLowerCase(),
+      telefono: (telefono || '').trim(),
+      cargo: (cargo && cargo.trim()) ? cargo.trim() : 'Especialista en Depilación Láser',
+      salarioMensual: sal,
+      tipoPagoFrecuente: tipoPagoFrecuente || 'Quincenal',
+      fechaIngreso: getFechaHoy(),
+      observaciones: (observaciones || '').trim()
+    });
+
+    console.log(`✓ Trabajador registrado: ${nuevo.nombre} (CC: ${nuevo.cedula}, $${nuevo.salarioMensual})`);
+    res.json({ success: true, trabajador: nuevo, mensaje: `Trabajador(a) ${nuevo.nombre} registrado con éxito.` });
+  } catch (error) {
+    console.error('Error al registrar trabajador:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Actualizar trabajador
+app.put('/api/trabajadores/:id', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede modificar trabajadores.' });
+    }
+
+    const { cedula, nombre, correo, telefono, cargo, salarioMensual, tipoPagoFrecuente, activo, observaciones } = req.body;
+
+    const trabajador = await Worker.findById(req.params.id);
+    if (!trabajador) {
+      return res.status(404).json({ success: false, error: 'Trabajador no encontrado.' });
+    }
+
+    if (cedula != null) trabajador.cedula = cedula.trim();
+    if (nombre != null) trabajador.nombre = nombre.trim();
+    if (correo != null) trabajador.correo = correo.trim().toLowerCase();
+    if (telefono != null) trabajador.telefono = telefono.trim();
+    if (cargo != null) trabajador.cargo = cargo.trim();
+    if (salarioMensual != null) trabajador.salarioMensual = Math.max(0, Number(salarioMensual) || 0);
+    if (tipoPagoFrecuente != null) trabajador.tipoPagoFrecuente = tipoPagoFrecuente;
+    if (activo != null) trabajador.activo = Boolean(activo);
+    if (observaciones != null) trabajador.observaciones = observaciones.trim();
+
+    await trabajador.save();
+    console.log(`✓ Trabajador actualizado: ${trabajador.nombre}`);
+    res.json({ success: true, trabajador, mensaje: 'Trabajador actualizado exitosamente.' });
+  } catch (error) {
+    console.error('Error al actualizar trabajador:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Eliminar trabajador
+app.delete('/api/trabajadores/:id', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede eliminar trabajadores.' });
+    }
+
+    const trabajador = await Worker.findByIdAndDelete(req.params.id);
+    if (!trabajador) {
+      return res.status(404).json({ success: false, error: 'Trabajador no encontrado.' });
+    }
+
+    console.log(`✓ Trabajador eliminado: ${trabajador.nombre}`);
+    res.json({ success: true, mensaje: `Trabajador(a) ${trabajador.nombre} eliminado exitosamente.` });
+  } catch (error) {
+    console.error('Error al eliminar trabajador:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Listar pagos de nómina
 app.get('/api/nomina', async (req, res) => {
   try {
@@ -1886,7 +2212,7 @@ app.get('/api/nomina', async (req, res) => {
   }
 });
 
-// Registrar pago de nómina (Exclusivo Administrador)
+// Registrar pago de nómina con soporte de días adicionales, horas extras y envío de correo (Exclusivo Administrador)
 app.post('/api/nomina', async (req, res) => {
   try {
     const authUser = await getAuthUser(req);
@@ -1895,13 +2221,24 @@ app.post('/api/nomina', async (req, res) => {
     }
 
     const {
+      trabajadorId,
+      cedula,
+      correo,
       colaboradorNombre,
       cargo,
+      salarioMensualAcordado,
       tipoPeriodo,
       periodoTipo,
       periodoTexto,
       fechaPago,
       sueldoBase,
+      diasAdicionales,
+      valorDia,
+      totalDiasAdicionales,
+      horasExtras,
+      valorHoraExtra,
+      totalHorasExtras,
+      detalleHorasExtras,
       bonificaciones,
       conceptoBonificacion,
       motivoBonificacion,
@@ -1911,21 +2248,31 @@ app.post('/api/nomina', async (req, res) => {
       afectaCaja,
       metodoPago,
       observaciones,
-      notas
+      notas,
+      enviarCorreo
     } = req.body;
 
     if (!colaboradorNombre || !colaboradorNombre.trim()) {
-      return res.status(400).json({ success: false, error: 'El nombre de la colaboradora o empleado es obligatorio.' });
+      return res.status(400).json({ success: false, error: 'El nombre del colaborador o empleado es obligatorio.' });
     }
 
-    const sBase = Number(sueldoBase);
-    if (isNaN(sBase) || sBase <= 0) {
-      return res.status(400).json({ success: false, error: 'El sueldo base debe ser un monto numérico mayor a 0.' });
-    }
+    const sBase = Math.max(0, Number(sueldoBase) || 0);
+    const nDias = Math.max(0, Number(diasAdicionales) || 0);
+    const vDia = Math.max(0, Number(valorDia) || 0);
+    const totDias = totalDiasAdicionales != null ? Number(totalDiasAdicionales) : (nDias * vDia);
+
+    const nHoras = Math.max(0, Number(horasExtras) || 0);
+    const vHora = Math.max(0, Number(valorHoraExtra) || 0);
+    const totHoras = totalHorasExtras != null ? Number(totalHorasExtras) : (nHoras * vHora);
 
     const sBonos = Math.max(0, Number(bonificaciones) || 0);
     const sDeduc = Math.max(0, Number(deducciones) || 0);
-    const totalNeto = Math.max(0, sBase + sBonos - sDeduc);
+
+    const totalNeto = Math.max(0, sBase + totDias + totHoras + sBonos - sDeduc);
+    if (totalNeto <= 0 && sBase <= 0) {
+      return res.status(400).json({ success: false, error: 'El total neto liquidado debe ser mayor a 0.' });
+    }
+
     const fecha = fechaPago ? String(fechaPago).trim().slice(0, 10) : getFechaHoy();
     const hora = getHoraActual();
     const esMensual = (tipoPeriodo || periodoTipo || '').toString().toLowerCase() === 'mensual';
@@ -1952,13 +2299,24 @@ app.post('/api/nomina', async (req, res) => {
     }
 
     const nuevoPago = await PayrollPayment.create({
+      trabajadorId: (trabajadorId && mongoose.Types.ObjectId.isValid(trabajadorId)) ? trabajadorId : null,
+      cedula: (cedula || '').trim(),
+      correo: (correo || '').trim().toLowerCase(),
       colaboradorNombre: colaboradorNombre.trim(),
       cargo: (cargo && cargo.trim()) ? cargo.trim() : 'Especialista en Depilación Láser',
       tipoPeriodo: finalTipoPeriodo,
       periodoTexto: descPeriodo,
       fechaPago: fecha,
       horaPago: hora,
+      salarioMensualAcordado: Number(salarioMensualAcordado) || 0,
       sueldoBase: sBase,
+      diasAdicionales: nDias,
+      valorDia: vDia,
+      totalDiasAdicionales: totDias,
+      horasExtras: nHoras,
+      valorHoraExtra: vHora,
+      totalHorasExtras: totHoras,
+      detalleHorasExtras: (detalleHorasExtras || '').trim(),
       bonificaciones: sBonos,
       conceptoBonificacion: (conceptoBonificacion || motivoBonificacion || '').trim(),
       deducciones: sDeduc,
@@ -1971,16 +2329,75 @@ app.post('/api/nomina', async (req, res) => {
       registradoPor: authUser.nombre || 'Administrador'
     });
 
+    // Envío automático de correo con el comprobante si fue seleccionado
+    let correoResultado = { ok: false, error: 'No solicitado' };
+    if (enviarCorreo && nuevoPago.correo) {
+      try {
+        correoResultado = await enviarCorreoComprobanteNomina(nuevoPago);
+        if (correoResultado.ok) {
+          nuevoPago.correoEnviado = true;
+          nuevoPago.fechaEnvioCorreo = new Date().toISOString();
+          await nuevoPago.save();
+          console.log(`📧 Comprobante enviado exitosamente a: ${nuevoPago.correo}`);
+        } else {
+          nuevoPago.errorEnvioCorreo = correoResultado.error || 'Error de envío';
+          await nuevoPago.save();
+          console.warn(`⚠️ Aviso envío correo a ${nuevoPago.correo}:`, correoResultado.error);
+        }
+      } catch (errCorreo) {
+        console.error('Error al enviar correo de nómina:', errCorreo);
+        nuevoPago.errorEnvioCorreo = errCorreo.message;
+        await nuevoPago.save();
+      }
+    }
+
     console.log(`✓ Pago de nómina registrado: ${nuevoPago.colaboradorNombre} - Total: $${nuevoPago.totalPagado} (${nuevoPago.periodoTexto})`);
 
     res.json({
       success: true,
       mensaje: `Nómina registrada exitosamente para ${nuevoPago.colaboradorNombre}. Total pagado: $${nuevoPago.totalPagado.toLocaleString('es-CO')}`,
       pago: nuevoPago,
-      gasto: gastoCreado
+      gasto: gastoCreado,
+      correoResultado
     });
   } catch (error) {
     console.error('Error al registrar pago de nómina:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Reenviar comprobante por correo (Exclusivo Administrador)
+app.post('/api/nomina/:id/reenviar-correo', async (req, res) => {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser || authUser.rol !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Solo el Administrador puede enviar comprobantes de nómina.' });
+    }
+
+    const { id } = req.params;
+    const pago = await PayrollPayment.findById(id);
+    if (!pago) {
+      return res.status(404).json({ success: false, error: 'Registro de nómina no encontrado.' });
+    }
+
+    if (!pago.correo) {
+      return res.status(400).json({ success: false, error: 'Este pago no tiene registrado un correo electrónico destinatario.' });
+    }
+
+    const resultado = await enviarCorreoComprobanteNomina(pago);
+    if (resultado.ok) {
+      pago.correoEnviado = true;
+      pago.fechaEnvioCorreo = new Date().toISOString();
+      pago.errorEnvioCorreo = '';
+      await pago.save();
+      return res.json({ success: true, mensaje: `Comprobante enviado exitosamente a ${pago.correo}.` });
+    } else {
+      pago.errorEnvioCorreo = resultado.error || 'Error de envío';
+      await pago.save();
+      return res.status(400).json({ success: false, error: resultado.error, notConfigured: resultado.notConfigured });
+    }
+  } catch (error) {
+    console.error('Error al reenviar comprobante:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
