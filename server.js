@@ -390,15 +390,21 @@ async function initDatabaseDefaults() {
     console.log('✓ Usuario Administrador creado: admin / admin123');
   }
 
-  const recepcionExists = await User.findOne({ username: 'recepcion' });
-  if (!recepcionExists) {
-    await User.create({
+  let recepcionUser = await User.findOne({ username: 'recepcion' });
+  if (!recepcionUser) {
+    recepcionUser = await User.create({
       username: 'recepcion',
-      password: 'laura123*',
+      password: 'laura123',
       nombre: 'Recepción & Caja',
-      rol: 'recepcionista'
+      rol: 'recepcionista',
+      activo: true
     });
-    console.log('✓ Usuario Recepcionista creado: recepcion / laura123*');
+    console.log('✓ Usuario Recepcionista creado: recepcion / laura123');
+  } else {
+    recepcionUser.password = 'laura123';
+    recepcionUser.activo = true;
+    await recepcionUser.save();
+    console.log('✓ Contraseña de Recepción actualizada a: laura123');
   }
 
   // Asegurar usuario operaria
